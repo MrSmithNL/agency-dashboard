@@ -297,10 +297,10 @@
         (d.account ? `<div class="arch-detail-row"><span class="arch-detail-label">Account</span><span class="arch-detail-value">${d.account}</span></div>` : '') +
         (d.integration ? `<div class="arch-detail-row"><span class="arch-detail-label">Integration</span><span class="arch-detail-value">${d.integration}</span></div>` : '') +
         (d.tech ? `<div class="arch-detail-row"><span class="arch-detail-label">Tech</span><span class="arch-detail-value">${d.tech}</span></div>` : '');
-      // Insert after the SVG container's parent (the archBox)
-      const archBox = document.querySelector('#archDetailPanel')?.parentElement || document.querySelector('.arch-detail')?.parentElement;
-      const svgContainer = document.querySelector('[data-node-id]')?.closest('svg')?.parentElement?.parentElement;
-      if (svgContainer) svgContainer.appendChild(panel);
+      // Insert into the inner content area of the architecture section
+      const svgEl = document.querySelector('[data-node-id]')?.closest('svg');
+      const innerWrap = svgEl?.parentElement?.parentElement;
+      if (innerWrap) innerWrap.appendChild(panel);
     };
 
     // ==================== PROJECT DETAIL ====================
@@ -311,7 +311,7 @@
       if (det.architecture) {
         const archBox = el('div','bg-card rounded-xl border border-border animate-in');
         const archHdr = el('div','arch-toggle flex items-center justify-between p-5 rounded-xl');
-        archHdr.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2"><span class="arch-chevron">&#9654;</span> Technical Architecture</h3><span class="text-xs text-slate-600">' + det.architecture.nodes.length + ' components &middot; Click to expand</span>';
+        archHdr.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2"><span class="arch-chevron">&#9654;</span> Technical Architecture</h3><span class="text-xs text-slate-600" data-arch-hint>' + det.architecture.nodes.length + ' components &middot; Click to expand</span>';
         const archBody = el('div','expandable-content');
         const archInner = el('div','px-5 pb-5');
         const svgC = el('div','');
@@ -319,7 +319,7 @@
         archBody.appendChild(archInner);
         archBox.appendChild(archHdr);
         archBox.appendChild(archBody);
-        archHdr.onclick = function() { archBody.classList.toggle('open'); archHdr.querySelector('.arch-chevron').classList.toggle('open'); archHdr.querySelector('span:last-child').textContent = archBody.classList.contains('open') ? 'Click components for details' : det.architecture.nodes.length + ' components \u00B7 Click to expand'; if (archBody.classList.contains('open') && !svgC.innerHTML) renderArchDiagram(svgC, det.architecture); };
+        archHdr.onclick = function() { archBody.classList.toggle('open'); archHdr.querySelector('.arch-chevron').classList.toggle('open'); const hint = archHdr.querySelector('[data-arch-hint]'); if (hint) hint.textContent = archBody.classList.contains('open') ? 'Click components for details' : det.architecture.nodes.length + ' components \u00B7 Click to expand'; if (archBody.classList.contains('open') && !svgC.innerHTML) renderArchDiagram(svgC, det.architecture); };
         c.appendChild(archBox);
         // Render lazily on expand — but also render immediately if someone navigates directly
         setTimeout(() => { if (archBody.classList.contains('open')) renderArchDiagram(svgC, det.architecture); }, 0);
@@ -328,7 +328,7 @@
       const mg = el('div','grid grid-cols-2 md:grid-cols-3 gap-3');
       det.metrics.forEach((m,i) => { const pct = metricPct(m); mg.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.06}s"><div class="flex items-center justify-between mb-1"><p class="text-xs text-slate-400 uppercase tracking-wider">${m.category}</p><p class="text-xs text-slate-600">${m.source}</p></div><p class="text-sm text-slate-300 mb-1">${m.name}</p><p class="text-xl font-bold text-white ${trendClass(m.trend)}">${formatMetricValue(m)}</p>${m.target!==null&&m.format!=='boolean'?`<div class="flex items-center gap-2 mt-2"><div class="flex-1 bg-slate-700 rounded-full h-1"><div class="${barColor(pct)} h-1 rounded-full progress-bar" style="width:${pct!==null?pct:0}%"></div></div><span class="text-xs text-slate-500">${m.target}${m.format==='score'?'/100':''}</span></div>`:''}</div>`; });
       c.appendChild(mg);
-      if (det.missingMetrics?.length) { c.innerHTML += `<div class="bg-amber-950/30 rounded-xl border border-amber-800/50 p-4 animate-in"><h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">Metric Gaps</h3><ul class="space-y-1">${det.missingMetrics.map(m=>`<li class="text-sm text-amber-300/80 flex items-start gap-2"><span class="text-amber-500 mt-0.5">!</span> ${m}</li>`).join('')}</ul></div>`; }
+      if (det.missingMetrics?.length) { const mmBox = el('div','bg-amber-950/30 rounded-xl border border-amber-800/50 p-4 animate-in'); mmBox.innerHTML = `<h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">Metric Gaps</h3><ul class="space-y-1">${det.missingMetrics.map(m=>`<li class="text-sm text-amber-300/80 flex items-start gap-2"><span class="text-amber-500 mt-0.5">!</span> ${m}</li>`).join('')}</ul>`; c.appendChild(mmBox); }
       // Chart
       const cc = el('div','bg-card rounded-xl border border-border p-5 animate-in');
       cc.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Metric Progress</h3><canvas id="projectMetricsChart" height="180"></canvas>';
