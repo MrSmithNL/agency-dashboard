@@ -35,11 +35,22 @@
     .chip-blocked { background: #3b1818; color: #f87171; }
     .chip-backlog { background: #27272a; color: #a1a1aa; }
     .chip-done { background: #14532d; color: #86efac; }
+    .chip-review { background: #2e1065; color: #c084fc; }
     .trend-up::after { content: ' \2191'; color: #22c55e; }
     .trend-down::after { content: ' \2193'; color: #ef4444; }
     .trend-flat::after { content: ' \2192'; color: #94a3b8; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeIn 0.4s ease-out forwards; }
+    .clickable-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+    .clickable-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
+    .back-btn { cursor: pointer; transition: color 0.15s; }
+    .back-btn:hover { color: #60a5fa; }
+    .metric-card { transition: transform 0.15s; }
+    .metric-card:hover { transform: translateY(-1px); }
+    .type-client { border-left: 3px solid #22c55e; }
+    .type-product { border-left: 3px solid #3b82f6; }
+    .type-infrastructure { border-left: 3px solid #a855f7; }
+    .warning-chip { background: #78350f; color: #fbbf24; font-size: 0.65rem; padding: 1px 6px; border-radius: 9999px; }
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
@@ -48,10 +59,10 @@
   <!-- Header -->
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-bold text-white text-sm">S</div>
+      <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-bold text-white text-sm clickable-card" onclick="navigateTo('')">S</div>
       <div>
-        <h1 class="text-lg font-semibold text-white">Smith AI Agency</h1>
-        <p class="text-xs text-slate-400">Performance Cockpit</p>
+        <h1 class="text-lg font-semibold text-white"><a href="#" onclick="navigateTo(''); return false;" class="hover:text-blue-400">Smith AI Agency</a></h1>
+        <p class="text-xs text-slate-400" id="breadcrumb">Performance Cockpit</p>
       </div>
     </div>
     <div class="text-right">
@@ -60,73 +71,8 @@
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpiCards"></div>
-
-    <!-- Project Overview -->
-    <section>
-      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Project Performance</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="projectCards"></div>
-    </section>
-
-    <!-- Charts Row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Tasks by Status -->
-      <div class="bg-card rounded-xl border border-border p-5">
-        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3>
-        <canvas id="taskStatusChart" height="200"></canvas>
-      </div>
-      <!-- Costs by Project -->
-      <div class="bg-card rounded-xl border border-border p-5">
-        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3>
-        <canvas id="costChart" height="200"></canvas>
-      </div>
-    </div>
-
-    <!-- Active Tasks Table -->
-    <section>
-      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Active Tasks</h2>
-      <div class="bg-card rounded-xl border border-border overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
-                <th class="px-4 py-3">Task</th>
-                <th class="px-4 py-3">Project</th>
-                <th class="px-4 py-3">Status</th>
-                <th class="px-4 py-3">Priority</th>
-                <th class="px-4 py-3">Last Activity</th>
-              </tr>
-            </thead>
-            <tbody id="taskTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- Financial Breakdown -->
-    <section>
-      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Cost Breakdown</h2>
-      <div class="bg-card rounded-xl border border-border overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
-                <th class="px-4 py-3">Service</th>
-                <th class="px-4 py-3">Project</th>
-                <th class="px-4 py-3">Category</th>
-                <th class="px-4 py-3 text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody id="financialTable"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-  </main>
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6" id="mainContent"></main>
 
   <footer class="border-t border-border px-6 py-4 text-center text-xs text-slate-500">
     <a href="https://docs.google.com/spreadsheets/d/1iZUsOKh1hAR0qtnu5HGk9WxTEXMuaZcvKY5pF0TVEJI/edit" target="_blank" class="hover:text-slate-300">View Google Sheet</a>
@@ -135,169 +81,551 @@
 
   <script>
     const D = DASHBOARD_DATA;
+    const chartInstances = [];
+
+    // --- Utilities ---
+    function destroyCharts() {
+      chartInstances.forEach(c => c.destroy());
+      chartInstances.length = 0;
+    }
+
+    function chipClass(status) {
+      const map = { 'This Week': 'chip-thisweek', 'In Progress': 'chip-inprogress', 'Blocked': 'chip-blocked', 'Review': 'chip-review', 'Done': 'chip-done' };
+      return map[status] || 'chip-backlog';
+    }
+
+    function ragClass(rag) {
+      return rag === 'Green' ? 'rag-green' : rag === 'Amber' ? 'rag-amber' : 'rag-red';
+    }
+
+    function trendClass(trend) {
+      return trend === 'up' ? 'trend-up' : trend === 'down' ? 'trend-down' : 'trend-flat';
+    }
+
+    function formatMetricValue(metric) {
+      if (metric.format === 'currency') return '\u20AC' + (typeof metric.value === 'number' ? metric.value.toFixed(2) : metric.value);
+      if (metric.format === 'score') return metric.value + '/100';
+      if (metric.format === 'boolean') return metric.label || (metric.value ? 'Yes' : 'No');
+      if (metric.format === 'seconds') return metric.value > 0 ? (metric.value / 60).toFixed(1) + ' min' : '0';
+      if (metric.format === 'position') return '#' + metric.value;
+      if (metric.format === 'ratio') return metric.value + '/' + metric.target;
+      return String(metric.value);
+    }
+
+    function metricPct(metric) {
+      if (!metric.target || metric.target === 0) return null;
+      if (metric.lowerIsBetter) return Math.min(100, (metric.target / metric.value) * 100);
+      if (metric.format === 'boolean') return metric.value ? 100 : 0;
+      return Math.min(100, (metric.value / metric.target) * 100);
+    }
+
+    function barColor(pct) {
+      if (pct === null) return 'bg-slate-600';
+      return pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+    }
+
+    function typeClass(type) {
+      return type === 'Client' ? 'type-client' : type === 'Product' ? 'type-product' : 'type-infrastructure';
+    }
+
+    function projectLabelForTask(taskProject) {
+      const map = { 'LOE': 'CLIENT-001', 'Hairgenetix': 'CLIENT-002', 'SEO': 'PROD-001', 'SF': 'PROD-002', 'INFRA': 'INFRA' };
+      return map[taskProject] || taskProject;
+    }
+
+    function tasksForProject(projectId) {
+      const detail = D.projectDetails[projectId];
+      if (!detail) return [];
+      const code = detail.code;
+      return D.tasks.filter(t => {
+        const label = projectLabelForTask(t.project);
+        return label === code || (code.startsWith('INFRA') && label === 'INFRA' && t.name.toLowerCase().includes(code.toLowerCase().replace('infra-', 'infra-0')));
+      });
+    }
+
+    function costsForProject(projectId) {
+      const detail = D.projectDetails[projectId];
+      if (!detail) return [];
+      return D.financial.filter(f => f.project.toLowerCase().includes(detail.name.toLowerCase()) || f.project.toLowerCase().includes(detail.code.toLowerCase()));
+    }
+
+    // --- Routing ---
+    function navigateTo(route) {
+      window.location.hash = route ? '#/' + route : '#';
+    }
+
+    function getRoute() {
+      const hash = window.location.hash;
+      if (!hash || hash === '#' || hash === '#/') return 'home';
+      return hash.replace('#/', '');
+    }
+
+    window.addEventListener('hashchange', render);
+
+    // --- Render Router ---
+    function render() {
+      destroyCharts();
+      const route = getRoute();
+      const main = document.getElementById('mainContent');
+      main.innerHTML = '';
+
+      if (route === 'home') {
+        renderHome(main);
+        document.getElementById('breadcrumb').textContent = 'Performance Cockpit';
+        document.title = 'Smith AI Agency \u2014 Cockpit';
+      } else if (D.projectDetails[route]) {
+        renderProjectDetail(main, route);
+        const detail = D.projectDetails[route];
+        document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + detail.code + ' ' + detail.name;
+        document.title = detail.code + ' ' + detail.name + ' \u2014 Cockpit';
+      } else {
+        main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>';
+      }
+    }
 
     // --- Last Sync ---
     const syncDate = new Date(D.lastSync);
     document.getElementById('lastSync').textContent = syncDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    // --- KPI Cards ---
-    const activeTasks = D.tasks.filter(t => ['This Week', 'In Progress'].includes(t.status));
-    const blockedTasks = D.tasks.filter(t => t.status === 'Blocked');
-    const doneTasks = D.tasks.filter(t => t.status === 'Done');
-    const totalBurn = D.financial.reduce((sum, f) => sum + Math.abs(f.amount), 0);
+    // ========================================
+    // HOME VIEW
+    // ========================================
+    function renderHome(container) {
+      // --- Agency KPI Cards ---
+      const kpiSection = document.createElement('div');
+      const topKPIs = D.agencyKPIs.slice(0, 4);
+      kpiSection.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
+      topKPIs.forEach((kpi, i) => {
+        const div = document.createElement('div');
+        div.className = 'bg-card rounded-xl border border-border p-4 animate-in';
+        div.style.animationDelay = `${i * 0.1}s`;
+        const color = kpi.name.includes('Burn') ? 'text-amber-400' :
+                      kpi.name.includes('Revenue') ? 'text-green-400' :
+                      kpi.name.includes('Blocked') ? (kpi.value > 0 ? 'text-red-400' : 'text-green-400') : 'text-blue-400';
+        const val = formatMetricValue(kpi);
+        div.innerHTML = `
+          <p class="text-xs text-slate-400 uppercase tracking-wider">${kpi.name}</p>
+          <p class="text-2xl font-bold ${color} mt-1 ${trendClass(kpi.trend)}">${val}</p>
+          ${kpi.target !== null ? `<p class="text-xs text-slate-500 mt-1">Target: ${kpi.format === 'currency' ? '\u20AC' + kpi.target : kpi.target}</p>` : ''}
+        `;
+        kpiSection.appendChild(div);
+      });
+      container.appendChild(kpiSection);
 
-    const kpis = [
-      { label: 'Active Projects', value: D.overview.length, color: 'text-blue-400' },
-      { label: 'This Week', value: activeTasks.length, color: 'text-blue-400' },
-      { label: 'Blocked', value: blockedTasks.length, color: blockedTasks.length > 0 ? 'text-red-400' : 'text-green-400' },
-      { label: 'Monthly Burn', value: '\u20AC' + totalBurn.toFixed(0), color: 'text-amber-400' },
-    ];
-
-    const kpiContainer = document.getElementById('kpiCards');
-    kpis.forEach((kpi, i) => {
-      const div = document.createElement('div');
-      div.className = 'bg-card rounded-xl border border-border p-4 animate-in';
-      div.style.animationDelay = `${i * 0.1}s`;
-      div.innerHTML = `
-        <p class="text-xs text-slate-400 uppercase tracking-wider">${kpi.label}</p>
-        <p class="text-2xl font-bold ${kpi.color} mt-1">${kpi.value}</p>
-      `;
-      kpiContainer.appendChild(div);
-    });
-
-    // --- Project Cards ---
-    const projectContainer = document.getElementById('projectCards');
-    D.overview.forEach((p, i) => {
-      const pct = p.omtmTarget > 0 ? Math.min(100, (p.omtmValue / p.omtmTarget) * 100) : 0;
-      const ragClass = p.rag === 'Green' ? 'rag-green' : p.rag === 'Amber' ? 'rag-amber' : 'rag-red';
-      const trendClass = p.trend === 'up' ? 'trend-up' : p.trend === 'down' ? 'trend-down' : 'trend-flat';
-      const barColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-      const shortName = p.project.replace(/^(CLIENT-\d+|PROD-\d+|INFRA-\d+)\s+/, '');
-
-      const div = document.createElement('div');
-      div.className = 'bg-card rounded-xl border border-border p-4 animate-in';
-      div.style.animationDelay = `${i * 0.08}s`;
-      div.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-white text-sm">${shortName}</h3>
-          <span class="${ragClass} text-lg font-bold">\u25CF</span>
-        </div>
-        <p class="text-xs text-slate-400 mb-1">${p.omtmName}</p>
-        <div class="flex items-baseline gap-1 mb-2">
-          <span class="text-xl font-bold text-white ${trendClass}">${p.omtmValue}</span>
-          <span class="text-xs text-slate-500">/ ${p.omtmTarget}</span>
-        </div>
-        <div class="w-full bg-slate-700 rounded-full h-1.5">
-          <div class="${barColor} h-1.5 rounded-full progress-bar" style="width: ${pct}%"></div>
-        </div>
-        <p class="text-xs text-slate-500 mt-2">${p.focus}</p>
-      `;
-      projectContainer.appendChild(div);
-    });
-
-    // --- Tasks by Status Chart ---
-    const statusCounts = {};
-    D.tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
-    const statusOrder = ['This Week', 'In Progress', 'Blocked', 'Review', 'Backlog', 'Done'];
-    const statusColors = { 'This Week': '#3b82f6', 'In Progress': '#22c55e', 'Blocked': '#ef4444', 'Review': '#a855f7', 'Backlog': '#64748b', 'Done': '#14532d' };
-
-    new Chart(document.getElementById('taskStatusChart'), {
-      type: 'bar',
-      data: {
-        labels: statusOrder.filter(s => statusCounts[s]),
-        datasets: [{
-          data: statusOrder.filter(s => statusCounts[s]).map(s => statusCounts[s]),
-          backgroundColor: statusOrder.filter(s => statusCounts[s]).map(s => statusColors[s]),
-          borderRadius: 6,
-          barThickness: 32,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
-          y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 5 }, beginAtZero: true }
-        }
+      // --- Secondary KPIs ---
+      const secKPIs = D.agencyKPIs.slice(4);
+      if (secKPIs.length > 0) {
+        const secSection = document.createElement('div');
+        secSection.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
+        secKPIs.forEach((kpi, i) => {
+          const div = document.createElement('div');
+          div.className = 'bg-card rounded-xl border border-border p-3 animate-in';
+          div.style.animationDelay = `${(i + 4) * 0.1}s`;
+          const val = formatMetricValue(kpi);
+          div.innerHTML = `
+            <p class="text-xs text-slate-400 uppercase tracking-wider">${kpi.name}</p>
+            <p class="text-lg font-bold text-slate-200 mt-1 ${trendClass(kpi.trend)}">${val}</p>
+          `;
+          secSection.appendChild(div);
+        });
+        container.appendChild(secSection);
       }
-    });
 
-    // --- Costs by Project Chart ---
-    const costByProject = {};
-    D.financial.forEach(f => {
-      if (f.amount < 0) {
-        const key = f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '');
-        costByProject[key] = (costByProject[key] || 0) + Math.abs(f.amount);
-      }
-    });
-    const costLabels = Object.keys(costByProject).sort((a, b) => costByProject[b] - costByProject[a]);
-    const costColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4'];
+      // --- Project Performance ---
+      const projHeader = document.createElement('h2');
+      projHeader.className = 'text-sm font-semibold text-slate-400 uppercase tracking-wider';
+      projHeader.textContent = 'Project Performance — Click to drill down';
+      container.appendChild(projHeader);
 
-    new Chart(document.getElementById('costChart'), {
-      type: 'doughnut',
-      data: {
-        labels: costLabels,
-        datasets: [{
-          data: costLabels.map(l => costByProject[l]),
-          backgroundColor: costColors.slice(0, costLabels.length),
-          borderWidth: 0,
-        }]
-      },
-      options: {
-        responsive: true,
-        cutout: '65%',
-        plugins: {
-          legend: { position: 'right', labels: { color: '#94a3b8', padding: 12, font: { size: 11 } } }
-        }
-      }
-    });
+      const projGrid = document.createElement('div');
+      projGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+      D.overview.forEach((p, i) => {
+        const pct = p.omtmTarget > 0 ? Math.min(100, (p.omtmValue / p.omtmTarget) * 100) : 0;
+        const bc = barColor(pct);
+        const shortName = p.project.replace(/^(CLIENT-\d+|PROD-\d+|INFRA-\d+)\s+/, '');
+        const detail = D.projectDetails[p.id];
+        const typeLabel = detail ? detail.type : '';
+        const missingCount = detail && detail.missingMetrics ? detail.missingMetrics.length : 0;
 
-    // --- Active Tasks Table ---
-    const tableBody = document.getElementById('taskTable');
-    const activeSorted = D.tasks
-      .filter(t => !['Done'].includes(t.status))
-      .sort((a, b) => {
-        const order = { 'This Week': 0, 'In Progress': 1, 'Blocked': 2, 'Review': 3, 'Backlog': 4 };
-        return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+        const div = document.createElement('div');
+        div.className = `bg-card rounded-xl border border-border p-4 animate-in clickable-card ${detail ? typeClass(typeLabel) : ''}`;
+        div.style.animationDelay = `${i * 0.08}s`;
+        div.onclick = () => navigateTo(p.id);
+        div.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-white text-sm">${shortName}</h3>
+            <div class="flex items-center gap-2">
+              ${missingCount > 0 ? `<span class="warning-chip">${missingCount} gap${missingCount > 1 ? 's' : ''}</span>` : ''}
+              <span class="${ragClass(p.rag)} text-lg font-bold">\u25CF</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 mb-1">${p.omtmName}</p>
+          <div class="flex items-baseline gap-1 mb-2">
+            <span class="text-xl font-bold text-white ${trendClass(p.trend)}">${p.omtmValue}</span>
+            <span class="text-xs text-slate-500">/ ${p.omtmTarget}</span>
+          </div>
+          <div class="w-full bg-slate-700 rounded-full h-1.5">
+            <div class="${bc} h-1.5 rounded-full progress-bar" style="width: ${pct}%"></div>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">${p.focus}</p>
+          <p class="text-xs text-slate-600 mt-1">${typeLabel} \u00B7 Click for details \u2192</p>
+        `;
+        projGrid.appendChild(div);
+      });
+      container.appendChild(projGrid);
+
+      // --- Charts Row ---
+      const chartsRow = document.createElement('div');
+      chartsRow.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
+
+      // Tasks by Status
+      const taskChartCard = document.createElement('div');
+      taskChartCard.className = 'bg-card rounded-xl border border-border p-5';
+      taskChartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3><canvas id="taskStatusChart" height="200"></canvas>';
+      chartsRow.appendChild(taskChartCard);
+
+      // Costs by Project
+      const costChartCard = document.createElement('div');
+      costChartCard.className = 'bg-card rounded-xl border border-border p-5';
+      costChartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3><canvas id="costChart" height="200"></canvas>';
+      chartsRow.appendChild(costChartCard);
+
+      container.appendChild(chartsRow);
+
+      // Render charts after DOM update
+      requestAnimationFrame(() => {
+        renderTaskStatusChart();
+        renderCostChart();
       });
 
-    activeSorted.forEach(t => {
-      const chipClass = t.status === 'This Week' ? 'chip-thisweek' :
-                        t.status === 'In Progress' ? 'chip-inprogress' :
-                        t.status === 'Blocked' ? 'chip-blocked' : 'chip-backlog';
-      const tr = document.createElement('tr');
-      tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
-      tr.innerHTML = `
-        <td class="px-4 py-2.5"><a href="${t.url}" target="_blank" class="hover:text-blue-400">${t.name}</a></td>
-        <td class="px-4 py-2.5 text-slate-400">${t.project}</td>
-        <td class="px-4 py-2.5"><span class="status-chip ${chipClass}">${t.status}</span></td>
-        <td class="px-4 py-2.5 text-slate-400">${t.priority}</td>
-        <td class="px-4 py-2.5 text-slate-400">${t.lastActivity}</td>
-      `;
-      tableBody.appendChild(tr);
-    });
+      // --- Active Tasks Table ---
+      renderTasksTable(container, D.tasks.filter(t => t.status !== 'Done'), 'Active Tasks');
 
-    // --- Financial Table ---
-    const finBody = document.getElementById('financialTable');
-    D.financial.filter(f => f.amount < 0).sort((a, b) => a.amount - b.amount).forEach(f => {
-      const tr = document.createElement('tr');
-      tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
-      tr.innerHTML = `
-        <td class="px-4 py-2.5">${f.description}</td>
-        <td class="px-4 py-2.5 text-slate-400">${f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '')}</td>
-        <td class="px-4 py-2.5 text-slate-400">${f.category}</td>
-        <td class="px-4 py-2.5 text-right font-mono text-red-400">\u20AC${Math.abs(f.amount).toFixed(2)}</td>
-      `;
-      finBody.appendChild(tr);
-    });
+      // --- Financial Table ---
+      renderFinancialTable(container, D.financial);
+    }
 
-    const totalRow = document.createElement('tr');
-    totalRow.className = 'bg-slate-800/50 font-semibold';
-    totalRow.innerHTML = `
-      <td class="px-4 py-2.5" colspan="3">Total Monthly Burn</td>
-      <td class="px-4 py-2.5 text-right font-mono text-amber-400">\u20AC${totalBurn.toFixed(2)}</td>
-    `;
-    finBody.appendChild(totalRow);
+    // ========================================
+    // PROJECT DETAIL VIEW
+    // ========================================
+    function renderProjectDetail(container, projectId) {
+      const detail = D.projectDetails[projectId];
+      const overview = D.overview.find(p => p.id === projectId);
+
+      // --- Back button + header ---
+      const header = document.createElement('div');
+      header.className = 'flex items-center gap-4 animate-in';
+      const ragDot = overview ? `<span class="${ragClass(overview.rag)} text-2xl font-bold">\u25CF</span>` : '';
+      header.innerHTML = `
+        <span class="back-btn text-slate-400 text-xl" onclick="navigateTo('')">\u2190</span>
+        <div class="flex-1">
+          <div class="flex items-center gap-3">
+            <h1 class="text-xl font-bold text-white">${detail.code} ${detail.name}</h1>
+            ${ragDot}
+            <span class="text-xs px-2 py-0.5 rounded-full ${detail.type === 'Client' ? 'bg-green-900 text-green-300' : detail.type === 'Product' ? 'bg-blue-900 text-blue-300' : 'bg-purple-900 text-purple-300'}">${detail.type}</span>
+          </div>
+          <p class="text-sm text-slate-400 mt-1">${detail.description}</p>
+          <div class="flex gap-3 mt-1">
+            ${detail.url ? `<a href="${detail.url}" target="_blank" class="text-xs text-blue-400 hover:underline">${detail.url}</a>` : ''}
+            ${detail.repoUrl ? `<a href="${detail.repoUrl}" target="_blank" class="text-xs text-slate-500 hover:text-slate-300">GitHub \u2192</a>` : ''}
+          </div>
+        </div>
+      `;
+      container.appendChild(header);
+
+      // --- OMTM Hero ---
+      if (overview) {
+        const omtmCard = document.createElement('div');
+        const pct = overview.omtmTarget > 0 ? Math.min(100, (overview.omtmValue / overview.omtmTarget) * 100) : 0;
+        omtmCard.className = 'bg-card rounded-xl border border-border p-5 animate-in';
+        omtmCard.innerHTML = `
+          <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">One Metric That Matters</p>
+          <p class="text-sm text-slate-300 mb-2">${overview.omtmName}</p>
+          <div class="flex items-baseline gap-2 mb-3">
+            <span class="text-4xl font-bold text-white ${trendClass(overview.trend)}">${overview.omtmValue}</span>
+            <span class="text-lg text-slate-500">/ ${overview.omtmTarget}</span>
+            <span class="text-sm text-slate-400 ml-2">(${pct.toFixed(0)}%)</span>
+          </div>
+          <div class="w-full bg-slate-700 rounded-full h-2">
+            <div class="${barColor(pct)} h-2 rounded-full progress-bar" style="width: ${pct}%"></div>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">Focus: ${overview.focus}</p>
+        `;
+        container.appendChild(omtmCard);
+      }
+
+      // --- All Metrics Grid ---
+      const metricsHeader = document.createElement('h2');
+      metricsHeader.className = 'text-sm font-semibold text-slate-400 uppercase tracking-wider';
+      metricsHeader.textContent = 'KPIs & Metrics';
+      container.appendChild(metricsHeader);
+
+      const metricsGrid = document.createElement('div');
+      metricsGrid.className = 'grid grid-cols-2 md:grid-cols-3 gap-3';
+      detail.metrics.forEach((m, i) => {
+        const pct = metricPct(m);
+        const div = document.createElement('div');
+        div.className = 'bg-card rounded-xl border border-border p-4 animate-in metric-card';
+        div.style.animationDelay = `${i * 0.06}s`;
+        div.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <p class="text-xs text-slate-400 uppercase tracking-wider">${m.category}</p>
+            <p class="text-xs text-slate-600">${m.source}</p>
+          </div>
+          <p class="text-sm text-slate-300 mb-1">${m.name}</p>
+          <p class="text-xl font-bold text-white ${trendClass(m.trend)}">${formatMetricValue(m)}</p>
+          ${m.target !== null && m.format !== 'boolean' ? `
+            <div class="flex items-center gap-2 mt-2">
+              <div class="flex-1 bg-slate-700 rounded-full h-1">
+                <div class="${barColor(pct)} h-1 rounded-full progress-bar" style="width: ${pct !== null ? pct : 0}%"></div>
+              </div>
+              <span class="text-xs text-slate-500">${m.target}${m.format === 'score' ? '/100' : ''}</span>
+            </div>
+          ` : ''}
+        `;
+        metricsGrid.appendChild(div);
+      });
+      container.appendChild(metricsGrid);
+
+      // --- Missing Metrics / Gaps ---
+      if (detail.missingMetrics && detail.missingMetrics.length > 0) {
+        const gapCard = document.createElement('div');
+        gapCard.className = 'bg-amber-950/30 rounded-xl border border-amber-800/50 p-4 animate-in';
+        gapCard.innerHTML = `
+          <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">Metric Gaps — Action Required</h3>
+          <ul class="space-y-1">
+            ${detail.missingMetrics.map(m => `<li class="text-sm text-amber-300/80 flex items-start gap-2"><span class="text-amber-500 mt-0.5">!</span> ${m}</li>`).join('')}
+          </ul>
+        `;
+        container.appendChild(gapCard);
+      }
+
+      // --- Metrics Chart ---
+      const chartCard = document.createElement('div');
+      chartCard.className = 'bg-card rounded-xl border border-border p-5 animate-in';
+      chartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Metric Progress</h3><canvas id="projectMetricsChart" height="180"></canvas>';
+      container.appendChild(chartCard);
+
+      requestAnimationFrame(() => {
+        const scored = detail.metrics.filter(m => m.target && m.target > 0 && m.format !== 'boolean');
+        if (scored.length > 0) {
+          const ctx = document.getElementById('projectMetricsChart');
+          if (ctx) {
+            const chart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: scored.map(m => m.name.length > 20 ? m.name.substring(0, 18) + '...' : m.name),
+                datasets: [
+                  {
+                    label: 'Current',
+                    data: scored.map(m => m.value),
+                    backgroundColor: scored.map(m => { const p = metricPct(m); return p >= 80 ? '#22c55e' : p >= 50 ? '#f59e0b' : '#ef4444'; }),
+                    borderRadius: 4,
+                  },
+                  {
+                    label: 'Target',
+                    data: scored.map(m => m.target),
+                    backgroundColor: '#334155',
+                    borderRadius: 4,
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+                scales: {
+                  x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+                  y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+                }
+              }
+            });
+            chartInstances.push(chart);
+          }
+        }
+      });
+
+      // --- Project Tasks ---
+      const projectTasks = tasksForProject(projectId);
+      if (projectTasks.length > 0) {
+        renderTasksTable(container, projectTasks.filter(t => t.status !== 'Done'), `Active Tasks — ${detail.name}`);
+        const doneTasks = projectTasks.filter(t => t.status === 'Done');
+        if (doneTasks.length > 0) {
+          renderTasksTable(container, doneTasks, `Completed Tasks — ${detail.name}`, true);
+        }
+      } else {
+        const noTasks = document.createElement('div');
+        noTasks.className = 'bg-card rounded-xl border border-border p-4 text-slate-500 text-sm';
+        noTasks.textContent = 'No tasks directly assigned to this project in Trello.';
+        container.appendChild(noTasks);
+      }
+
+      // --- Project Costs ---
+      const projectCosts = costsForProject(projectId);
+      if (projectCosts.length > 0) {
+        renderFinancialTable(container, projectCosts, `Costs — ${detail.name}`);
+      }
+    }
+
+    // ========================================
+    // SHARED COMPONENTS
+    // ========================================
+    function renderTasksTable(container, tasks, title, collapsed) {
+      const section = document.createElement('section');
+      const sorted = [...tasks].sort((a, b) => {
+        const order = { 'This Week': 0, 'In Progress': 1, 'Blocked': 2, 'Review': 3, 'Backlog': 4, 'Done': 5 };
+        return (order[a.status] ?? 6) - (order[b.status] ?? 6);
+      });
+
+      section.innerHTML = `
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title || 'Tasks'} <span class="text-slate-600">(${sorted.length})</span></h2>
+        <div class="bg-card rounded-xl border border-border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
+                  <th class="px-4 py-3">Task</th>
+                  <th class="px-4 py-3">Project</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Priority</th>
+                  <th class="px-4 py-3">Last Activity</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      const tbody = section.querySelector('tbody');
+      sorted.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
+        tr.innerHTML = `
+          <td class="px-4 py-2.5"><a href="${t.url}" target="_blank" class="hover:text-blue-400">${t.name}</a></td>
+          <td class="px-4 py-2.5 text-slate-400">${t.project}</td>
+          <td class="px-4 py-2.5"><span class="status-chip ${chipClass(t.status)}">${t.status}</span></td>
+          <td class="px-4 py-2.5 text-slate-400">${t.priority}</td>
+          <td class="px-4 py-2.5 text-slate-400">${t.lastActivity}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      container.appendChild(section);
+    }
+
+    function renderFinancialTable(container, items, title) {
+      const costs = items.filter(f => f.amount < 0);
+      const totalBurn = costs.reduce((sum, f) => sum + Math.abs(f.amount), 0);
+
+      const section = document.createElement('section');
+      section.innerHTML = `
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title || 'Cost Breakdown'}</h2>
+        <div class="bg-card rounded-xl border border-border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
+                  <th class="px-4 py-3">Service</th>
+                  <th class="px-4 py-3">Project</th>
+                  <th class="px-4 py-3">Category</th>
+                  <th class="px-4 py-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      `;
+      const tbody = section.querySelector('tbody');
+      costs.sort((a, b) => a.amount - b.amount).forEach(f => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
+        tr.innerHTML = `
+          <td class="px-4 py-2.5">${f.description}</td>
+          <td class="px-4 py-2.5 text-slate-400">${f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '')}</td>
+          <td class="px-4 py-2.5 text-slate-400">${f.category}</td>
+          <td class="px-4 py-2.5 text-right font-mono text-red-400">\u20AC${Math.abs(f.amount).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      if (totalBurn > 0) {
+        const totalRow = document.createElement('tr');
+        totalRow.className = 'bg-slate-800/50 font-semibold';
+        totalRow.innerHTML = `
+          <td class="px-4 py-2.5" colspan="3">Total</td>
+          <td class="px-4 py-2.5 text-right font-mono text-amber-400">\u20AC${totalBurn.toFixed(2)}</td>
+        `;
+        tbody.appendChild(totalRow);
+      }
+      container.appendChild(section);
+    }
+
+    // --- Charts ---
+    function renderTaskStatusChart() {
+      const statusCounts = {};
+      D.tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
+      const statusOrder = ['This Week', 'In Progress', 'Blocked', 'Review', 'Backlog', 'Done'];
+      const statusColors = { 'This Week': '#3b82f6', 'In Progress': '#22c55e', 'Blocked': '#ef4444', 'Review': '#a855f7', 'Backlog': '#64748b', 'Done': '#14532d' };
+
+      const ctx = document.getElementById('taskStatusChart');
+      if (!ctx) return;
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: statusOrder.filter(s => statusCounts[s]),
+          datasets: [{
+            data: statusOrder.filter(s => statusCounts[s]).map(s => statusCounts[s]),
+            backgroundColor: statusOrder.filter(s => statusCounts[s]).map(s => statusColors[s]),
+            borderRadius: 6,
+            barThickness: 32,
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 5 }, beginAtZero: true }
+          }
+        }
+      });
+      chartInstances.push(chart);
+    }
+
+    function renderCostChart() {
+      const costByProject = {};
+      D.financial.forEach(f => {
+        if (f.amount < 0) {
+          const key = f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '');
+          costByProject[key] = (costByProject[key] || 0) + Math.abs(f.amount);
+        }
+      });
+      const costLabels = Object.keys(costByProject).sort((a, b) => costByProject[b] - costByProject[a]);
+      const costColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4'];
+
+      const ctx = document.getElementById('costChart');
+      if (!ctx) return;
+      const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: costLabels,
+          datasets: [{
+            data: costLabels.map(l => costByProject[l]),
+            backgroundColor: costColors.slice(0, costLabels.length),
+            borderWidth: 0,
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: '65%',
+          plugins: {
+            legend: { position: 'right', labels: { color: '#94a3b8', padding: 12, font: { size: 11 } } }
+          }
+        }
+      });
+      chartInstances.push(chart);
+    }
+
+    // --- Initial render ---
+    render();
   </script>
 </body>
 </html>
