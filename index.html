@@ -59,7 +59,11 @@
     .sub-agent { border-left: 2px solid #334155; margin-left: 16px; padding-left: 12px; }
     select.filter-select { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; color: #e2e8f0; }
     /* Architecture diagrams */
-    .arch-node { cursor: default; transition: opacity 0.15s; } .arch-node:hover { opacity: 0.85; }
+    .arch-node { cursor: pointer; transition: opacity 0.15s, filter 0.15s; } .arch-node:hover { opacity: 0.9; filter: brightness(1.2); }
+    .arch-toggle { cursor: pointer; user-select: none; } .arch-toggle:hover { background: #334155; }
+    .arch-chevron { transition: transform 0.3s ease; display: inline-block; } .arch-chevron.open { transform: rotate(90deg); }
+    .arch-detail { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-top: 12px; animation: fadeIn 0.3s ease-out; }
+    .arch-detail-row { display: flex; gap: 8px; margin-bottom: 8px; } .arch-detail-label { color: #64748b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; min-width: 80px; flex-shrink: 0; } .arch-detail-value { color: #cbd5e1; font-size: 0.8rem; }
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
@@ -192,67 +196,134 @@
     // ==================== ARCHITECTURE DIAGRAM ====================
     function renderArchDiagram(container, arch) {
       const typeColor = { app:'#3b82f6', hosting:'#22c55e', data:'#f59e0b', api:'#a855f7', tool:'#64748b', service:'#06b6d4', status:'#475569' };
-      const nw = 130, nh = 52, gapX = 24, gapY = 72, padX = 40, padY = 30;
+      const typeLabel = { app:'Application', hosting:'Hosting', data:'Data', api:'API', tool:'Tool', service:'Service', status:'Status' };
+      const nw = 130, nh = 52, gapX = 24, gapY = 80, padX = 40, padY = 10, labelH = 28;
       const nodeMap = {}; arch.nodes.forEach(n => nodeMap[n.id] = n);
-      // Calculate positions from layers
+      // Layers are now objects with { name, nodes }
+      const layers = arch.layers.map(l => Array.isArray(l) ? { name: '', nodes: l } : l);
+      // Calculate positions
       let maxRowW = 0;
       const positions = {};
-      arch.layers.forEach((row, ri) => {
-        const rowW = row.length * nw + (row.length - 1) * gapX;
+      layers.forEach(layer => {
+        const rowW = layer.nodes.length * nw + (layer.nodes.length - 1) * gapX;
         if (rowW > maxRowW) maxRowW = rowW;
       });
-      arch.layers.forEach((row, ri) => {
-        const rowW = row.length * nw + (row.length - 1) * gapX;
+      const labelPadL = 100; // space for layer label on left
+      layers.forEach((layer, ri) => {
+        const rowW = layer.nodes.length * nw + (layer.nodes.length - 1) * gapX;
         const offsetX = (maxRowW - rowW) / 2;
-        row.forEach((nid, ci) => {
-          positions[nid] = { x: padX + offsetX + ci * (nw + gapX), y: padY + ri * (nh + gapY) };
+        layer.nodes.forEach((nid, ci) => {
+          positions[nid] = { x: labelPadL + padX + offsetX + ci * (nw + gapX), y: padY + ri * (nh + gapY + labelH) + labelH };
         });
       });
-      const svgW = maxRowW + padX * 2;
-      const svgH = arch.layers.length * nh + (arch.layers.length - 1) * gapY + padY * 2;
-      let svg = `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${svgW}px;height:auto;">`;
-      // Arrow marker
+      const svgW = maxRowW + padX * 2 + labelPadL;
+      const svgH = layers.length * (nh + labelH) + (layers.length - 1) * gapY + padY * 2;
+      let svg = `<svg viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${Math.max(svgW,500)}px;height:auto;">`;
       svg += '<defs><marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#475569"/></marker></defs>';
+      // Layer backgrounds and labels
+      layers.forEach((layer, ri) => {
+        const y = padY + ri * (nh + gapY + labelH);
+        const layerH = nh + labelH + 8;
+        svg += `<rect x="4" y="${y}" width="${svgW - 8}" height="${layerH}" rx="8" fill="#1e293b" fill-opacity="0.4" stroke="#334155" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+        if (layer.name) svg += `<text x="16" y="${y + (layerH / 2) + 4}" fill="#64748b" font-size="10" font-weight="600" font-family="system-ui,sans-serif" text-anchor="start">${layer.name}</text>`;
+      });
       // Connections
       arch.connections.forEach(cn => {
         const from = positions[cn.from], to = positions[cn.to];
         if (!from || !to) return;
-        const x1 = from.x + nw / 2, y1 = from.y + nh;
-        const x2 = to.x + nw / 2, y2 = to.y;
-        // Determine if same row
         let fromRow = -1, toRow = -1;
-        arch.layers.forEach((r, i) => { if (r.includes(cn.from)) fromRow = i; if (r.includes(cn.to)) toRow = i; });
+        layers.forEach((l, i) => { if (l.nodes.includes(cn.from)) fromRow = i; if (l.nodes.includes(cn.to)) toRow = i; });
         if (fromRow === toRow) {
-          // Horizontal connection
           const hx1 = from.x + nw, hy1 = from.y + nh / 2;
           const hx2 = to.x, hy2 = to.y + nh / 2;
           svg += `<line x1="${hx1}" y1="${hy1}" x2="${hx2}" y2="${hy2}" stroke="#475569" stroke-width="1.5" marker-end="url(#ah)"/>`;
         } else {
-          // Vertical with slight curve
-          const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-          svg += `<path d="M${x1},${y1} Q${x1},${my} ${mx},${my} Q${x2},${my} ${x2},${y2}" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#ah)"/>`;
+          const x1 = from.x + nw / 2, y1 = from.y + nh;
+          const x2 = to.x + nw / 2, y2 = to.y;
+          const my = (y1 + y2) / 2;
+          svg += `<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" fill="none" stroke="#475569" stroke-width="1.5" marker-end="url(#ah)"/>`;
         }
       });
       // Nodes
       arch.nodes.forEach(n => {
         const p = positions[n.id]; if (!p) return;
         const col = typeColor[n.type] || '#64748b';
-        svg += `<g class="arch-node" transform="translate(${p.x},${p.y})">`;
-        svg += `<rect width="${nw}" height="${nh}" rx="8" fill="${col}22" stroke="${col}" stroke-width="1.5"/>`;
-        svg += `<text x="${nw/2}" y="20" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600" font-family="system-ui,sans-serif">${n.label}</text>`;
-        if (n.sub) svg += `<text x="${nw/2}" y="36" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="system-ui,sans-serif">${n.sub}</text>`;
+        svg += `<g class="arch-node" data-node-id="${n.id}" onclick="showNodeDetail('${n.id}')" transform="translate(${p.x},${p.y})">`;
+        svg += `<rect width="${nw}" height="${nh}" rx="8" fill="${col}18" stroke="${col}" stroke-width="1.5"/>`;
+        svg += `<text x="${nw/2}" y="20" text-anchor="middle" fill="#e2e8f0" font-size="11" font-weight="600" font-family="system-ui,sans-serif">${n.label}</text>`;
+        if (n.sub) svg += `<text x="${nw/2}" y="35" text-anchor="middle" fill="#94a3b8" font-size="8.5" font-family="system-ui,sans-serif">${n.sub}</text>`;
+        // Type indicator dot
+        svg += `<circle cx="${nw - 8}" cy="8" r="3" fill="${col}"/>`;
         svg += '</g>';
       });
+      // Legend
+      const legendY = svgH - 18;
+      const types = [...new Set(arch.nodes.map(n => n.type))];
+      let legendX = labelPadL + padX;
+      svg += `<g transform="translate(0,${legendY})">`;
+      types.forEach(t => {
+        svg += `<circle cx="${legendX}" cy="0" r="4" fill="${typeColor[t]}"/>`;
+        svg += `<text x="${legendX + 8}" y="4" fill="#64748b" font-size="8" font-family="system-ui,sans-serif">${typeLabel[t] || t}</text>`;
+        legendX += (typeLabel[t] || t).length * 6 + 24;
+      });
+      svg += '</g>';
       svg += '</svg>';
       container.innerHTML = svg;
+      // Store node data on container for detail panel
+      container._archNodes = nodeMap;
     }
+    // Node detail panel
+    let _activeNodeDetail = null;
+    window.showNodeDetail = function(nodeId) {
+      const existing = document.getElementById('archDetailPanel');
+      if (existing && _activeNodeDetail === nodeId) { existing.remove(); _activeNodeDetail = null; return; }
+      if (existing) existing.remove();
+      _activeNodeDetail = nodeId;
+      // Find the node data by traversing all projectDetails
+      const route = getRoute();
+      const det = D.projectDetails[route];
+      if (!det || !det.architecture) return;
+      const node = det.architecture.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+      const typeColor = { app:'#3b82f6', hosting:'#22c55e', data:'#f59e0b', api:'#a855f7', tool:'#64748b', service:'#06b6d4', status:'#475569' };
+      const typeLabel = { app:'Application', hosting:'Hosting', data:'Data', api:'API', tool:'Tool', service:'Service', status:'Status' };
+      const col = typeColor[node.type] || '#64748b';
+      const d = node.details || {};
+      const panel = document.createElement('div');
+      panel.id = 'archDetailPanel';
+      panel.className = 'arch-detail';
+      panel.innerHTML = `<div class="flex items-center justify-between mb-3"><div class="flex items-center gap-3"><span style="width:10px;height:10px;border-radius:50%;background:${col};display:inline-block"></span><span class="text-white font-semibold text-sm">${node.label}</span><span class="text-xs px-2 py-0.5 rounded-full" style="background:${col}22;color:${col};border:1px solid ${col}44">${typeLabel[node.type] || node.type}</span></div><span class="text-slate-500 cursor-pointer hover:text-white text-lg" onclick="this.closest('.arch-detail').remove();_activeNodeDetail=null">&times;</span></div>` +
+        (d.description ? `<div class="arch-detail-row"><span class="arch-detail-label">What</span><span class="arch-detail-value">${d.description}</span></div>` : '') +
+        (d.account ? `<div class="arch-detail-row"><span class="arch-detail-label">Account</span><span class="arch-detail-value">${d.account}</span></div>` : '') +
+        (d.integration ? `<div class="arch-detail-row"><span class="arch-detail-label">Integration</span><span class="arch-detail-value">${d.integration}</span></div>` : '') +
+        (d.tech ? `<div class="arch-detail-row"><span class="arch-detail-label">Tech</span><span class="arch-detail-value">${d.tech}</span></div>` : '');
+      // Insert after the SVG container's parent (the archBox)
+      const archBox = document.querySelector('#archDetailPanel')?.parentElement || document.querySelector('.arch-detail')?.parentElement;
+      const svgContainer = document.querySelector('[data-node-id]')?.closest('svg')?.parentElement?.parentElement;
+      if (svgContainer) svgContainer.appendChild(panel);
+    };
 
     // ==================== PROJECT DETAIL ====================
     function renderProjectDetail(c, pid) {
       const det = D.projectDetails[pid], ov = D.overview.find(p=>p.id===pid);
       c.innerHTML += `<div class="flex items-center gap-4 animate-in"><span class="back-btn text-slate-400 text-xl" onclick="navigateTo('')">\u2190</span><div class="flex-1"><div class="flex items-center gap-3"><h1 class="text-xl font-bold text-white">${det.code} ${det.name}</h1>${ov?`<span class="${ragClass(ov.rag)} text-2xl font-bold">\u25CF</span>`:''}<span class="text-xs px-2 py-0.5 rounded-full ${det.type==='Client'?'bg-green-900 text-green-300':det.type==='Product'?'bg-blue-900 text-blue-300':'bg-purple-900 text-purple-300'}">${det.type}</span></div><p class="text-sm text-slate-400 mt-1">${det.description}</p><div class="flex gap-3 mt-1">${det.url?`<a href="${det.url}" target="_blank" class="text-xs text-blue-400 hover:underline">${det.url}</a>`:''}${det.repoUrl?`<a href="${det.repoUrl}" target="_blank" class="text-xs text-slate-500 hover:text-slate-300">GitHub \u2192</a>`:''}</div></div></div>`;
       if (ov) { const pct = ov.omtmTarget>0?Math.min(100,(ov.omtmValue/ov.omtmTarget)*100):0; c.innerHTML += `<div class="bg-card rounded-xl border border-border p-5 animate-in"><p class="text-xs text-slate-400 uppercase tracking-wider mb-1">One Metric That Matters</p><p class="text-sm text-slate-300 mb-2">${ov.omtmName}</p><div class="flex items-baseline gap-2 mb-3"><span class="text-4xl font-bold text-white ${trendClass(ov.trend)}">${ov.omtmValue}</span><span class="text-lg text-slate-500">/ ${ov.omtmTarget}</span><span class="text-sm text-slate-400 ml-2">(${pct.toFixed(0)}%)</span></div><div class="w-full bg-slate-700 rounded-full h-2"><div class="${barColor(pct)} h-2 rounded-full progress-bar" style="width:${pct}%"></div></div><p class="text-xs text-slate-500 mt-2">Focus: ${ov.focus}</p></div>`; }
-      if (det.architecture) { const archBox = el('div','bg-card rounded-xl border border-border p-5 animate-in'); archBox.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Technical Architecture</h3>'; const svgC = el('div',''); archBox.appendChild(svgC); c.appendChild(archBox); renderArchDiagram(svgC, det.architecture); }
+      if (det.architecture) {
+        const archBox = el('div','bg-card rounded-xl border border-border animate-in');
+        const archHdr = el('div','arch-toggle flex items-center justify-between p-5 rounded-xl');
+        archHdr.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2"><span class="arch-chevron">&#9654;</span> Technical Architecture</h3><span class="text-xs text-slate-600">' + det.architecture.nodes.length + ' components &middot; Click to expand</span>';
+        const archBody = el('div','expandable-content');
+        const archInner = el('div','px-5 pb-5');
+        const svgC = el('div','');
+        archInner.appendChild(svgC);
+        archBody.appendChild(archInner);
+        archBox.appendChild(archHdr);
+        archBox.appendChild(archBody);
+        archHdr.onclick = function() { archBody.classList.toggle('open'); archHdr.querySelector('.arch-chevron').classList.toggle('open'); archHdr.querySelector('span:last-child').textContent = archBody.classList.contains('open') ? 'Click components for details' : det.architecture.nodes.length + ' components \u00B7 Click to expand'; if (archBody.classList.contains('open') && !svgC.innerHTML) renderArchDiagram(svgC, det.architecture); };
+        c.appendChild(archBox);
+        // Render lazily on expand — but also render immediately if someone navigates directly
+        setTimeout(() => { if (archBody.classList.contains('open')) renderArchDiagram(svgC, det.architecture); }, 0);
+      }
       c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider','KPIs & Metrics'));
       const mg = el('div','grid grid-cols-2 md:grid-cols-3 gap-3');
       det.metrics.forEach((m,i) => { const pct = metricPct(m); mg.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.06}s"><div class="flex items-center justify-between mb-1"><p class="text-xs text-slate-400 uppercase tracking-wider">${m.category}</p><p class="text-xs text-slate-600">${m.source}</p></div><p class="text-sm text-slate-300 mb-1">${m.name}</p><p class="text-xl font-bold text-white ${trendClass(m.trend)}">${formatMetricValue(m)}</p>${m.target!==null&&m.format!=='boolean'?`<div class="flex items-center gap-2 mt-2"><div class="flex-1 bg-slate-700 rounded-full h-1"><div class="${barColor(pct)} h-1 rounded-full progress-bar" style="width:${pct!==null?pct:0}%"></div></div><span class="text-xs text-slate-500">${m.target}${m.format==='score'?'/100':''}</span></div>`:''}</div>`; });

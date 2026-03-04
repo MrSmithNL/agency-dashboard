@@ -50,12 +50,12 @@ const DASHBOARD_DATA = {
       missingMetrics: ["GA4 baselines not yet established", "MailerLite subscriber tracking not automated"],
       architecture: {
         nodes: [
-          { id: "nextjs", label: "Next.js", type: "app", sub: "React SSR" },
-          { id: "vercel", label: "Vercel", type: "hosting", sub: "Edge CDN + CI/CD" },
-          { id: "ga4", label: "GA4", type: "data", sub: "Analytics" },
-          { id: "gsc", label: "Search Console", type: "data", sub: "Search data" },
-          { id: "mailerlite", label: "MailerLite", type: "api", sub: "Email marketing" },
-          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits" },
+          { id: "nextjs", label: "Next.js", type: "app", sub: "React SSR", details: { description: "Server-side rendered React framework powering the website. Uses App Router with ISR for blog pages.", account: "GitHub: MrSmithNL/loveoverexile-website", integration: "Git push triggers automatic Vercel deploy", tech: "Next.js 14, React 18, TypeScript" } },
+          { id: "vercel", label: "Vercel", type: "hosting", sub: "Edge CDN + CI/CD", details: { description: "Edge hosting platform with global CDN, automatic SSL, and CI/CD pipeline from GitHub.", account: "Vercel — Malcolm's GitHub OAuth", integration: "Auto-deploy on push to main branch", tech: "Edge Functions, ISR, Serverless" } },
+          { id: "ga4", label: "GA4", type: "data", sub: "Analytics", details: { description: "Google Analytics 4 tracking visitor sessions, page views, and engagement metrics.", account: "Google — msmithnl@gmail.com", integration: "JavaScript tag embedded in Next.js layout", tech: "GA4 measurement protocol" } },
+          { id: "gsc", label: "Search Console", type: "data", sub: "Search data", details: { description: "Google Search Console providing search query data, click-through rates, and indexing status.", account: "Google — msmithnl@gmail.com", integration: "Domain verified via Vercel DNS", tech: "GSC API for SEO Toolkit integration" } },
+          { id: "mailerlite", label: "MailerLite", type: "api", sub: "Email marketing", details: { description: "Email marketing platform managing subscriber lists, signup forms, and email campaigns.", account: "MailerLite — dedicated LOE account", integration: "Embedded forms via JavaScript SDK", tech: "REST API, JavaScript widget" } },
+          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits", details: { description: "Internal SEO analysis tool (PROD-001) running audits on content, technical SEO, and AI discoverability.", account: "Internal — Claude Code execution", integration: "CLI scripts run against live site URL", tech: "Node.js, PageSpeed API, GSC API" } },
         ],
         connections: [
           { from: "nextjs", to: "vercel" },
@@ -64,7 +64,11 @@ const DASHBOARD_DATA = {
           { from: "nextjs", to: "mailerlite" },
           { from: "seo", to: "nextjs" },
         ],
-        layers: [["nextjs","vercel"],["ga4","gsc","mailerlite"],["seo"]]
+        layers: [
+          { name: "Application", nodes: ["nextjs","vercel"] },
+          { name: "Data & Marketing", nodes: ["ga4","gsc","mailerlite"] },
+          { name: "Tools", nodes: ["seo"] }
+        ]
       },
     },
     "client-002": {
@@ -82,13 +86,13 @@ const DASHBOARD_DATA = {
       missingMetrics: ["GA4 NOT installed — no session/conversion data", "Revenue tracking not connected"],
       architecture: {
         nodes: [
-          { id: "shopify", label: "Shopify", type: "app", sub: "E-commerce platform" },
-          { id: "domain", label: "hairgenetix.com", type: "hosting", sub: "Custom domain" },
-          { id: "theme", label: "Liquid Theme", type: "service", sub: "Custom storefront" },
-          { id: "langs", label: "9 Languages", type: "service", sub: "i18n translations" },
-          { id: "reviews", label: "1200+ Reviews", type: "data", sub: "Social proof" },
-          { id: "gsc", label: "Search Console", type: "data", sub: "Search data" },
-          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits" },
+          { id: "shopify", label: "Shopify", type: "app", sub: "E-commerce platform", details: { description: "Shopify e-commerce platform hosting the full online store with product management, checkout, and order processing.", account: "Shopify — a24be5-c5.myshopify.com (admin domain)", integration: "Full Shopify Admin + Storefront APIs", tech: "Shopify Plus, Liquid templating, REST + GraphQL APIs" } },
+          { id: "domain", label: "hairgenetix.com", type: "hosting", sub: "Custom domain", details: { description: "Custom domain pointing to Shopify storefront. DNS managed through Shopify.", account: "Domain registrar — hairgenetix.com", integration: "DNS A/CNAME records to Shopify", tech: "Shopify SSL, CDN via Shopify Edge" } },
+          { id: "theme", label: "Liquid Theme", type: "service", sub: "Custom storefront", details: { description: "Custom Shopify Liquid theme (ID: 165687230796) controlling storefront design, layout, and UX.", account: "Shopify Theme Editor", integration: "Shopify Theme API for programmatic edits", tech: "Liquid, HTML, CSS, JavaScript" } },
+          { id: "langs", label: "9 Languages", type: "service", sub: "i18n translations", details: { description: "Multi-language support serving 9 languages for global e-commerce reach.", account: "Shopify Markets / Translation app", integration: "Built-in Shopify i18n or third-party app", tech: "Shopify Markets, language-specific URLs" } },
+          { id: "reviews", label: "1200+ Reviews", type: "data", sub: "Social proof", details: { description: "Customer review system with 1200+ verified reviews providing social proof and SEO-rich content.", account: "Shopify review app", integration: "Product page embedded widget", tech: "JSON-LD review schema, widget embed" } },
+          { id: "gsc", label: "Search Console", type: "data", sub: "Search data", details: { description: "Google Search Console tracking search performance, indexing, and organic click data for hairgenetix.com.", account: "Google — msmithnl@gmail.com", integration: "Domain verified via DNS TXT record", tech: "GSC API for SEO Toolkit integration" } },
+          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits", details: { description: "Internal SEO analysis tool running technical audits, content scoring, and AI discovery checks.", account: "Internal — Claude Code execution", integration: "CLI scripts + Shopify API for meta/schema edits", tech: "Node.js, PageSpeed API, Shopify Admin API" } },
         ],
         connections: [
           { from: "shopify", to: "domain" },
@@ -98,7 +102,11 @@ const DASHBOARD_DATA = {
           { from: "domain", to: "gsc" },
           { from: "seo", to: "shopify" },
         ],
-        layers: [["shopify","domain"],["theme","langs","reviews"],["gsc","seo"]]
+        layers: [
+          { name: "Platform", nodes: ["shopify","domain"] },
+          { name: "Storefront", nodes: ["theme","langs","reviews"] },
+          { name: "Data & Tools", nodes: ["gsc","seo"] }
+        ]
       },
     },
     "prod-001": {
@@ -116,16 +124,16 @@ const DASHBOARD_DATA = {
       missingMetrics: ["No usage/adoption metrics (no users yet)", "No revenue metrics"],
       architecture: {
         nodes: [
-          { id: "claude", label: "Claude Code", type: "tool", sub: "AI execution engine" },
-          { id: "audit", label: "Technical Audit", type: "service", sub: "90/100" },
-          { id: "content", label: "Content Optimizer", type: "service", sub: "74/100" },
-          { id: "keywords", label: "Keywords", type: "service", sub: "Live" },
-          { id: "serp", label: "SERP Analyzer", type: "service", sub: "Live" },
-          { id: "aidiscovery", label: "AI Discovery", type: "service", sub: "100/100" },
-          { id: "pagespeed", label: "PageSpeed API", type: "api", sub: "Google" },
-          { id: "gscapi", label: "GSC API", type: "api", sub: "Google" },
-          { id: "serpapi", label: "SerpAPI", type: "api", sub: "SERP data" },
-          { id: "anthropic", label: "Anthropic API", type: "api", sub: "Claude LLM" },
+          { id: "claude", label: "Claude Code", type: "tool", sub: "AI execution engine", details: { description: "AI coding assistant that orchestrates all SEO Toolkit services. Runs audits, generates reports, and executes fixes.", account: "Anthropic — Malcolm's Claude Code subscription", integration: "CLI execution via claude command", tech: "Claude Opus 4, VS Code extension, CLI" } },
+          { id: "audit", label: "Technical Audit", type: "service", sub: "90/100", details: { description: "Automated technical SEO audit checking page speed, meta tags, schema markup, crawlability, and 50+ factors.", account: "Internal service — no separate account", integration: "Claude Code runs audit scripts on target URL", tech: "Node.js, Puppeteer, PageSpeed Insights API" } },
+          { id: "content", label: "Content Optimizer", type: "service", sub: "74/100", details: { description: "Content analysis service scoring readability, keyword density, heading structure, and AI-optimised formatting.", account: "Internal service — no separate account", integration: "Claude Code analyses page content", tech: "NLP analysis, Claude API for scoring" } },
+          { id: "keywords", label: "Keywords", type: "service", sub: "Live", details: { description: "Keyword research and tracking service finding opportunities, gaps, and ranking positions.", account: "Internal service — no separate account", integration: "GSC API + SerpAPI data fusion", tech: "GSC API, SerpAPI, statistical analysis" } },
+          { id: "serp", label: "SERP Analyzer", type: "service", sub: "Live", details: { description: "Search engine results page analyser examining competitor rankings, featured snippets, and SERP features.", account: "SerpAPI — API key in Bitwarden", integration: "REST API calls to SerpAPI", tech: "SerpAPI, JSON parsing, competitor mapping" } },
+          { id: "aidiscovery", label: "AI Discovery", type: "service", sub: "100/100", details: { description: "AI search engine visibility audit checking how ChatGPT, Perplexity, Gemini, and AI Overviews reference the site.", account: "Anthropic API — shared with Claude Code", integration: "Prompts AI models with brand/product queries", tech: "Anthropic API, OpenAI API, prompt engineering" } },
+          { id: "pagespeed", label: "PageSpeed API", type: "api", sub: "Google", details: { description: "Google PageSpeed Insights API measuring Core Web Vitals, performance scores, and speed optimisation suggestions.", account: "Google Cloud — API key", integration: "REST API with URL parameter", tech: "Lighthouse engine, CrUX data" } },
+          { id: "gscapi", label: "GSC API", type: "api", sub: "Google", details: { description: "Google Search Console API providing search analytics, indexing data, and crawl statistics.", account: "Google — msmithnl@gmail.com (OAuth)", integration: "OAuth2 authenticated REST API", tech: "GSC API v1, OAuth2 service account" } },
+          { id: "serpapi", label: "SerpAPI", type: "api", sub: "SERP data", details: { description: "Third-party API providing real-time Google SERP data including rankings, snippets, and competitor positions.", account: "SerpAPI — API key in Bitwarden", integration: "REST API with search query params", tech: "JSON responses, 100 searches/mo free tier" } },
+          { id: "anthropic", label: "Anthropic API", type: "api", sub: "Claude LLM", details: { description: "Anthropic's Claude API used for AI-powered content analysis, scoring, and AI discovery testing.", account: "Anthropic — Malcolm's API account", integration: "SDK calls via @anthropic-ai/sdk", tech: "Claude Opus 4, Messages API" } },
         ],
         connections: [
           { from: "claude", to: "audit" },
@@ -138,7 +146,11 @@ const DASHBOARD_DATA = {
           { from: "serp", to: "serpapi" },
           { from: "aidiscovery", to: "anthropic" },
         ],
-        layers: [["claude"],["audit","content","keywords","serp","aidiscovery"],["pagespeed","gscapi","serpapi","anthropic"]]
+        layers: [
+          { name: "Orchestration", nodes: ["claude"] },
+          { name: "Services", nodes: ["audit","content","keywords","serp","aidiscovery"] },
+          { name: "External APIs", nodes: ["pagespeed","gscapi","serpapi","anthropic"] }
+        ]
       },
     },
     "prod-002": {
@@ -151,17 +163,20 @@ const DASHBOARD_DATA = {
       missingMetrics: ["NO success KPIs defined", "No architecture milestones tracked", "No competitive analysis metrics", "No market sizing metrics"],
       architecture: {
         nodes: [
-          { id: "research", label: "Research Phase", type: "status", sub: "In progress" },
-          { id: "market", label: "Market Research", type: "status", sub: "Pending" },
-          { id: "competitor", label: "Competitor Analysis", type: "status", sub: "Pending" },
-          { id: "arch", label: "Architecture Design", type: "status", sub: "Pending" },
+          { id: "research", label: "Research Phase", type: "status", sub: "In progress", details: { description: "Active research phase — gathering market data, analysing competitors, and defining the product architecture before any code is written.", account: "N/A — pre-build phase", integration: "Manual research + Claude Code analysis", tech: "Markdown docs, blueprint templates" } },
+          { id: "market", label: "Market Research", type: "status", sub: "Pending", details: { description: "Market sizing, target audience definition, pricing research, and demand validation for sales funnel tools.", account: "N/A — research phase", integration: "Web research, industry reports", tech: "Research documents in smith-ai-agency repo" } },
+          { id: "competitor", label: "Competitor Analysis", type: "status", sub: "Pending", details: { description: "Analysis of existing sales funnel tools (ClickFunnels, Leadpages, Unbounce) — features, pricing, and gaps.", account: "N/A — research phase", integration: "Competitor websites, review sites", tech: "competitor-analysis.md template" } },
+          { id: "arch", label: "Architecture Design", type: "status", sub: "Pending", details: { description: "Technical architecture decisions — stack choices, hosting, database, API design, and modular structure.", account: "N/A — design phase", integration: "D2 diagrams, ADRs", tech: "To be decided based on research" } },
         ],
         connections: [
           { from: "research", to: "market" },
           { from: "research", to: "competitor" },
           { from: "research", to: "arch" },
         ],
-        layers: [["research"],["market","competitor","arch"]]
+        layers: [
+          { name: "Current Phase", nodes: ["research"] },
+          { name: "Workstreams", nodes: ["market","competitor","arch"] }
+        ]
       },
     },
     "infra-003": {
@@ -176,14 +191,14 @@ const DASHBOARD_DATA = {
       missingMetrics: ["Data freshness SLA not defined"],
       architecture: {
         nodes: [
-          { id: "dashboard", label: "Dashboard", type: "app", sub: "HTML/JS SPA" },
-          { id: "ghpages", label: "GitHub Pages", type: "hosting", sub: "Static hosting" },
-          { id: "sheets", label: "Google Sheets", type: "data", sub: "Data hub (8 tabs)" },
-          { id: "trello", label: "Trello", type: "data", sub: "Task source" },
-          { id: "composio", label: "Composio MCP", type: "api", sub: "API bridge" },
-          { id: "qmd", label: "QMD", type: "tool", sub: "Doc search" },
-          { id: "scheduler", label: "Scheduler", type: "tool", sub: "4 launchd tasks" },
-          { id: "claude", label: "Claude Code", type: "tool", sub: "AI engine" },
+          { id: "dashboard", label: "Dashboard", type: "app", sub: "HTML/JS SPA", details: { description: "Performance cockpit dashboard — single-page app with 4 tabs (Cockpit, Calendar, Improvement, Agents). Built with vanilla JS, Tailwind CSS, and Chart.js.", account: "GitHub Pages — MrSmithNL/agency-dashboard", integration: "Static HTML served from GitHub Pages", tech: "HTML, JavaScript, Tailwind CSS, Chart.js" } },
+          { id: "ghpages", label: "GitHub Pages", type: "hosting", sub: "Static hosting", details: { description: "Free static hosting from GitHub serving the dashboard at mrsmithnl.github.io/agency-dashboard/.", account: "GitHub — MrSmithNL", integration: "Auto-deploy on push to main branch", tech: "GitHub Pages, HTTPS, CDN" } },
+          { id: "sheets", label: "Google Sheets", type: "data", sub: "Data hub (8 tabs)", details: { description: "Central data hub with 8 tabs: Overview, Project Details, Tasks, Financial, KPIs, History, Schedules, Agents. Source of truth for dashboard data.js.", account: "Google — msmithnl@gmail.com", integration: "Composio MCP reads/writes via API", tech: "Google Sheets API v4, 8 structured tabs" } },
+          { id: "trello", label: "Trello", type: "data", sub: "Task source", details: { description: "Trello board 'AI Agency — All Projects' with 7 columns and 5 project labels. Source of truth for task status.", account: "Trello — malcolmsmith47 (OAuth via Composio)", integration: "Composio MCP for CRUD operations", tech: "Trello REST API via Composio" } },
+          { id: "composio", label: "Composio MCP", type: "api", sub: "API bridge", details: { description: "MCP server (Rube/Composio) bridging Claude Code to external services — Google Sheets, Trello, and 500+ other apps.", account: "Composio — connected via OAuth", integration: "MCP protocol within Claude Code sessions", tech: "MCP server, OAuth tokens, REST API proxy" } },
+          { id: "qmd", label: "QMD", type: "tool", sub: "Doc search", details: { description: "Quick Markdown Documents — local search engine indexing 127 markdown files across 4 collections with BM25 + vector + reranking.", account: "Local install — npm global package", integration: "CLI tool, future MCP server capability", tech: "BM25, embeddings (Apple Metal GPU), SQLite index" } },
+          { id: "scheduler", label: "Scheduler", type: "tool", sub: "4 launchd tasks", details: { description: "macOS launchd scheduler running 4 automated tasks: daily Trello sync (07:00), nightly consolidation (03:00), weekly review (Mon 08:00), monthly maintenance (1st 09:00).", account: "Local macOS — LaunchAgents", integration: "launchd plist files triggering Claude Code CLI", tech: "macOS launchd, bash scripts, claude -p" } },
+          { id: "claude", label: "Claude Code", type: "tool", sub: "AI engine", details: { description: "AI coding assistant orchestrating all dashboard operations — data generation, Trello/Sheets sync, and dashboard deployment.", account: "Anthropic — Malcolm's Claude Code subscription", integration: "CLI + VS Code extension", tech: "Claude Opus 4, MCP protocol, CLI" } },
         ],
         connections: [
           { from: "dashboard", to: "ghpages" },
@@ -194,7 +209,11 @@ const DASHBOARD_DATA = {
           { from: "scheduler", to: "claude" },
           { from: "qmd", to: "claude" },
         ],
-        layers: [["dashboard","ghpages"],["sheets","trello","composio"],["qmd","scheduler","claude"]]
+        layers: [
+          { name: "Frontend", nodes: ["dashboard","ghpages"] },
+          { name: "Data Sources", nodes: ["sheets","trello","composio"] },
+          { name: "Local Tools", nodes: ["qmd","scheduler","claude"] }
+        ]
       },
     },
     "infra-004": {
@@ -210,11 +229,11 @@ const DASHBOARD_DATA = {
       missingMetrics: [],
       architecture: {
         nodes: [
-          { id: "trello", label: "Trello Board", type: "app", sub: "7 columns, 5 labels" },
-          { id: "composio", label: "Composio MCP", type: "api", sub: "OAuth bridge" },
-          { id: "claude", label: "Claude Code", type: "tool", sub: "Card management" },
-          { id: "sheets", label: "Google Sheets", type: "data", sub: "Tasks tab sync" },
-          { id: "dashboard", label: "Dashboard", type: "app", sub: "Task cockpit view" },
+          { id: "trello", label: "Trello Board", type: "app", sub: "7 columns, 5 labels", details: { description: "Central task board 'AI Agency — All Projects' with 7 columns (Inbox → Done) and 5 colour-coded project labels (LOE, SEO, INFRA, SF, URGENT).", account: "Trello — malcolmsmith47", integration: "Composio OAuth connection (session: rope)", tech: "Trello REST API, webhooks capable" } },
+          { id: "composio", label: "Composio MCP", type: "api", sub: "OAuth bridge", details: { description: "MCP server bridging Claude Code to Trello via OAuth. Handles card creation, movement, label assignment, and board queries.", account: "Composio — OAuth connection active", integration: "MCP protocol, Rube session ID: rope", tech: "MCP server, OAuth2 tokens, REST proxy" } },
+          { id: "claude", label: "Claude Code", type: "tool", sub: "Card management", details: { description: "AI assistant managing Trello cards — creates tasks from todos, moves cards between columns, and syncs status.", account: "Anthropic — Malcolm's subscription", integration: "MCP tools: TRELLO_CREATE_CARD, TRELLO_UPDATE_CARD, etc.", tech: "Claude Opus 4, Composio MCP integration" } },
+          { id: "sheets", label: "Google Sheets", type: "data", sub: "Tasks tab sync", details: { description: "Google Sheets Tasks tab receiving synchronised task data from Trello for dashboard consumption and historical tracking.", account: "Google — msmithnl@gmail.com", integration: "Composio MCP writes to Sheets API", tech: "Google Sheets API v4, structured tabs" } },
+          { id: "dashboard", label: "Dashboard", type: "app", sub: "Task cockpit view", details: { description: "Cockpit dashboard displaying task tables, status charts, and project drill-downs sourced from Google Sheets data.", account: "GitHub Pages — MrSmithNL/agency-dashboard", integration: "Reads from data.js generated from Sheets", tech: "HTML, JavaScript, Chart.js" } },
         ],
         connections: [
           { from: "trello", to: "composio" },
@@ -222,7 +241,11 @@ const DASHBOARD_DATA = {
           { from: "trello", to: "sheets" },
           { from: "sheets", to: "dashboard" },
         ],
-        layers: [["trello"],["composio","claude"],["sheets","dashboard"]]
+        layers: [
+          { name: "Application", nodes: ["trello"] },
+          { name: "Integration", nodes: ["composio","claude"] },
+          { name: "Output", nodes: ["sheets","dashboard"] }
+        ]
       },
     },
   },
