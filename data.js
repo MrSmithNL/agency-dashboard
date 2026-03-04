@@ -48,6 +48,24 @@ const DASHBOARD_DATA = {
         { name: "SEO Score", value: 90, target: 95, format: "score", category: "SEO", trend: "flat", source: "SEO Toolkit" },
       ],
       missingMetrics: ["GA4 baselines not yet established", "MailerLite subscriber tracking not automated"],
+      architecture: {
+        nodes: [
+          { id: "nextjs", label: "Next.js", type: "app", sub: "React SSR" },
+          { id: "vercel", label: "Vercel", type: "hosting", sub: "Edge CDN + CI/CD" },
+          { id: "ga4", label: "GA4", type: "data", sub: "Analytics" },
+          { id: "gsc", label: "Search Console", type: "data", sub: "Search data" },
+          { id: "mailerlite", label: "MailerLite", type: "api", sub: "Email marketing" },
+          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits" },
+        ],
+        connections: [
+          { from: "nextjs", to: "vercel" },
+          { from: "vercel", to: "ga4" },
+          { from: "vercel", to: "gsc" },
+          { from: "nextjs", to: "mailerlite" },
+          { from: "seo", to: "nextjs" },
+        ],
+        layers: [["nextjs","vercel"],["ga4","gsc","mailerlite"],["seo"]]
+      },
     },
     "client-002": {
       name: "Hairgenetix", code: "CLIENT-002", type: "Client",
@@ -62,6 +80,26 @@ const DASHBOARD_DATA = {
         { name: "Content Score", value: 64, target: 80, format: "score", category: "Content", trend: "flat", source: "SEO Toolkit" },
       ],
       missingMetrics: ["GA4 NOT installed — no session/conversion data", "Revenue tracking not connected"],
+      architecture: {
+        nodes: [
+          { id: "shopify", label: "Shopify", type: "app", sub: "E-commerce platform" },
+          { id: "domain", label: "hairgenetix.com", type: "hosting", sub: "Custom domain" },
+          { id: "theme", label: "Liquid Theme", type: "service", sub: "Custom storefront" },
+          { id: "langs", label: "9 Languages", type: "service", sub: "i18n translations" },
+          { id: "reviews", label: "1200+ Reviews", type: "data", sub: "Social proof" },
+          { id: "gsc", label: "Search Console", type: "data", sub: "Search data" },
+          { id: "seo", label: "SEO Toolkit", type: "tool", sub: "PROD-001 audits" },
+        ],
+        connections: [
+          { from: "shopify", to: "domain" },
+          { from: "shopify", to: "theme" },
+          { from: "shopify", to: "langs" },
+          { from: "shopify", to: "reviews" },
+          { from: "domain", to: "gsc" },
+          { from: "seo", to: "shopify" },
+        ],
+        layers: [["shopify","domain"],["theme","langs","reviews"],["gsc","seo"]]
+      },
     },
     "prod-001": {
       name: "SEO Toolkit", code: "PROD-001", type: "Product",
@@ -76,6 +114,32 @@ const DASHBOARD_DATA = {
         { name: "Services at 80+/100", value: 3, target: 5, format: "number", category: "Quality", trend: "up", source: "Internal" },
       ],
       missingMetrics: ["No usage/adoption metrics (no users yet)", "No revenue metrics"],
+      architecture: {
+        nodes: [
+          { id: "claude", label: "Claude Code", type: "tool", sub: "AI execution engine" },
+          { id: "audit", label: "Technical Audit", type: "service", sub: "90/100" },
+          { id: "content", label: "Content Optimizer", type: "service", sub: "74/100" },
+          { id: "keywords", label: "Keywords", type: "service", sub: "Live" },
+          { id: "serp", label: "SERP Analyzer", type: "service", sub: "Live" },
+          { id: "aidiscovery", label: "AI Discovery", type: "service", sub: "100/100" },
+          { id: "pagespeed", label: "PageSpeed API", type: "api", sub: "Google" },
+          { id: "gscapi", label: "GSC API", type: "api", sub: "Google" },
+          { id: "serpapi", label: "SerpAPI", type: "api", sub: "SERP data" },
+          { id: "anthropic", label: "Anthropic API", type: "api", sub: "Claude LLM" },
+        ],
+        connections: [
+          { from: "claude", to: "audit" },
+          { from: "claude", to: "content" },
+          { from: "claude", to: "keywords" },
+          { from: "claude", to: "serp" },
+          { from: "claude", to: "aidiscovery" },
+          { from: "audit", to: "pagespeed" },
+          { from: "audit", to: "gscapi" },
+          { from: "serp", to: "serpapi" },
+          { from: "aidiscovery", to: "anthropic" },
+        ],
+        layers: [["claude"],["audit","content","keywords","serp","aidiscovery"],["pagespeed","gscapi","serpapi","anthropic"]]
+      },
     },
     "prod-002": {
       name: "SellFunnel", code: "PROD-002", type: "Product",
@@ -85,6 +149,20 @@ const DASHBOARD_DATA = {
         { name: "Research Milestones", value: 1, target: 4, format: "number", category: "Progress", trend: "flat", source: "Manual" },
       ],
       missingMetrics: ["NO success KPIs defined", "No architecture milestones tracked", "No competitive analysis metrics", "No market sizing metrics"],
+      architecture: {
+        nodes: [
+          { id: "research", label: "Research Phase", type: "status", sub: "In progress" },
+          { id: "market", label: "Market Research", type: "status", sub: "Pending" },
+          { id: "competitor", label: "Competitor Analysis", type: "status", sub: "Pending" },
+          { id: "arch", label: "Architecture Design", type: "status", sub: "Pending" },
+        ],
+        connections: [
+          { from: "research", to: "market" },
+          { from: "research", to: "competitor" },
+          { from: "research", to: "arch" },
+        ],
+        layers: [["research"],["market","competitor","arch"]]
+      },
     },
     "infra-003": {
       name: "Monitoring & BI Dashboard", code: "INFRA-003", type: "Infrastructure",
@@ -96,6 +174,28 @@ const DASHBOARD_DATA = {
         { name: "Auto-Sync Active", value: 0, target: 1, format: "boolean", category: "Automation", trend: "flat", source: "Internal", label: "Not yet" },
       ],
       missingMetrics: ["Data freshness SLA not defined"],
+      architecture: {
+        nodes: [
+          { id: "dashboard", label: "Dashboard", type: "app", sub: "HTML/JS SPA" },
+          { id: "ghpages", label: "GitHub Pages", type: "hosting", sub: "Static hosting" },
+          { id: "sheets", label: "Google Sheets", type: "data", sub: "Data hub (8 tabs)" },
+          { id: "trello", label: "Trello", type: "data", sub: "Task source" },
+          { id: "composio", label: "Composio MCP", type: "api", sub: "API bridge" },
+          { id: "qmd", label: "QMD", type: "tool", sub: "Doc search" },
+          { id: "scheduler", label: "Scheduler", type: "tool", sub: "4 launchd tasks" },
+          { id: "claude", label: "Claude Code", type: "tool", sub: "AI engine" },
+        ],
+        connections: [
+          { from: "dashboard", to: "ghpages" },
+          { from: "composio", to: "sheets" },
+          { from: "composio", to: "trello" },
+          { from: "claude", to: "composio" },
+          { from: "claude", to: "dashboard" },
+          { from: "scheduler", to: "claude" },
+          { from: "qmd", to: "claude" },
+        ],
+        layers: [["dashboard","ghpages"],["sheets","trello","composio"],["qmd","scheduler","claude"]]
+      },
     },
     "infra-004": {
       name: "Task Management", code: "INFRA-004", type: "Infrastructure",
@@ -108,6 +208,22 @@ const DASHBOARD_DATA = {
         { name: "Cards Blocked", value: 2, target: 0, format: "number", category: "Health", trend: "flat", source: "Trello" },
       ],
       missingMetrics: [],
+      architecture: {
+        nodes: [
+          { id: "trello", label: "Trello Board", type: "app", sub: "7 columns, 5 labels" },
+          { id: "composio", label: "Composio MCP", type: "api", sub: "OAuth bridge" },
+          { id: "claude", label: "Claude Code", type: "tool", sub: "Card management" },
+          { id: "sheets", label: "Google Sheets", type: "data", sub: "Tasks tab sync" },
+          { id: "dashboard", label: "Dashboard", type: "app", sub: "Task cockpit view" },
+        ],
+        connections: [
+          { from: "trello", to: "composio" },
+          { from: "composio", to: "claude" },
+          { from: "trello", to: "sheets" },
+          { from: "sheets", to: "dashboard" },
+        ],
+        layers: [["trello"],["composio","claude"],["sheets","dashboard"]]
+      },
     },
   },
 
