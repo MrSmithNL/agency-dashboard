@@ -26,37 +26,40 @@
   <style>
     body { background: #0f172a; font-family: 'Inter', system-ui, sans-serif; }
     .progress-bar { transition: width 0.8s ease-out; }
-    .rag-green { color: #22c55e; }
-    .rag-amber { color: #f59e0b; }
-    .rag-red { color: #ef4444; }
+    .rag-green { color: #22c55e; } .rag-amber { color: #f59e0b; } .rag-red { color: #ef4444; }
     .status-chip { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-    .chip-thisweek { background: #1e3a5f; color: #60a5fa; }
-    .chip-inprogress { background: #1a3a2a; color: #4ade80; }
-    .chip-blocked { background: #3b1818; color: #f87171; }
-    .chip-backlog { background: #27272a; color: #a1a1aa; }
-    .chip-done { background: #14532d; color: #86efac; }
-    .chip-review { background: #2e1065; color: #c084fc; }
-    .trend-up::after { content: ' \2191'; color: #22c55e; }
-    .trend-down::after { content: ' \2193'; color: #ef4444; }
-    .trend-flat::after { content: ' \2192'; color: #94a3b8; }
+    .chip-thisweek { background: #1e3a5f; color: #60a5fa; } .chip-inprogress { background: #1a3a2a; color: #4ade80; }
+    .chip-blocked { background: #3b1818; color: #f87171; } .chip-backlog { background: #27272a; color: #a1a1aa; }
+    .chip-done { background: #14532d; color: #86efac; } .chip-review { background: #2e1065; color: #c084fc; }
+    .trend-up::after { content: ' \2191'; color: #22c55e; } .trend-down::after { content: ' \2193'; color: #ef4444; } .trend-flat::after { content: ' \2192'; color: #94a3b8; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeIn 0.4s ease-out forwards; }
-    .clickable-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
-    .clickable-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
-    .back-btn { cursor: pointer; transition: color 0.15s; }
-    .back-btn:hover { color: #60a5fa; }
-    .metric-card { transition: transform 0.15s; }
-    .metric-card:hover { transform: translateY(-1px); }
-    .type-client { border-left: 3px solid #22c55e; }
-    .type-product { border-left: 3px solid #3b82f6; }
-    .type-infrastructure { border-left: 3px solid #a855f7; }
+    .clickable-card { cursor: pointer; transition: transform 0.15s, border-color 0.15s; } .clickable-card:hover { transform: translateY(-2px); border-color: #3b82f6; }
+    .back-btn { cursor: pointer; transition: color 0.15s; } .back-btn:hover { color: #60a5fa; }
+    .type-client { border-left: 3px solid #22c55e; } .type-product { border-left: 3px solid #3b82f6; } .type-infrastructure { border-left: 3px solid #a855f7; }
     .warning-chip { background: #78350f; color: #fbbf24; font-size: 0.65rem; padding: 1px 6px; border-radius: 9999px; }
+    /* Tab nav */
+    .tab-btn { cursor: pointer; } .tab-btn.active { color: #fff !important; border-bottom-color: #3b82f6 !important; }
+    /* Calendar */
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-day { min-height: 72px; cursor: pointer; transition: background 0.15s; } .cal-day:hover { background: #334155; }
+    .cal-day.today { border: 1px solid #3b82f6; } .cal-day.selected { background: #1e3a5f; }
+    .cal-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+    .dot-recipe { background: #3b82f6; } .dot-standing-order { background: #a855f7; } .dot-deadline { background: #f59e0b; }
+    /* Improvement */
+    .expandable-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; } .expandable-content.open { max-height: 600px; }
+    .score-bar { height: 4px; border-radius: 2px; background: #334155; } .score-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease-out; }
+    /* Agents */
+    .gauge-bg { fill: none; stroke: #334155; stroke-width: 6; } .gauge-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease-out; }
+    .tier-badge { font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
+    .tier-1 { background: #14532d; color: #86efac; } .tier-2 { background: #1e3a5f; color: #60a5fa; } .tier-3 { background: #27272a; color: #a1a1aa; }
+    .sub-agent { border-left: 2px solid #334155; margin-left: 16px; padding-left: 12px; }
+    select.filter-select { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; color: #e2e8f0; }
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
   <script src="data.js"></script>
 
-  <!-- Header -->
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center font-bold text-white text-sm clickable-card" onclick="navigateTo('')">S</div>
@@ -71,7 +74,16 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
+  <!-- Tab Navigation -->
+  <nav class="border-b border-border bg-card/50" id="tabNav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto">
+      <button onclick="navigateTo('')" data-tab="home" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Cockpit</button>
+      <button onclick="navigateTo('calendar')" data-tab="calendar" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Calendar</button>
+      <button onclick="navigateTo('improvement')" data-tab="improvement" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Improvement</button>
+      <button onclick="navigateTo('agents')" data-tab="agents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agents</button>
+    </div>
+  </nav>
+
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6" id="mainContent"></main>
 
   <footer class="border-t border-border px-6 py-4 text-center text-xs text-slate-500">
@@ -83,548 +95,312 @@
     const D = DASHBOARD_DATA;
     const chartInstances = [];
 
-    // --- Utilities ---
-    function destroyCharts() {
-      chartInstances.forEach(c => c.destroy());
-      chartInstances.length = 0;
+    // ==================== UTILITIES ====================
+    function destroyCharts() { chartInstances.forEach(c => c.destroy()); chartInstances.length = 0; }
+    function chipClass(s) { return { 'This Week':'chip-thisweek','In Progress':'chip-inprogress','Blocked':'chip-blocked','Review':'chip-review','Done':'chip-done' }[s] || 'chip-backlog'; }
+    function ragClass(r) { return r === 'Green' ? 'rag-green' : r === 'Amber' ? 'rag-amber' : 'rag-red'; }
+    function trendClass(t) { return t === 'up' ? 'trend-up' : t === 'down' ? 'trend-down' : 'trend-flat'; }
+    function typeClass(t) { return t === 'Client' ? 'type-client' : t === 'Product' ? 'type-product' : 'type-infrastructure'; }
+    function barColor(p) { return p === null ? 'bg-slate-600' : p >= 80 ? 'bg-green-500' : p >= 50 ? 'bg-amber-500' : 'bg-red-500'; }
+    function barHex(p) { return p >= 80 ? '#22c55e' : p >= 50 ? '#f59e0b' : '#ef4444'; }
+    function formatMetricValue(m) {
+      if (m.format === 'currency') return '\u20AC' + (typeof m.value === 'number' ? m.value.toFixed(2) : m.value);
+      if (m.format === 'score') return m.value + '/100'; if (m.format === 'boolean') return m.label || (m.value ? 'Yes' : 'No');
+      if (m.format === 'seconds') return m.value > 0 ? (m.value / 60).toFixed(1) + ' min' : '0';
+      if (m.format === 'position') return '#' + m.value; if (m.format === 'ratio') return m.value + '/' + m.target;
+      return String(m.value);
     }
+    function metricPct(m) { if (!m.target || m.target === 0) return null; if (m.lowerIsBetter) return Math.min(100, (m.target / m.value) * 100); if (m.format === 'boolean') return m.value ? 100 : 0; return Math.min(100, (m.value / m.target) * 100); }
+    function projectLabelForTask(tp) { return { 'LOE':'CLIENT-001','Hairgenetix':'CLIENT-002','SEO':'PROD-001','SF':'PROD-002','INFRA':'INFRA' }[tp] || tp; }
+    function tasksForProject(pid) { const d = D.projectDetails[pid]; if (!d) return []; const c = d.code; return D.tasks.filter(t => { const l = projectLabelForTask(t.project); return l === c || (c.startsWith('INFRA') && l === 'INFRA' && t.name.toLowerCase().includes(c.toLowerCase().replace('infra-','infra-0'))); }); }
+    function costsForProject(pid) { const d = D.projectDetails[pid]; if (!d) return []; return D.financial.filter(f => f.project.toLowerCase().includes(d.name.toLowerCase()) || f.project.toLowerCase().includes(d.code.toLowerCase())); }
 
-    function chipClass(status) {
-      const map = { 'This Week': 'chip-thisweek', 'In Progress': 'chip-inprogress', 'Blocked': 'chip-blocked', 'Review': 'chip-review', 'Done': 'chip-done' };
-      return map[status] || 'chip-backlog';
-    }
-
-    function ragClass(rag) {
-      return rag === 'Green' ? 'rag-green' : rag === 'Amber' ? 'rag-amber' : 'rag-red';
-    }
-
-    function trendClass(trend) {
-      return trend === 'up' ? 'trend-up' : trend === 'down' ? 'trend-down' : 'trend-flat';
-    }
-
-    function formatMetricValue(metric) {
-      if (metric.format === 'currency') return '\u20AC' + (typeof metric.value === 'number' ? metric.value.toFixed(2) : metric.value);
-      if (metric.format === 'score') return metric.value + '/100';
-      if (metric.format === 'boolean') return metric.label || (metric.value ? 'Yes' : 'No');
-      if (metric.format === 'seconds') return metric.value > 0 ? (metric.value / 60).toFixed(1) + ' min' : '0';
-      if (metric.format === 'position') return '#' + metric.value;
-      if (metric.format === 'ratio') return metric.value + '/' + metric.target;
-      return String(metric.value);
-    }
-
-    function metricPct(metric) {
-      if (!metric.target || metric.target === 0) return null;
-      if (metric.lowerIsBetter) return Math.min(100, (metric.target / metric.value) * 100);
-      if (metric.format === 'boolean') return metric.value ? 100 : 0;
-      return Math.min(100, (metric.value / metric.target) * 100);
-    }
-
-    function barColor(pct) {
-      if (pct === null) return 'bg-slate-600';
-      return pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
-    }
-
-    function typeClass(type) {
-      return type === 'Client' ? 'type-client' : type === 'Product' ? 'type-product' : 'type-infrastructure';
-    }
-
-    function projectLabelForTask(taskProject) {
-      const map = { 'LOE': 'CLIENT-001', 'Hairgenetix': 'CLIENT-002', 'SEO': 'PROD-001', 'SF': 'PROD-002', 'INFRA': 'INFRA' };
-      return map[taskProject] || taskProject;
-    }
-
-    function tasksForProject(projectId) {
-      const detail = D.projectDetails[projectId];
-      if (!detail) return [];
-      const code = detail.code;
-      return D.tasks.filter(t => {
-        const label = projectLabelForTask(t.project);
-        return label === code || (code.startsWith('INFRA') && label === 'INFRA' && t.name.toLowerCase().includes(code.toLowerCase().replace('infra-', 'infra-0')));
-      });
-    }
-
-    function costsForProject(projectId) {
-      const detail = D.projectDetails[projectId];
-      if (!detail) return [];
-      return D.financial.filter(f => f.project.toLowerCase().includes(detail.name.toLowerCase()) || f.project.toLowerCase().includes(detail.code.toLowerCase()));
-    }
-
-    // --- Routing ---
-    function navigateTo(route) {
-      window.location.hash = route ? '#/' + route : '#';
-    }
-
-    function getRoute() {
-      const hash = window.location.hash;
-      if (!hash || hash === '#' || hash === '#/') return 'home';
-      return hash.replace('#/', '');
-    }
-
+    // ==================== ROUTING ====================
+    function navigateTo(r) { window.location.hash = r ? '#/' + r : '#'; }
+    function getRoute() { const h = window.location.hash; if (!h || h === '#' || h === '#/') return 'home'; return h.replace('#/', ''); }
     window.addEventListener('hashchange', render);
 
-    // --- Render Router ---
+    const syncDate = new Date(D.lastSync);
+    document.getElementById('lastSync').textContent = syncDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    // State
+    let calState = { month: new Date().getMonth(), year: new Date().getFullYear(), selected: null };
+    let impState = { project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
+    let agentState = { dept: null, expandedAgent: null };
+
     function render() {
       destroyCharts();
       const route = getRoute();
       const main = document.getElementById('mainContent');
       main.innerHTML = '';
+      // Tab highlighting
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', agents:'agents' };
+      const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
+      if (ab) ab.classList.add('active');
+      const isProject = !!D.projectDetails[route];
+      document.getElementById('tabNav').style.display = isProject ? 'none' : '';
 
-      if (route === 'home') {
-        renderHome(main);
-        document.getElementById('breadcrumb').textContent = 'Performance Cockpit';
-        document.title = 'Smith AI Agency \u2014 Cockpit';
-      } else if (D.projectDetails[route]) {
-        renderProjectDetail(main, route);
-        const detail = D.projectDetails[route];
-        document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + detail.code + ' ' + detail.name;
-        document.title = detail.code + ' ' + detail.name + ' \u2014 Cockpit';
-      } else {
-        main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>';
-      }
+      if (route === 'home') { renderHome(main); document.getElementById('breadcrumb').textContent = 'Performance Cockpit'; document.title = 'Smith AI Agency \u2014 Cockpit'; }
+      else if (route === 'calendar') { renderCalendar(main); document.getElementById('breadcrumb').textContent = 'Calendar & Scheduler'; document.title = 'Smith AI Agency \u2014 Calendar'; }
+      else if (route === 'improvement') { renderImprovement(main); document.getElementById('breadcrumb').textContent = 'Continuous Improvement'; document.title = 'Smith AI Agency \u2014 Improvement'; }
+      else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
+      else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
+      else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
     }
 
-    // --- Last Sync ---
-    const syncDate = new Date(D.lastSync);
-    document.getElementById('lastSync').textContent = syncDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-    // ========================================
-    // HOME VIEW
-    // ========================================
-    function renderHome(container) {
-      // --- Agency KPI Cards ---
-      const kpiSection = document.createElement('div');
-      const topKPIs = D.agencyKPIs.slice(0, 4);
-      kpiSection.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
-      topKPIs.forEach((kpi, i) => {
-        const div = document.createElement('div');
-        div.className = 'bg-card rounded-xl border border-border p-4 animate-in';
-        div.style.animationDelay = `${i * 0.1}s`;
-        const color = kpi.name.includes('Burn') ? 'text-amber-400' :
-                      kpi.name.includes('Revenue') ? 'text-green-400' :
-                      kpi.name.includes('Blocked') ? (kpi.value > 0 ? 'text-red-400' : 'text-green-400') : 'text-blue-400';
-        const val = formatMetricValue(kpi);
-        div.innerHTML = `
-          <p class="text-xs text-slate-400 uppercase tracking-wider">${kpi.name}</p>
-          <p class="text-2xl font-bold ${color} mt-1 ${trendClass(kpi.trend)}">${val}</p>
-          ${kpi.target !== null ? `<p class="text-xs text-slate-500 mt-1">Target: ${kpi.format === 'currency' ? '\u20AC' + kpi.target : kpi.target}</p>` : ''}
-        `;
-        kpiSection.appendChild(div);
+    // ==================== HOME VIEW ====================
+    function renderHome(c) {
+      // KPIs
+      const kg = el('div','grid grid-cols-2 md:grid-cols-4 gap-4');
+      D.agencyKPIs.slice(0,4).forEach((k,i) => {
+        const color = k.name.includes('Burn') ? 'text-amber-400' : k.name.includes('Revenue') ? 'text-green-400' : k.name.includes('Blocked') ? (k.value > 0 ? 'text-red-400' : 'text-green-400') : 'text-blue-400';
+        kg.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.1}s"><p class="text-xs text-slate-400 uppercase tracking-wider">${k.name}</p><p class="text-2xl font-bold ${color} mt-1 ${trendClass(k.trend)}">${formatMetricValue(k)}</p>${k.target !== null ? `<p class="text-xs text-slate-500 mt-1">Target: ${k.format==='currency'?'\u20AC'+k.target:k.target}</p>` : ''}</div>`;
       });
-      container.appendChild(kpiSection);
+      c.appendChild(kg);
+      // Secondary KPIs
+      const sg = el('div','grid grid-cols-2 md:grid-cols-4 gap-4');
+      D.agencyKPIs.slice(4).forEach((k,i) => { sg.innerHTML += `<div class="bg-card rounded-xl border border-border p-3 animate-in" style="animation-delay:${(i+4)*0.1}s"><p class="text-xs text-slate-400 uppercase tracking-wider">${k.name}</p><p class="text-lg font-bold text-slate-200 mt-1 ${trendClass(k.trend)}">${formatMetricValue(k)}</p></div>`; });
+      c.appendChild(sg);
+      // Projects
+      c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider','Project Performance \u2014 Click to drill down'));
+      const pg = el('div','grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4');
+      D.overview.forEach((p,i) => {
+        const pct = p.omtmTarget > 0 ? Math.min(100,(p.omtmValue/p.omtmTarget)*100) : 0;
+        const short = p.project.replace(/^(CLIENT-\d+|PROD-\d+|INFRA-\d+)\s+/,'');
+        const det = D.projectDetails[p.id]; const tl = det ? det.type : ''; const mc = det?.missingMetrics?.length || 0;
+        const d = el('div',`bg-card rounded-xl border border-border p-4 animate-in clickable-card ${det?typeClass(tl):''}`);
+        d.style.animationDelay = `${i*0.08}s`; d.onclick = () => navigateTo(p.id);
+        d.innerHTML = `<div class="flex items-center justify-between mb-2"><h3 class="font-semibold text-white text-sm">${short}</h3><div class="flex items-center gap-2">${mc>0?`<span class="warning-chip">${mc} gap${mc>1?'s':''}</span>`:''}<span class="${ragClass(p.rag)} text-lg font-bold">\u25CF</span></div></div><p class="text-xs text-slate-400 mb-1">${p.omtmName}</p><div class="flex items-baseline gap-1 mb-2"><span class="text-xl font-bold text-white ${trendClass(p.trend)}">${p.omtmValue}</span><span class="text-xs text-slate-500">/ ${p.omtmTarget}</span></div><div class="w-full bg-slate-700 rounded-full h-1.5"><div class="${barColor(pct)} h-1.5 rounded-full progress-bar" style="width:${pct}%"></div></div><p class="text-xs text-slate-500 mt-2">${p.focus}</p><p class="text-xs text-slate-600 mt-1">${tl} \u00B7 Click for details \u2192</p>`;
+        pg.appendChild(d);
+      });
+      c.appendChild(pg);
+      // Charts
+      const cr = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      cr.innerHTML = '<div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3><canvas id="taskStatusChart" height="200"></canvas></div><div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3><canvas id="costChart" height="200"></canvas></div>';
+      c.appendChild(cr);
+      requestAnimationFrame(() => { renderTaskStatusChart(); renderCostChart(); });
+      renderTasksTable(c, D.tasks.filter(t=>t.status!=='Done'), 'Active Tasks');
+      renderFinancialTable(c, D.financial);
+    }
 
-      // --- Secondary KPIs ---
-      const secKPIs = D.agencyKPIs.slice(4);
-      if (secKPIs.length > 0) {
-        const secSection = document.createElement('div');
-        secSection.className = 'grid grid-cols-2 md:grid-cols-4 gap-4';
-        secKPIs.forEach((kpi, i) => {
-          const div = document.createElement('div');
-          div.className = 'bg-card rounded-xl border border-border p-3 animate-in';
-          div.style.animationDelay = `${(i + 4) * 0.1}s`;
-          const val = formatMetricValue(kpi);
-          div.innerHTML = `
-            <p class="text-xs text-slate-400 uppercase tracking-wider">${kpi.name}</p>
-            <p class="text-lg font-bold text-slate-200 mt-1 ${trendClass(kpi.trend)}">${val}</p>
-          `;
-          secSection.appendChild(div);
+    // ==================== PROJECT DETAIL ====================
+    function renderProjectDetail(c, pid) {
+      const det = D.projectDetails[pid], ov = D.overview.find(p=>p.id===pid);
+      c.innerHTML += `<div class="flex items-center gap-4 animate-in"><span class="back-btn text-slate-400 text-xl" onclick="navigateTo('')">\u2190</span><div class="flex-1"><div class="flex items-center gap-3"><h1 class="text-xl font-bold text-white">${det.code} ${det.name}</h1>${ov?`<span class="${ragClass(ov.rag)} text-2xl font-bold">\u25CF</span>`:''}<span class="text-xs px-2 py-0.5 rounded-full ${det.type==='Client'?'bg-green-900 text-green-300':det.type==='Product'?'bg-blue-900 text-blue-300':'bg-purple-900 text-purple-300'}">${det.type}</span></div><p class="text-sm text-slate-400 mt-1">${det.description}</p><div class="flex gap-3 mt-1">${det.url?`<a href="${det.url}" target="_blank" class="text-xs text-blue-400 hover:underline">${det.url}</a>`:''}${det.repoUrl?`<a href="${det.repoUrl}" target="_blank" class="text-xs text-slate-500 hover:text-slate-300">GitHub \u2192</a>`:''}</div></div></div>`;
+      if (ov) { const pct = ov.omtmTarget>0?Math.min(100,(ov.omtmValue/ov.omtmTarget)*100):0; c.innerHTML += `<div class="bg-card rounded-xl border border-border p-5 animate-in"><p class="text-xs text-slate-400 uppercase tracking-wider mb-1">One Metric That Matters</p><p class="text-sm text-slate-300 mb-2">${ov.omtmName}</p><div class="flex items-baseline gap-2 mb-3"><span class="text-4xl font-bold text-white ${trendClass(ov.trend)}">${ov.omtmValue}</span><span class="text-lg text-slate-500">/ ${ov.omtmTarget}</span><span class="text-sm text-slate-400 ml-2">(${pct.toFixed(0)}%)</span></div><div class="w-full bg-slate-700 rounded-full h-2"><div class="${barColor(pct)} h-2 rounded-full progress-bar" style="width:${pct}%"></div></div><p class="text-xs text-slate-500 mt-2">Focus: ${ov.focus}</p></div>`; }
+      c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider','KPIs & Metrics'));
+      const mg = el('div','grid grid-cols-2 md:grid-cols-3 gap-3');
+      det.metrics.forEach((m,i) => { const pct = metricPct(m); mg.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.06}s"><div class="flex items-center justify-between mb-1"><p class="text-xs text-slate-400 uppercase tracking-wider">${m.category}</p><p class="text-xs text-slate-600">${m.source}</p></div><p class="text-sm text-slate-300 mb-1">${m.name}</p><p class="text-xl font-bold text-white ${trendClass(m.trend)}">${formatMetricValue(m)}</p>${m.target!==null&&m.format!=='boolean'?`<div class="flex items-center gap-2 mt-2"><div class="flex-1 bg-slate-700 rounded-full h-1"><div class="${barColor(pct)} h-1 rounded-full progress-bar" style="width:${pct!==null?pct:0}%"></div></div><span class="text-xs text-slate-500">${m.target}${m.format==='score'?'/100':''}</span></div>`:''}</div>`; });
+      c.appendChild(mg);
+      if (det.missingMetrics?.length) { c.innerHTML += `<div class="bg-amber-950/30 rounded-xl border border-amber-800/50 p-4 animate-in"><h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">Metric Gaps</h3><ul class="space-y-1">${det.missingMetrics.map(m=>`<li class="text-sm text-amber-300/80 flex items-start gap-2"><span class="text-amber-500 mt-0.5">!</span> ${m}</li>`).join('')}</ul></div>`; }
+      // Chart
+      const cc = el('div','bg-card rounded-xl border border-border p-5 animate-in');
+      cc.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Metric Progress</h3><canvas id="projectMetricsChart" height="180"></canvas>';
+      c.appendChild(cc);
+      requestAnimationFrame(() => { const scored = det.metrics.filter(m=>m.target&&m.target>0&&m.format!=='boolean'); if (scored.length) { const ctx = document.getElementById('projectMetricsChart'); if(ctx){const ch=new Chart(ctx,{type:'bar',data:{labels:scored.map(m=>m.name.length>20?m.name.substring(0,18)+'...':m.name),datasets:[{label:'Current',data:scored.map(m=>m.value),backgroundColor:scored.map(m=>barHex(metricPct(m)||0)),borderRadius:4},{label:'Target',data:scored.map(m=>m.target),backgroundColor:'#334155',borderRadius:4}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10}}},y:{grid:{color:'#334155'},ticks:{color:'#94a3b8'},beginAtZero:true}}}});chartInstances.push(ch);}} });
+      const pt = tasksForProject(pid);
+      if (pt.length) { renderTasksTable(c, pt.filter(t=>t.status!=='Done'), `Active Tasks \u2014 ${det.name}`); const done = pt.filter(t=>t.status==='Done'); if (done.length) renderTasksTable(c, done, `Completed \u2014 ${det.name}`); }
+      const pc = costsForProject(pid);
+      if (pc.length) renderFinancialTable(c, pc, `Costs \u2014 ${det.name}`);
+    }
+
+    // ==================== CALENDAR TAB ====================
+    function matchesCron(cron, date) {
+      const [,, dom, mon, dow] = cron.split(' ');
+      const d = new Date(date);
+      if (dom !== '*' && parseInt(dom) !== d.getDate()) return false;
+      if (mon !== '*' && parseInt(mon) !== d.getMonth() + 1) return false;
+      if (dow !== '*') { const wd = d.getDay(); if (dow.includes('-')) { const [s,e] = dow.split('-').map(Number); if (wd < s || wd > e) return false; } else if (parseInt(dow) !== wd) return false; }
+      return true;
+    }
+    function getSchedulesForDate(date) {
+      return D.schedules.filter(s => s.cron === '* * * * *' ? false : matchesCron(s.cron, date));
+    }
+    function renderCalendar(c) {
+      const hdr = el('div','flex items-center justify-between mb-4');
+      hdr.innerHTML = `<div class="flex items-center gap-3"><button onclick="changeMonth(-1)" class="text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-700">\u2190</button><h2 class="text-lg font-semibold text-white" id="calTitle"></h2><button onclick="changeMonth(1)" class="text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-slate-700">\u2192</button><button onclick="goToday()" class="text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded border border-blue-800 hover:border-blue-600">Today</button></div><div class="flex items-center gap-3"><span class="text-xs text-slate-500 flex items-center gap-1"><span class="cal-dot dot-recipe"></span> Recipe</span><span class="text-xs text-slate-500 flex items-center gap-1"><span class="cal-dot dot-standing-order"></span> Standing Order</span><span class="text-xs text-slate-500 flex items-center gap-1"><span class="cal-dot dot-deadline"></span> Deadline</span></div>`;
+      c.appendChild(hdr);
+      const calBox = el('div','bg-card rounded-xl border border-border p-4'); calBox.id = 'calBox'; c.appendChild(calBox);
+      const dayPanel = el('div','hidden mt-4'); dayPanel.id = 'dayPanel'; c.appendChild(dayPanel);
+      // Upcoming
+      c.appendChild(el('h3','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-3','Upcoming (Next 7 Days)'));
+      const upList = el('div','space-y-2'); upList.id = 'upList'; c.appendChild(upList);
+      // Add schedule
+      const ar = el('div','mt-4 flex items-center gap-4');
+      ar.innerHTML = `<button onclick="toggleSchForm()" class="text-sm bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">+ Add Schedule</button><span id="pendingBadge" class="text-xs text-slate-500"></span>`;
+      c.appendChild(ar);
+      const form = el('div','hidden mt-4 bg-card rounded-xl border border-border p-5'); form.id = 'schForm'; c.appendChild(form);
+      drawCalGrid(); drawUpcoming(); updatePendingBadge();
+    }
+    function drawCalGrid() {
+      const box = document.getElementById('calBox'); if (!box) return;
+      const y = calState.year, m = calState.month;
+      const title = document.getElementById('calTitle'); if (title) title.textContent = new Date(y, m).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      const first = new Date(y, m, 1); const startDay = (first.getDay() + 6) % 7; // Mon=0
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const today = new Date(); const todayStr = today.toISOString().slice(0, 10);
+      let html = '<div class="cal-grid mb-2">';
+      ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => { html += `<div class="text-xs text-slate-500 text-center py-1 font-medium">${d}</div>`; });
+      html += '</div><div class="cal-grid">';
+      for (let i = 0; i < startDay; i++) html += '<div class="cal-day rounded-lg p-1"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday = dateStr === todayStr;
+        const isSel = calState.selected === dateStr;
+        const scheds = getSchedulesForDate(dateStr);
+        const dots = scheds.map(s => `<span class="cal-dot dot-${s.type}"></span>`).join('');
+        html += `<div class="cal-day rounded-lg p-1 ${isToday?'today':''} ${isSel?'selected':''}" onclick="selectCalDay('${dateStr}')"><p class="text-xs ${isToday?'text-blue-400 font-bold':'text-slate-400'}">${d}</p><div class="flex flex-wrap gap-0.5 mt-1">${dots}</div></div>`;
+      }
+      html += '</div>';
+      box.innerHTML = html;
+    }
+    window.selectCalDay = function(dateStr) {
+      calState.selected = dateStr; drawCalGrid();
+      const panel = document.getElementById('dayPanel');
+      const scheds = getSchedulesForDate(dateStr);
+      const d = new Date(dateStr);
+      const dateLabel = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      if (scheds.length === 0) { panel.className = 'mt-4 bg-card rounded-xl border border-border p-4'; panel.innerHTML = `<p class="text-sm text-slate-400">${dateLabel} \u2014 No schedules</p>`; return; }
+      panel.className = 'mt-4 bg-card rounded-xl border border-border p-4';
+      panel.innerHTML = `<p class="text-sm font-semibold text-white mb-3">${dateLabel}</p><div class="space-y-2">${scheds.map(s => `<div class="flex items-center gap-3 text-sm"><span class="cal-dot dot-${s.type}"></span><span class="text-white font-medium">${s.name}</span><span class="text-slate-500">${s.humanCron}</span><span class="text-xs px-2 py-0.5 rounded-full ${s.status==='active'?'bg-green-900 text-green-300':'bg-slate-800 text-slate-400'}">${s.status}</span></div><p class="text-xs text-slate-400 ml-5">${s.description}</p>`).join('')}</div>`;
+    };
+    function drawUpcoming() {
+      const ul = document.getElementById('upList'); if (!ul) return;
+      const now = new Date(); let items = [];
+      for (let i = 0; i < 7; i++) { const d = new Date(now); d.setDate(d.getDate() + i); const ds = d.toISOString().slice(0,10); const scheds = getSchedulesForDate(ds); scheds.forEach(s => items.push({ date: ds, ...s })); }
+      if (items.length === 0) { ul.innerHTML = '<p class="text-sm text-slate-500">No schedules in the next 7 days</p>'; return; }
+      ul.innerHTML = items.map(s => `<div class="bg-card rounded-lg border border-border p-3 flex items-center gap-3"><span class="cal-dot dot-${s.type}"></span><span class="text-xs text-slate-500 w-20">${new Date(s.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</span><span class="text-sm text-white font-medium">${s.name}</span><span class="text-xs text-slate-500 ml-auto">${s.project}</span></div>`).join('');
+    }
+    window.changeMonth = function(d) { calState.month += d; if (calState.month > 11) { calState.month = 0; calState.year++; } if (calState.month < 0) { calState.month = 11; calState.year--; } drawCalGrid(); };
+    window.goToday = function() { const n = new Date(); calState.month = n.getMonth(); calState.year = n.getFullYear(); calState.selected = n.toISOString().slice(0,10); drawCalGrid(); selectCalDay(calState.selected); };
+    window.toggleSchForm = function() {
+      const f = document.getElementById('schForm'); f.classList.toggle('hidden');
+      if (!f.classList.contains('hidden')) {
+        f.innerHTML = `<h3 class="text-sm font-semibold text-white mb-3">Request New Schedule</h3><p class="text-xs text-slate-400 mb-3">Creates a pending request. Claude will set it up in the next session.</p><div class="grid grid-cols-1 md:grid-cols-2 gap-3"><input id="sn" type="text" placeholder="Schedule name" class="bg-bg border border-border rounded px-3 py-2 text-sm text-white"><select id="st" class="bg-bg border border-border rounded px-3 py-2 text-sm text-white"><option value="recipe">Recipe</option><option value="standing-order">Standing Order</option><option value="deadline">Deadline</option></select><input id="sc" type="text" placeholder="Cron (e.g., 0 8 * * 1)" class="bg-bg border border-border rounded px-3 py-2 text-sm text-white"><input id="sp" type="text" placeholder="Project" class="bg-bg border border-border rounded px-3 py-2 text-sm text-white"></div><textarea id="sd" placeholder="Description" class="w-full mt-3 bg-bg border border-border rounded px-3 py-2 text-sm text-white h-16"></textarea><div class="flex gap-2 mt-3"><button onclick="savePending()" class="text-sm bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg">Save as Pending</button><button onclick="document.getElementById('schForm').classList.add('hidden')" class="text-sm text-slate-400 hover:text-white px-4 py-2">Cancel</button></div>`;
+      }
+    };
+    window.savePending = function() { const p = JSON.parse(localStorage.getItem('pendingSchedules')||'[]'); p.push({ name:document.getElementById('sn').value, type:document.getElementById('st').value, cron:document.getElementById('sc').value, project:document.getElementById('sp').value, description:document.getElementById('sd').value, createdAt:new Date().toISOString() }); localStorage.setItem('pendingSchedules',JSON.stringify(p)); document.getElementById('schForm').classList.add('hidden'); updatePendingBadge(); };
+    function updatePendingBadge() { const b = document.getElementById('pendingBadge'); if (!b) return; const p = JSON.parse(localStorage.getItem('pendingSchedules')||'[]'); b.textContent = p.length ? `${p.length} pending request${p.length>1?'s':''}` : ''; }
+
+    // ==================== IMPROVEMENT TAB ====================
+    function getRecStatuses() { return JSON.parse(localStorage.getItem('recStatuses')||'{}'); }
+    function effectiveStatus(r) { return getRecStatuses()[r.id] || r.status; }
+    function renderImprovement(c) {
+      const statuses = getRecStatuses();
+      const all = D.recommendations;
+      const cnt = (fn) => all.filter(fn).length;
+      const approved = all.filter(r => (statuses[r.id]||r.status)==='approved').length;
+      const archived = all.filter(r => (statuses[r.id]||r.status)==='archived').length;
+      // Stats row
+      const sr = el('div','grid grid-cols-2 md:grid-cols-5 gap-3');
+      [{l:'Total',v:all.length,cl:'text-white'},{l:'Critical',v:cnt(r=>r.priority==='Critical'),cl:'text-red-400'},{l:'High',v:cnt(r=>r.priority==='High'),cl:'text-amber-400'},{l:'Approved',v:approved,cl:'text-green-400'},{l:'Archived',v:archived,cl:'text-slate-500'}].forEach(s => { sr.innerHTML += `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">${s.l}</p><p class="text-2xl font-bold ${s.cl}">${s.v}</p></div>`; });
+      c.appendChild(sr);
+      // Filters
+      const projects = [...new Set(all.map(r=>r.project))];
+      const categories = [...new Set(all.map(r=>r.category))];
+      const fr = el('div','flex flex-wrap gap-2 items-center');
+      fr.innerHTML = `<select class="filter-select" onchange="impState.project=this.value;applyImpFilters()"><option value="all">All Projects</option>${projects.map(p=>`<option value="${p}">${p}</option>`).join('')}</select><select class="filter-select" onchange="impState.category=this.value;applyImpFilters()"><option value="all">All Categories</option>${categories.map(c=>`<option value="${c}">${c}</option>`).join('')}</select><select class="filter-select" onchange="impState.priority=this.value;applyImpFilters()"><option value="all">All Priorities</option><option value="Critical">Critical</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select><select class="filter-select" onchange="impState.status=this.value;applyImpFilters()"><option value="all">All Statuses</option><option value="proposed">Proposed</option><option value="approved">Approved</option><option value="archived">Archived</option></select><select class="filter-select" onchange="impState.sort=this.value;applyImpFilters()"><option value="total-desc">Score (High\u2192Low)</option><option value="total-asc">Score (Low\u2192High)</option></select>`;
+      c.appendChild(fr);
+      const list = el('div','space-y-2'); list.id = 'recList'; c.appendChild(list);
+      applyImpFilters();
+    }
+    window.applyImpFilters = function() {
+      const list = document.getElementById('recList'); if (!list) return;
+      const st = getRecStatuses();
+      let recs = D.recommendations.filter(r => {
+        const es = st[r.id] || r.status;
+        if (impState.project !== 'all' && r.project !== impState.project) return false;
+        if (impState.category !== 'all' && r.category !== impState.category) return false;
+        if (impState.priority !== 'all' && r.priority !== impState.priority) return false;
+        if (impState.status !== 'all' && es !== impState.status) return false;
+        return true;
+      });
+      recs.sort((a,b) => impState.sort === 'total-desc' ? b.total - a.total : a.total - b.total);
+      list.innerHTML = recs.map(r => {
+        const es = st[r.id] || r.status;
+        const pc = { Critical:'bg-red-900 text-red-300', High:'bg-amber-900 text-amber-300', Medium:'bg-blue-900 text-blue-300', Low:'bg-slate-800 text-slate-400' };
+        const dims = r.scoreType === 'competitor' ?
+          [{l:'Strategic',v:r.scores.strategic,c:'#3b82f6'},{l:'Revenue',v:r.scores.revenue,c:'#22c55e'},{l:'Effort',v:r.scores.effort,c:'#f59e0b'},{l:'Urgency',v:r.scores.urgency,c:'#ef4444'}] :
+          [{l:'Efficiency',v:r.scores.efficiency,c:'#3b82f6'},{l:'Quality',v:r.scores.quality,c:'#22c55e'},{l:'Security',v:r.scores.security,c:'#ef4444'},{l:'Scalability',v:r.scores.scalability,c:'#a855f7'},{l:'Revenue',v:r.scores.revenue,c:'#f59e0b'}];
+        return `<div class="bg-card rounded-xl border border-border p-4 ${es==='archived'?'opacity-50':''}" onclick="toggleRec('${r.id}')"><div class="flex items-center justify-between cursor-pointer"><div class="flex items-center gap-3 flex-1 min-w-0"><span class="text-xs font-mono text-slate-500 shrink-0">${r.sourceRef}</span><span class="font-medium text-white text-sm truncate">${r.title}</span><span class="text-xs text-slate-500 shrink-0 hidden sm:inline">${r.project}</span></div><div class="flex items-center gap-2 shrink-0"><span class="text-xs px-2 py-0.5 rounded-full ${pc[r.priority]}">${r.priority}</span><span class="text-sm font-bold ${r.priority==='Critical'?'text-red-400':r.priority==='High'?'text-amber-400':'text-blue-400'}">${r.total}/${r.maxTotal}</span></div></div><div id="rd-${r.id}" class="expandable-content mt-3"><p class="text-sm text-slate-300 mb-3">${r.description}</p><div class="flex gap-4 mb-3">${dims.map(d=>`<div class="flex-1"><p class="text-xs text-slate-500">${d.l}</p><div class="score-bar mt-1"><div class="score-fill" style="width:${(d.v/3)*100}%;background:${d.c}"></div></div><p class="text-xs text-slate-400 mt-0.5">${d.v}/3</p></div>`).join('')}</div><div class="flex gap-2"><button onclick="event.stopPropagation();setRecSt('${r.id}','approved')" class="text-xs ${es==='approved'?'bg-green-600':'bg-green-800 hover:bg-green-700'} text-green-200 px-3 py-1 rounded">${es==='approved'?'\u2713 Approved':'Approve'}</button><button onclick="event.stopPropagation();setRecSt('${r.id}','archived')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded">Archive</button>${es!=='proposed'?`<button onclick="event.stopPropagation();setRecSt('${r.id}','proposed')" class="text-xs text-slate-500 hover:text-slate-300 px-3 py-1 rounded">Reset</button>`:''}</div></div></div>`;
+      }).join('');
+    };
+    window.toggleRec = function(id) { const el = document.getElementById('rd-'+id); if (el) el.classList.toggle('open'); };
+    window.setRecSt = function(id, status) { const s = getRecStatuses(); if (status === 'proposed') delete s[id]; else s[id] = status; localStorage.setItem('recStatuses', JSON.stringify(s)); applyImpFilters(); };
+
+    // ==================== AGENTS TAB ====================
+    function renderAgents(c) {
+      if (agentState.dept) { renderDeptDetail(c, agentState.dept); return; }
+      c.innerHTML += '<div class="mb-4"><h2 class="text-lg font-semibold text-white">Agent Registry</h2><p class="text-sm text-slate-400">Products and infrastructure organized as agent departments</p></div>';
+      // Summary
+      const ta = D.agents.departments.reduce((s,d)=>s+d.agentCount,0), la = D.agents.departments.reduce((s,d)=>s+d.liveCount,0);
+      const ss = el('div','grid grid-cols-3 gap-4 mb-4');
+      ss.innerHTML = `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Total Agents</p><p class="text-2xl font-bold text-white">${ta}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Live</p><p class="text-2xl font-bold text-green-400">${la}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Departments</p><p class="text-2xl font-bold text-blue-400">${D.agents.departments.length}</p></div>`;
+      c.appendChild(ss);
+      const grid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      D.agents.departments.forEach((dept,i) => {
+        const d = el('div', `bg-card rounded-xl border border-border p-5 animate-in clickable-card ${typeClass(dept.type)}`);
+        d.style.animationDelay = `${i*0.1}s`;
+        d.onclick = () => { agentState.dept = dept.id; render(); };
+        const pct = dept.agentCount > 0 ? dept.overallCompleteness : 0;
+        const r = 30, circ = 2 * Math.PI * r, offset = circ - (pct / 100) * circ;
+        const gaugeColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : pct > 0 ? '#ef4444' : '#334155';
+        d.innerHTML = `<div class="flex items-center gap-4"><svg width="76" height="76" class="shrink-0"><circle class="gauge-bg" cx="38" cy="38" r="${r}"/><circle class="gauge-fill" cx="38" cy="38" r="${r}" stroke="${gaugeColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 38 38)"/><text x="38" y="42" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="bold">${pct}%</text></svg><div class="flex-1"><h3 class="font-semibold text-white">${dept.name}</h3><p class="text-xs text-slate-400 mt-1">${dept.type} \u00B7 ${dept.liveCount}/${dept.agentCount} agents live</p><p class="text-xs ${dept.status==='active'?'text-green-400':dept.status==='research'?'text-blue-400':'text-slate-500'} mt-1">${dept.status}</p></div><span class="text-slate-500">\u2192</span></div>`;
+        grid.appendChild(d);
+      });
+      c.appendChild(grid);
+    }
+    function renderDeptDetail(c, deptId) {
+      const dept = D.agents.departments.find(d=>d.id===deptId);
+      if (!dept) { agentState.dept = null; render(); return; }
+      c.innerHTML += `<div class="flex items-center gap-4 animate-in mb-4"><span class="back-btn text-slate-400 text-xl" onclick="agentState.dept=null;render()">\u2190</span><div><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${dept.type} \u00B7 ${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p></div></div>`;
+      if (dept.agents.length === 0) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No agents defined yet</p><p class="text-sm">This department is in the planning/research phase.</p></div>'; return; }
+      // Group by tier
+      const tiers = [1,2,3];
+      const tierNames = { 1: 'Tier 1 \u2014 Live / Core', 2: 'Tier 2 \u2014 Next Build', 3: 'Tier 3 \u2014 Strategic' };
+      tiers.forEach(tier => {
+        const agents = dept.agents.filter(a=>a.tier===tier);
+        if (!agents.length) return;
+        c.appendChild(el('h3',`text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2`,tierNames[tier]));
+        agents.forEach((a,i) => {
+          const card = el('div','bg-card rounded-xl border border-border p-4 mb-2 animate-in');
+          card.style.animationDelay = `${i*0.05}s`;
+          const stColor = a.status==='live'?'bg-green-900 text-green-300':a.status==='active'?'bg-blue-900 text-blue-300':'bg-slate-800 text-slate-400';
+          const qPct = a.qualityScore || 0; const cPct = a.capabilityScore || 0;
+          card.innerHTML = `<div class="flex items-center justify-between cursor-pointer" onclick="toggleAgentDetail('${a.id}')"><div class="flex items-center gap-3"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="font-medium text-white text-sm">${a.name}</span><span class="text-xs px-2 py-0.5 rounded-full ${stColor}">${a.status}</span></div><div class="flex items-center gap-4"><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(qPct)} h-1 rounded-full" style="width:${qPct}%"></div></div></div><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(cPct)} h-1 rounded-full" style="width:${cPct}%"></div></div></div><span class="text-slate-500 text-xs">\u25BC</span></div></div><div id="ad-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50"><p class="text-sm text-slate-300 mb-3">${a.description}</p><div class="grid grid-cols-2 gap-4 mb-3"><div><p class="text-xs text-slate-500 mb-1">Quality Score</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(qPct)} h-2 rounded-full" style="width:${qPct}%"></div></div><span class="text-sm font-bold text-white">${a.qualityScore !== null ? a.qualityScore + '/100' : 'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-1">Capability vs Industry</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(cPct)} h-2 rounded-full" style="width:${cPct}%"></div></div><span class="text-sm font-bold text-white">${cPct}%</span></div></div></div>${a.tools.length?`<p class="text-xs text-slate-500 mb-1">Tools</p><div class="flex flex-wrap gap-1 mb-3">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}${a.benchmarks.length?`<p class="text-xs text-slate-500 mb-1">Industry Benchmarks</p><div class="overflow-x-auto"><table class="w-full text-xs mb-2"><thead><tr class="text-slate-500"><th class="text-left py-1 pr-3">Competitor</th><th class="text-left py-1 pr-3">Capability</th><th class="text-right py-1">Coverage</th></tr></thead><tbody>${a.benchmarks.map(b=>`<tr class="border-t border-border/30"><td class="py-1 pr-3 text-slate-300">${b.competitor}</td><td class="py-1 pr-3 text-slate-400">${b.capability}</td><td class="py-1 text-right"><span class="font-bold ${b.ourCoverage>=80?'text-green-400':b.ourCoverage>=50?'text-amber-400':b.ourCoverage>0?'text-red-400':'text-slate-500'}">${b.ourCoverage}%</span></td></tr>`).join('')}</tbody></table></div>`:''}</div>${a.subAgents.length?`<div class="mt-2"><p class="text-xs text-slate-500 mb-1">Sub-Agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-1"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}</div>`;
+          c.appendChild(card);
         });
-        container.appendChild(secSection);
-      }
-
-      // --- Project Performance ---
-      const projHeader = document.createElement('h2');
-      projHeader.className = 'text-sm font-semibold text-slate-400 uppercase tracking-wider';
-      projHeader.textContent = 'Project Performance — Click to drill down';
-      container.appendChild(projHeader);
-
-      const projGrid = document.createElement('div');
-      projGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-      D.overview.forEach((p, i) => {
-        const pct = p.omtmTarget > 0 ? Math.min(100, (p.omtmValue / p.omtmTarget) * 100) : 0;
-        const bc = barColor(pct);
-        const shortName = p.project.replace(/^(CLIENT-\d+|PROD-\d+|INFRA-\d+)\s+/, '');
-        const detail = D.projectDetails[p.id];
-        const typeLabel = detail ? detail.type : '';
-        const missingCount = detail && detail.missingMetrics ? detail.missingMetrics.length : 0;
-
-        const div = document.createElement('div');
-        div.className = `bg-card rounded-xl border border-border p-4 animate-in clickable-card ${detail ? typeClass(typeLabel) : ''}`;
-        div.style.animationDelay = `${i * 0.08}s`;
-        div.onclick = () => navigateTo(p.id);
-        div.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-semibold text-white text-sm">${shortName}</h3>
-            <div class="flex items-center gap-2">
-              ${missingCount > 0 ? `<span class="warning-chip">${missingCount} gap${missingCount > 1 ? 's' : ''}</span>` : ''}
-              <span class="${ragClass(p.rag)} text-lg font-bold">\u25CF</span>
-            </div>
-          </div>
-          <p class="text-xs text-slate-400 mb-1">${p.omtmName}</p>
-          <div class="flex items-baseline gap-1 mb-2">
-            <span class="text-xl font-bold text-white ${trendClass(p.trend)}">${p.omtmValue}</span>
-            <span class="text-xs text-slate-500">/ ${p.omtmTarget}</span>
-          </div>
-          <div class="w-full bg-slate-700 rounded-full h-1.5">
-            <div class="${bc} h-1.5 rounded-full progress-bar" style="width: ${pct}%"></div>
-          </div>
-          <p class="text-xs text-slate-500 mt-2">${p.focus}</p>
-          <p class="text-xs text-slate-600 mt-1">${typeLabel} \u00B7 Click for details \u2192</p>
-        `;
-        projGrid.appendChild(div);
       });
-      container.appendChild(projGrid);
-
-      // --- Charts Row ---
-      const chartsRow = document.createElement('div');
-      chartsRow.className = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-
-      // Tasks by Status
-      const taskChartCard = document.createElement('div');
-      taskChartCard.className = 'bg-card rounded-xl border border-border p-5';
-      taskChartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3><canvas id="taskStatusChart" height="200"></canvas>';
-      chartsRow.appendChild(taskChartCard);
-
-      // Costs by Project
-      const costChartCard = document.createElement('div');
-      costChartCard.className = 'bg-card rounded-xl border border-border p-5';
-      costChartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3><canvas id="costChart" height="200"></canvas>';
-      chartsRow.appendChild(costChartCard);
-
-      container.appendChild(chartsRow);
-
-      // Render charts after DOM update
-      requestAnimationFrame(() => {
-        renderTaskStatusChart();
-        renderCostChart();
-      });
-
-      // --- Active Tasks Table ---
-      renderTasksTable(container, D.tasks.filter(t => t.status !== 'Done'), 'Active Tasks');
-
-      // --- Financial Table ---
-      renderFinancialTable(container, D.financial);
     }
+    window.toggleAgentDetail = function(id) { const el = document.getElementById('ad-'+id); if (el) el.classList.toggle('open'); };
 
-    // ========================================
-    // PROJECT DETAIL VIEW
-    // ========================================
-    function renderProjectDetail(container, projectId) {
-      const detail = D.projectDetails[projectId];
-      const overview = D.overview.find(p => p.id === projectId);
-
-      // --- Back button + header ---
-      const header = document.createElement('div');
-      header.className = 'flex items-center gap-4 animate-in';
-      const ragDot = overview ? `<span class="${ragClass(overview.rag)} text-2xl font-bold">\u25CF</span>` : '';
-      header.innerHTML = `
-        <span class="back-btn text-slate-400 text-xl" onclick="navigateTo('')">\u2190</span>
-        <div class="flex-1">
-          <div class="flex items-center gap-3">
-            <h1 class="text-xl font-bold text-white">${detail.code} ${detail.name}</h1>
-            ${ragDot}
-            <span class="text-xs px-2 py-0.5 rounded-full ${detail.type === 'Client' ? 'bg-green-900 text-green-300' : detail.type === 'Product' ? 'bg-blue-900 text-blue-300' : 'bg-purple-900 text-purple-300'}">${detail.type}</span>
-          </div>
-          <p class="text-sm text-slate-400 mt-1">${detail.description}</p>
-          <div class="flex gap-3 mt-1">
-            ${detail.url ? `<a href="${detail.url}" target="_blank" class="text-xs text-blue-400 hover:underline">${detail.url}</a>` : ''}
-            ${detail.repoUrl ? `<a href="${detail.repoUrl}" target="_blank" class="text-xs text-slate-500 hover:text-slate-300">GitHub \u2192</a>` : ''}
-          </div>
-        </div>
-      `;
-      container.appendChild(header);
-
-      // --- OMTM Hero ---
-      if (overview) {
-        const omtmCard = document.createElement('div');
-        const pct = overview.omtmTarget > 0 ? Math.min(100, (overview.omtmValue / overview.omtmTarget) * 100) : 0;
-        omtmCard.className = 'bg-card rounded-xl border border-border p-5 animate-in';
-        omtmCard.innerHTML = `
-          <p class="text-xs text-slate-400 uppercase tracking-wider mb-1">One Metric That Matters</p>
-          <p class="text-sm text-slate-300 mb-2">${overview.omtmName}</p>
-          <div class="flex items-baseline gap-2 mb-3">
-            <span class="text-4xl font-bold text-white ${trendClass(overview.trend)}">${overview.omtmValue}</span>
-            <span class="text-lg text-slate-500">/ ${overview.omtmTarget}</span>
-            <span class="text-sm text-slate-400 ml-2">(${pct.toFixed(0)}%)</span>
-          </div>
-          <div class="w-full bg-slate-700 rounded-full h-2">
-            <div class="${barColor(pct)} h-2 rounded-full progress-bar" style="width: ${pct}%"></div>
-          </div>
-          <p class="text-xs text-slate-500 mt-2">Focus: ${overview.focus}</p>
-        `;
-        container.appendChild(omtmCard);
-      }
-
-      // --- All Metrics Grid ---
-      const metricsHeader = document.createElement('h2');
-      metricsHeader.className = 'text-sm font-semibold text-slate-400 uppercase tracking-wider';
-      metricsHeader.textContent = 'KPIs & Metrics';
-      container.appendChild(metricsHeader);
-
-      const metricsGrid = document.createElement('div');
-      metricsGrid.className = 'grid grid-cols-2 md:grid-cols-3 gap-3';
-      detail.metrics.forEach((m, i) => {
-        const pct = metricPct(m);
-        const div = document.createElement('div');
-        div.className = 'bg-card rounded-xl border border-border p-4 animate-in metric-card';
-        div.style.animationDelay = `${i * 0.06}s`;
-        div.innerHTML = `
-          <div class="flex items-center justify-between mb-1">
-            <p class="text-xs text-slate-400 uppercase tracking-wider">${m.category}</p>
-            <p class="text-xs text-slate-600">${m.source}</p>
-          </div>
-          <p class="text-sm text-slate-300 mb-1">${m.name}</p>
-          <p class="text-xl font-bold text-white ${trendClass(m.trend)}">${formatMetricValue(m)}</p>
-          ${m.target !== null && m.format !== 'boolean' ? `
-            <div class="flex items-center gap-2 mt-2">
-              <div class="flex-1 bg-slate-700 rounded-full h-1">
-                <div class="${barColor(pct)} h-1 rounded-full progress-bar" style="width: ${pct !== null ? pct : 0}%"></div>
-              </div>
-              <span class="text-xs text-slate-500">${m.target}${m.format === 'score' ? '/100' : ''}</span>
-            </div>
-          ` : ''}
-        `;
-        metricsGrid.appendChild(div);
-      });
-      container.appendChild(metricsGrid);
-
-      // --- Missing Metrics / Gaps ---
-      if (detail.missingMetrics && detail.missingMetrics.length > 0) {
-        const gapCard = document.createElement('div');
-        gapCard.className = 'bg-amber-950/30 rounded-xl border border-amber-800/50 p-4 animate-in';
-        gapCard.innerHTML = `
-          <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">Metric Gaps — Action Required</h3>
-          <ul class="space-y-1">
-            ${detail.missingMetrics.map(m => `<li class="text-sm text-amber-300/80 flex items-start gap-2"><span class="text-amber-500 mt-0.5">!</span> ${m}</li>`).join('')}
-          </ul>
-        `;
-        container.appendChild(gapCard);
-      }
-
-      // --- Metrics Chart ---
-      const chartCard = document.createElement('div');
-      chartCard.className = 'bg-card rounded-xl border border-border p-5 animate-in';
-      chartCard.innerHTML = '<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Metric Progress</h3><canvas id="projectMetricsChart" height="180"></canvas>';
-      container.appendChild(chartCard);
-
-      requestAnimationFrame(() => {
-        const scored = detail.metrics.filter(m => m.target && m.target > 0 && m.format !== 'boolean');
-        if (scored.length > 0) {
-          const ctx = document.getElementById('projectMetricsChart');
-          if (ctx) {
-            const chart = new Chart(ctx, {
-              type: 'bar',
-              data: {
-                labels: scored.map(m => m.name.length > 20 ? m.name.substring(0, 18) + '...' : m.name),
-                datasets: [
-                  {
-                    label: 'Current',
-                    data: scored.map(m => m.value),
-                    backgroundColor: scored.map(m => { const p = metricPct(m); return p >= 80 ? '#22c55e' : p >= 50 ? '#f59e0b' : '#ef4444'; }),
-                    borderRadius: 4,
-                  },
-                  {
-                    label: 'Target',
-                    data: scored.map(m => m.target),
-                    backgroundColor: '#334155',
-                    borderRadius: 4,
-                  }
-                ]
-              },
-              options: {
-                responsive: true,
-                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
-                scales: {
-                  x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                  y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
-                }
-              }
-            });
-            chartInstances.push(chart);
-          }
-        }
-      });
-
-      // --- Project Tasks ---
-      const projectTasks = tasksForProject(projectId);
-      if (projectTasks.length > 0) {
-        renderTasksTable(container, projectTasks.filter(t => t.status !== 'Done'), `Active Tasks — ${detail.name}`);
-        const doneTasks = projectTasks.filter(t => t.status === 'Done');
-        if (doneTasks.length > 0) {
-          renderTasksTable(container, doneTasks, `Completed Tasks — ${detail.name}`, true);
-        }
-      } else {
-        const noTasks = document.createElement('div');
-        noTasks.className = 'bg-card rounded-xl border border-border p-4 text-slate-500 text-sm';
-        noTasks.textContent = 'No tasks directly assigned to this project in Trello.';
-        container.appendChild(noTasks);
-      }
-
-      // --- Project Costs ---
-      const projectCosts = costsForProject(projectId);
-      if (projectCosts.length > 0) {
-        renderFinancialTable(container, projectCosts, `Costs — ${detail.name}`);
-      }
+    // ==================== SHARED COMPONENTS ====================
+    function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt) e.textContent = txt; return e; }
+    function renderTasksTable(c, tasks, title) {
+      const sorted = [...tasks].sort((a,b) => { const o = {'This Week':0,'In Progress':1,'Blocked':2,'Review':3,'Backlog':4,'Done':5}; return (o[a.status]??6) - (o[b.status]??6); });
+      const s = el('section','');
+      s.innerHTML = `<h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title||'Tasks'} <span class="text-slate-600">(${sorted.length})</span></h2><div class="bg-card rounded-xl border border-border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider"><th class="px-4 py-3">Task</th><th class="px-4 py-3">Project</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Priority</th><th class="px-4 py-3">Last Activity</th></tr></thead><tbody>${sorted.map(t=>`<tr class="border-b border-border/50 hover:bg-slate-800/50"><td class="px-4 py-2.5"><a href="${t.url}" target="_blank" class="hover:text-blue-400">${t.name}</a></td><td class="px-4 py-2.5 text-slate-400">${t.project}</td><td class="px-4 py-2.5"><span class="status-chip ${chipClass(t.status)}">${t.status}</span></td><td class="px-4 py-2.5 text-slate-400">${t.priority}</td><td class="px-4 py-2.5 text-slate-400">${t.lastActivity}</td></tr>`).join('')}</tbody></table></div></div>`;
+      c.appendChild(s);
     }
-
-    // ========================================
-    // SHARED COMPONENTS
-    // ========================================
-    function renderTasksTable(container, tasks, title, collapsed) {
-      const section = document.createElement('section');
-      const sorted = [...tasks].sort((a, b) => {
-        const order = { 'This Week': 0, 'In Progress': 1, 'Blocked': 2, 'Review': 3, 'Backlog': 4, 'Done': 5 };
-        return (order[a.status] ?? 6) - (order[b.status] ?? 6);
-      });
-
-      section.innerHTML = `
-        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title || 'Tasks'} <span class="text-slate-600">(${sorted.length})</span></h2>
-        <div class="bg-card rounded-xl border border-border overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
-                  <th class="px-4 py-3">Task</th>
-                  <th class="px-4 py-3">Project</th>
-                  <th class="px-4 py-3">Status</th>
-                  <th class="px-4 py-3">Priority</th>
-                  <th class="px-4 py-3">Last Activity</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      const tbody = section.querySelector('tbody');
-      sorted.forEach(t => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
-        tr.innerHTML = `
-          <td class="px-4 py-2.5"><a href="${t.url}" target="_blank" class="hover:text-blue-400">${t.name}</a></td>
-          <td class="px-4 py-2.5 text-slate-400">${t.project}</td>
-          <td class="px-4 py-2.5"><span class="status-chip ${chipClass(t.status)}">${t.status}</span></td>
-          <td class="px-4 py-2.5 text-slate-400">${t.priority}</td>
-          <td class="px-4 py-2.5 text-slate-400">${t.lastActivity}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      container.appendChild(section);
+    function renderFinancialTable(c, items, title) {
+      const costs = items.filter(f=>f.amount<0); const total = costs.reduce((s,f)=>s+Math.abs(f.amount),0);
+      const s = el('section','');
+      s.innerHTML = `<h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title||'Cost Breakdown'}</h2><div class="bg-card rounded-xl border border-border overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider"><th class="px-4 py-3">Service</th><th class="px-4 py-3">Project</th><th class="px-4 py-3">Category</th><th class="px-4 py-3 text-right">Amount</th></tr></thead><tbody>${costs.sort((a,b)=>a.amount-b.amount).map(f=>`<tr class="border-b border-border/50 hover:bg-slate-800/50"><td class="px-4 py-2.5">${f.description}</td><td class="px-4 py-2.5 text-slate-400">${f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/,'')}</td><td class="px-4 py-2.5 text-slate-400">${f.category}</td><td class="px-4 py-2.5 text-right font-mono text-red-400">\u20AC${Math.abs(f.amount).toFixed(2)}</td></tr>`).join('')}${total>0?`<tr class="bg-slate-800/50 font-semibold"><td class="px-4 py-2.5" colspan="3">Total</td><td class="px-4 py-2.5 text-right font-mono text-amber-400">\u20AC${total.toFixed(2)}</td></tr>`:''}</tbody></table></div></div>`;
+      c.appendChild(s);
     }
-
-    function renderFinancialTable(container, items, title) {
-      const costs = items.filter(f => f.amount < 0);
-      const totalBurn = costs.reduce((sum, f) => sum + Math.abs(f.amount), 0);
-
-      const section = document.createElement('section');
-      section.innerHTML = `
-        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">${title || 'Cost Breakdown'}</h2>
-        <div class="bg-card rounded-xl border border-border overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-border text-left text-slate-400 text-xs uppercase tracking-wider">
-                  <th class="px-4 py-3">Service</th>
-                  <th class="px-4 py-3">Project</th>
-                  <th class="px-4 py-3">Category</th>
-                  <th class="px-4 py-3 text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      `;
-      const tbody = section.querySelector('tbody');
-      costs.sort((a, b) => a.amount - b.amount).forEach(f => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-border/50 hover:bg-slate-800/50';
-        tr.innerHTML = `
-          <td class="px-4 py-2.5">${f.description}</td>
-          <td class="px-4 py-2.5 text-slate-400">${f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '')}</td>
-          <td class="px-4 py-2.5 text-slate-400">${f.category}</td>
-          <td class="px-4 py-2.5 text-right font-mono text-red-400">\u20AC${Math.abs(f.amount).toFixed(2)}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      if (totalBurn > 0) {
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'bg-slate-800/50 font-semibold';
-        totalRow.innerHTML = `
-          <td class="px-4 py-2.5" colspan="3">Total</td>
-          <td class="px-4 py-2.5 text-right font-mono text-amber-400">\u20AC${totalBurn.toFixed(2)}</td>
-        `;
-        tbody.appendChild(totalRow);
-      }
-      container.appendChild(section);
-    }
-
-    // --- Charts ---
     function renderTaskStatusChart() {
-      const statusCounts = {};
-      D.tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
-      const statusOrder = ['This Week', 'In Progress', 'Blocked', 'Review', 'Backlog', 'Done'];
-      const statusColors = { 'This Week': '#3b82f6', 'In Progress': '#22c55e', 'Blocked': '#ef4444', 'Review': '#a855f7', 'Backlog': '#64748b', 'Done': '#14532d' };
-
-      const ctx = document.getElementById('taskStatusChart');
-      if (!ctx) return;
-      const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: statusOrder.filter(s => statusCounts[s]),
-          datasets: [{
-            data: statusOrder.filter(s => statusCounts[s]).map(s => statusCounts[s]),
-            backgroundColor: statusOrder.filter(s => statusCounts[s]).map(s => statusColors[s]),
-            borderRadius: 6,
-            barThickness: 32,
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } },
-            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 5 }, beginAtZero: true }
-          }
-        }
-      });
-      chartInstances.push(chart);
+      const sc = {}; D.tasks.forEach(t=>{sc[t.status]=(sc[t.status]||0)+1;});
+      const so = ['This Week','In Progress','Blocked','Review','Backlog','Done'], cl = {'This Week':'#3b82f6','In Progress':'#22c55e','Blocked':'#ef4444','Review':'#a855f7','Backlog':'#64748b','Done':'#14532d'};
+      const ctx = document.getElementById('taskStatusChart'); if(!ctx)return;
+      chartInstances.push(new Chart(ctx,{type:'bar',data:{labels:so.filter(s=>sc[s]),datasets:[{data:so.filter(s=>sc[s]).map(s=>sc[s]),backgroundColor:so.filter(s=>sc[s]).map(s=>cl[s]),borderRadius:6,barThickness:32}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11}}},y:{grid:{color:'#334155'},ticks:{color:'#94a3b8',stepSize:5},beginAtZero:true}}}}));
     }
-
     function renderCostChart() {
-      const costByProject = {};
-      D.financial.forEach(f => {
-        if (f.amount < 0) {
-          const key = f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/, '');
-          costByProject[key] = (costByProject[key] || 0) + Math.abs(f.amount);
-        }
-      });
-      const costLabels = Object.keys(costByProject).sort((a, b) => costByProject[b] - costByProject[a]);
-      const costColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#22c55e', '#06b6d4'];
-
-      const ctx = document.getElementById('costChart');
-      if (!ctx) return;
-      const chart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: costLabels,
-          datasets: [{
-            data: costLabels.map(l => costByProject[l]),
-            backgroundColor: costColors.slice(0, costLabels.length),
-            borderWidth: 0,
-          }]
-        },
-        options: {
-          responsive: true,
-          cutout: '65%',
-          plugins: {
-            legend: { position: 'right', labels: { color: '#94a3b8', padding: 12, font: { size: 11 } } }
-          }
-        }
-      });
-      chartInstances.push(chart);
+      const cp = {}; D.financial.forEach(f=>{if(f.amount<0){const k=f.project.replace(/^(CLIENT-\d+|PROD-\d+)\s+/,'');cp[k]=(cp[k]||0)+Math.abs(f.amount);}});
+      const cl = Object.keys(cp).sort((a,b)=>cp[b]-cp[a]), cc = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#22c55e','#06b6d4'];
+      const ctx = document.getElementById('costChart'); if(!ctx)return;
+      chartInstances.push(new Chart(ctx,{type:'doughnut',data:{labels:cl,datasets:[{data:cl.map(l=>cp[l]),backgroundColor:cc.slice(0,cl.length),borderWidth:0}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',padding:12,font:{size:11}}}}}}));
     }
-
-    // --- Initial render ---
     render();
   </script>
 </body>
