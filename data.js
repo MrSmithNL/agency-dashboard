@@ -428,10 +428,17 @@ const DASHBOARD_DATA = {
   // AGENTS (Agents Tab)
   // ============================================================
   agents: {
+    // === BUSINESS UNITS (group departments by strategic function) ===
+    businessUnits: [
+      { id: "bu-revenue", name: "Revenue Operations", icon: "\uD83D\uDCBC", color: "#f97316", description: "Get and keep customers", departmentIds: ["dept-sales", "dept-marketing"] },
+      { id: "bu-production", name: "Production", icon: "\uD83C\uDFED", color: "#3b82f6", description: "Build and deliver the work we sell", departmentIds: ["dept-seo", "dept-content"] },
+      { id: "bu-intelligence", name: "Intelligence", icon: "\uD83E\uDDE0", color: "#a855f7", description: "Know more than competitors", departmentIds: ["dept-research"] },
+      { id: "bu-platform", name: "Platform", icon: "\uD83D\uDD27", color: "#06b6d4", description: "Run the machine", departmentIds: ["dept-infra"] },
+    ],
     // === DEPARTMENTS (organized by business function) ===
     departments: [
       {
-        id: "dept-seo", name: "SEO & Search", icon: "\uD83D\uDD0D", color: "#3b82f6", status: "active",
+        id: "dept-seo", buId: "bu-production", name: "SEO & Search", icon: "\uD83D\uDD0D", color: "#3b82f6", status: "active",
         agentCount: 5, liveCount: 5, overallCompleteness: 52,
         agents: [
           { id: "seo-technical-audit", name: "Technical Audit", tier: 1, status: "live", recipeId: "rcp_fUfiRNt8Bh8b", originProduct: "prod-001", qualityScore: 90, capabilityScore: 65, description: "Automated technical SEO audit \u2014 crawls site, checks structure, performance, accessibility", tools: ["GSC", "WebFetch", "DataForSEO"], benchmarks: [{ competitor: "Screaming Frog", capability: "Deep crawl analysis (1000s pages/min)", ourCoverage: 70 }, { competitor: "Ahrefs Site Audit", capability: "100+ technical checks with fix suggestions", ourCoverage: 60 }, { competitor: "SEMrush Site Audit", capability: "140+ checks + auto-fix suggestions", ourCoverage: 55 }], subAgents: [] },
@@ -442,7 +449,7 @@ const DASHBOARD_DATA = {
         ]
       },
       {
-        id: "dept-content", name: "Content & Creative", icon: "\u270D\uFE0F", color: "#22c55e", status: "active",
+        id: "dept-content", buId: "bu-production", name: "Content & Creative", icon: "\u270D\uFE0F", color: "#22c55e", status: "active",
         agentCount: 3, liveCount: 1, overallCompleteness: 17,
         agents: [
           { id: "seo-content-optimizer", name: "Content Optimizer", tier: 1, status: "live", recipeId: "rcp_-msCRAZI2mln", originProduct: "prod-001", qualityScore: 74, capabilityScore: 50, description: "Analyzes content quality and provides optimization recommendations", tools: ["WebFetch", "invoke_llm"], benchmarks: [{ competitor: "Surfer SEO", capability: "NLP scoring against top-ranking pages in real-time", ourCoverage: 40 }, { competitor: "Clearscope", capability: "Content grading with A-F scores + semantic terms", ourCoverage: 50 }], subAgents: [] },
@@ -451,25 +458,25 @@ const DASHBOARD_DATA = {
         ]
       },
       {
-        id: "dept-marketing", name: "Marketing & Outreach", icon: "\uD83D\uDCE2", color: "#f59e0b", status: "planned",
+        id: "dept-marketing", buId: "bu-revenue", name: "Marketing & Outreach", icon: "\uD83D\uDCE2", color: "#f59e0b", status: "planned",
         agentCount: 1, liveCount: 0, overallCompleteness: 0,
         agents: [
           { id: "seo-link-builder", name: "Link Builder", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated link building with 6 specialized sub-agents", tools: [], benchmarks: [{ competitor: "Ahrefs", capability: "16 trillion link index + content explorer", ourCoverage: 0 }, { competitor: "SEMrush Link Building Tool", capability: "Prospect discovery + outreach management", ourCoverage: 0 }], subAgents: [{ id: "lb-backlink-profiler", name: "Backlink Profiler", status: "planned" }, { id: "lb-prospect-discovery", name: "Prospect Discovery", status: "planned" }, { id: "lb-linkable-asset", name: "Linkable Asset Creator", status: "planned" }, { id: "lb-outreach-manager", name: "Outreach Manager", status: "planned" }, { id: "lb-competitor-spy", name: "Competitor Link Spy", status: "planned" }, { id: "lb-health-monitor", name: "Link Health Monitor", status: "planned" }] },
         ]
       },
       {
-        id: "dept-sales", name: "Sales & CRM", icon: "\uD83D\uDCB0", color: "#ef4444", status: "not-started",
+        id: "dept-sales", buId: "bu-revenue", name: "Sales & CRM", icon: "\uD83D\uDCB0", color: "#ef4444", status: "not-started",
         agentCount: 0, liveCount: 0, overallCompleteness: 0, agents: []
       },
       {
-        id: "dept-research", name: "Research & Intelligence", icon: "\uD83D\uDD2C", color: "#a855f7", status: "planned",
+        id: "dept-research", buId: "bu-intelligence", name: "Research & Intelligence", icon: "\uD83D\uDD2C", color: "#a855f7", status: "planned",
         agentCount: 1, liveCount: 0, overallCompleteness: 0,
         agents: [
           { id: "seo-competitor-monitor", name: "Competitor Monitor", tier: 3, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated competitive intelligence and positioning tracking", tools: [], benchmarks: [{ competitor: "SEMrush Competitive Research", capability: "Traffic analytics + gap analysis + position changes", ourCoverage: 0 }], subAgents: [] },
         ]
       },
       {
-        id: "dept-infra", name: "Infrastructure & Operations", icon: "\u2699\uFE0F", color: "#06b6d4", status: "active",
+        id: "dept-infra", buId: "bu-platform", name: "Infrastructure & Operations", icon: "\u2699\uFE0F", color: "#06b6d4", status: "active",
         agentCount: 5, liveCount: 2, overallCompleteness: 26,
         agents: [
           { id: "infra-001", name: "Overnight CLI Runner", tier: 1, status: "planned", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 0, description: "Autonomous overnight task runner via Claude Code headless mode + cron", tools: [], benchmarks: [], subAgents: [] },
@@ -493,6 +500,25 @@ const DASHBOARD_DATA = {
       { id: "prod-002", name: "SellFunnel", code: "PROD-002", status: "research", description: "AI sales automation \u2014 research phase", processes: [] },
       { id: "prod-003", name: "Marketing Engine", code: "PROD-003", status: "not-started", description: "Multi-channel marketing automation", processes: [] },
       { id: "vert-book-rocket", name: "Book Rocket", code: "VERTICAL", status: "planned", description: "SEO + Marketing vertical for authors", processes: [] },
+    ],
+
+    // === CLIENT PROJECTS (cross-department service delivery) ===
+    clientProjects: [
+      { id: "client-001", name: "Love Over Exile", code: "CLIENT-001", status: "active",
+        description: "Author platform — memoir, blog, email community",
+        services: [
+          { name: "Technical SEO", agents: [{ agentId: "seo-technical-audit", deptId: "dept-seo" }, { agentId: "seo-ai-discovery", deptId: "dept-seo" }], productRef: "prod-001" },
+          { name: "Content Strategy", agents: [{ agentId: "seo-content-optimizer", deptId: "dept-content" }, { agentId: "seo-keyword-research", deptId: "dept-seo" }], productRef: "prod-001" },
+        ]},
+      { id: "client-002", name: "Hairgenetix", code: "CLIENT-002", status: "active",
+        description: "Shopify e-commerce — hair growth products",
+        services: [
+          { name: "Technical SEO", agents: [{ agentId: "seo-technical-audit", deptId: "dept-seo" }, { agentId: "seo-ai-discovery", deptId: "dept-seo" }], productRef: "prod-001" },
+          { name: "Keyword & SERP Strategy", agents: [{ agentId: "seo-keyword-research", deptId: "dept-seo" }, { agentId: "seo-serp-analyzer", deptId: "dept-seo" }, { agentId: "seo-competitor-monitor", deptId: "dept-research" }], productRef: "prod-001" },
+          { name: "Content Optimization", agents: [{ agentId: "seo-content-optimizer", deptId: "dept-content" }], productRef: "prod-001" },
+        ]},
+      { id: "client-003", name: "Skingenetix", code: "CLIENT-003", status: "planned",
+        description: "Shopify e-commerce — skincare products", services: [] },
     ]
   },
 

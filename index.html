@@ -62,6 +62,9 @@
     .dept-chip { font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
     .process-card { border-left: 3px solid #334155; }
     .process-agents { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bu-card { transition: transform 0.15s, border-color 0.15s; } .bu-card:hover { transform: translateY(-2px); }
+    .org-kpi { text-align: center; }
+    .service-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
     select.filter-select { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; color: #e2e8f0; }
     /* Architecture diagrams */
     .arch-node { cursor: pointer; transition: opacity 0.15s, filter 0.15s; } .arch-node:hover { opacity: 0.9; filter: brightness(1.2); }
@@ -94,6 +97,7 @@
       <button onclick="navigateTo('')" data-tab="home" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Cockpit</button>
       <button onclick="navigateTo('calendar')" data-tab="calendar" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Calendar</button>
       <button onclick="navigateTo('improvement')" data-tab="improvement" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Improvement</button>
+      <button onclick="navigateTo('organisation')" data-tab="organisation" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Organisation</button>
       <button onclick="navigateTo('agents')" data-tab="agents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agents</button>
     </div>
   </nav>
@@ -140,7 +144,7 @@
     // State
     let calState = { month: new Date().getMonth(), year: new Date().getFullYear(), selected: null };
     let impState = { level: 'all', project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
-    let agentState = { subTab: 'departments', dept: null, product: null, expandedAgent: null };
+    let agentState = { subTab: 'departments', dept: null, product: null, client: null, expandedAgent: null };
 
     function render() {
       destroyCharts();
@@ -149,7 +153,7 @@
       main.innerHTML = '';
       // Tab highlighting
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', agents:'agents' };
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents' };
       const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
       if (ab) ab.classList.add('active');
       const isProject = !!D.projectDetails[route];
@@ -158,6 +162,7 @@
       if (route === 'home') { renderHome(main); document.getElementById('breadcrumb').textContent = 'Performance Cockpit'; document.title = 'Smith AI Agency \u2014 Cockpit'; }
       else if (route === 'calendar') { renderCalendar(main); document.getElementById('breadcrumb').textContent = 'Calendar & Scheduler'; document.title = 'Smith AI Agency \u2014 Calendar'; }
       else if (route === 'improvement') { renderImpHierarchy(main); document.getElementById('breadcrumb').textContent = 'Continuous Improvement'; document.title = 'Smith AI Agency \u2014 Improvement'; }
+      else if (route === 'organisation') { renderOrganisation(main); document.getElementById('breadcrumb').textContent = 'Organisation'; document.title = 'Smith AI Agency \u2014 Organisation'; }
       else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
@@ -665,15 +670,17 @@
       // Sub-tab routing
       if (agentState.dept) { renderDeptDetail(c, agentState.dept); return; }
       if (agentState.product) { renderProductDetail(c, agentState.product); return; }
+      if (agentState.client) { renderClientDetail(c, agentState.client); return; }
 
       // Header + sub-tabs
-      c.innerHTML += `<div class="mb-4"><h2 class="text-lg font-semibold text-white">Agent Registry</h2><p class="text-sm text-slate-400">Organizational hierarchy — departments own capabilities, products compose them</p></div>`;
+      c.innerHTML += `<div class="mb-4"><h2 class="text-lg font-semibold text-white">Agent Registry</h2><p class="text-sm text-slate-400">Organizational hierarchy — departments own capabilities, products compose them, clients consume them</p></div>`;
       const tabs = el('div','flex gap-6 border-b border-border mb-4');
-      tabs.innerHTML = `<button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='departments'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='departments';agentState.dept=null;agentState.product=null;render()">Departments</button><button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='products'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='products';agentState.dept=null;agentState.product=null;render()">Products / Platforms</button>`;
+      tabs.innerHTML = `<button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='departments'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='departments';agentState.dept=null;agentState.product=null;agentState.client=null;render()">Departments</button><button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='products'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='products';agentState.dept=null;agentState.product=null;agentState.client=null;render()">Products / Platforms</button><button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='clients'?'active text-white border-green-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='clients';agentState.dept=null;agentState.product=null;agentState.client=null;render()">Client Projects</button>`;
       c.appendChild(tabs);
 
       if (agentState.subTab === 'departments') renderDeptGrid(c);
-      else renderProductGrid(c);
+      else if (agentState.subTab === 'products') renderProductGrid(c);
+      else renderClientGrid(c);
     }
 
     function renderDeptGrid(c) {
@@ -792,6 +799,179 @@
           pCard.innerHTML += `<div id="ad-pv-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50" style="border-left:2px solid ${color};padding-left:12px"><div class="flex items-center gap-2 mb-2"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="text-sm font-medium text-white">${a.name}</span><span class="dept-chip" style="background:${color}22;color:${color}">${dept?dept.name:''}</span></div><p class="text-xs text-slate-300 mb-2">${a.description}</p><div class="grid grid-cols-2 gap-3 mb-2"><div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div></div>${a.tools.length?`<div class="flex flex-wrap gap-1 mb-2">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}</div></div>`;
         });
         c.appendChild(pCard);
+      });
+    }
+
+    // ==================== ORGANISATION VIEW ====================
+    function renderOrganisation(c) {
+      const bus = D.agents.businessUnits || [];
+      const depts = D.agents.departments || [];
+      const ta = depts.reduce((s,d)=>s+d.agentCount,0);
+      const la = depts.reduce((s,d)=>s+d.liveCount,0);
+      const clients = (D.agents.clientProjects||[]).filter(cp=>cp.status==='active').length;
+      const products = (D.agents.products||[]).filter(p=>p.status==='active').length;
+
+      // Header
+      c.innerHTML += `<div class="mb-4"><h2 class="text-lg font-semibold text-white">Organisation</h2><p class="text-sm text-slate-400">Strategic operating system — business units, departments, and cross-cutting delivery</p></div>`;
+
+      // Summary KPIs
+      const kpis = el('div','grid grid-cols-2 md:grid-cols-5 gap-3 mb-6');
+      kpis.innerHTML = `
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in"><p class="text-xs text-slate-400">Business Units</p><p class="text-2xl font-bold text-white">${bus.length}</p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.05s"><p class="text-xs text-slate-400">Departments</p><p class="text-2xl font-bold text-blue-400">${depts.length}</p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.1s"><p class="text-xs text-slate-400">Agents</p><p class="text-2xl font-bold text-white">${la}<span class="text-sm text-slate-500">/${ta}</span></p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.15s"><p class="text-xs text-slate-400">Active Products</p><p class="text-2xl font-bold text-blue-400">${products}</p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.2s"><p class="text-xs text-slate-400">Active Clients</p><p class="text-2xl font-bold text-green-400">${clients}</p></div>`;
+      c.appendChild(kpis);
+
+      // Business Unit cards — 2x2 grid
+      const buSection = el('div','mb-6');
+      buSection.innerHTML = `<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Business Units</h3>`;
+      const buGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      bus.forEach((bu,i) => {
+        const buDepts = depts.filter(d=>d.buId===bu.id);
+        const buAgents = buDepts.reduce((s,d)=>s+d.agentCount,0);
+        const buLive = buDepts.reduce((s,d)=>s+d.liveCount,0);
+        const pct = buAgents > 0 ? Math.round(buDepts.reduce((s,d)=>s+d.overallCompleteness,0)/buDepts.length) : 0;
+        const card = el('div','bu-card bg-card rounded-xl border border-border p-5 animate-in');
+        card.style.borderLeftColor = bu.color; card.style.borderLeftWidth = '4px';
+        card.style.animationDelay = `${i*0.1}s`;
+        let deptChips = buDepts.map(d => `<span class="dept-chip" style="background:${d.color}22;color:${d.color};border:1px solid ${d.color}44">${d.icon} ${d.name} <span class="text-slate-500">${d.liveCount}/${d.agentCount}</span></span>`).join('');
+        card.innerHTML = `<div class="flex items-center gap-3 mb-3"><span class="text-2xl">${bu.icon}</span><div class="flex-1"><h4 class="font-semibold text-white">${bu.name}</h4><p class="text-xs text-slate-400">${bu.description}</p></div><div class="text-right"><p class="text-lg font-bold text-white">${buLive}<span class="text-sm text-slate-500">/${buAgents}</span></p><p class="text-xs text-slate-500">agents live</p></div></div><div class="flex flex-wrap gap-2">${deptChips}</div><div class="mt-3"><div class="flex justify-between text-xs text-slate-500 mb-1"><span>Completeness</span><span>${pct}%</span></div><div class="w-full bg-slate-700 rounded-full h-1.5"><div class="h-1.5 rounded-full" style="width:${pct}%;background:${bu.color}"></div></div></div>`;
+        buGrid.appendChild(card);
+      });
+      buSection.appendChild(buGrid);
+      c.appendChild(buSection);
+
+      // Strategic OS summary
+      const osSection = el('div','mb-6');
+      osSection.innerHTML = `<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Strategic Operating System</h3>`;
+      const osGrid = el('div','grid grid-cols-1 md:grid-cols-3 gap-4');
+      osGrid.innerHTML = `
+        <div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:0.1s">
+          <h4 class="text-sm font-semibold text-white mb-2">Business Model Canvas</h4>
+          <div class="space-y-1 text-xs text-slate-400">
+            <p><span class="text-slate-500">Value Prop:</span> AI-native SEO automation at 95% lower cost</p>
+            <p><span class="text-slate-500">Segments:</span> Solo founders, SMB e-commerce, authors</p>
+            <p><span class="text-slate-500">Revenue:</span> SaaS subscriptions + done-for-you services</p>
+          </div>
+        </div>
+        <div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:0.15s">
+          <h4 class="text-sm font-semibold text-white mb-2">Competitive Position</h4>
+          <div class="space-y-1 text-xs text-slate-400">
+            <p><span class="text-slate-500">Strategy:</span> Low-cost provider + vertical focus</p>
+            <p><span class="text-slate-500">Moat:</span> AI-native ops, outcome-based pricing, early mover on AI visibility</p>
+            <p><span class="text-slate-500">Rivalry:</span> Intensifying — differentiate on results</p>
+          </div>
+        </div>
+        <div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:0.2s">
+          <h4 class="text-sm font-semibold text-white mb-2">Current OKRs (Q2 2026)</h4>
+          <div class="space-y-1 text-xs text-slate-400">
+            <p><span class="text-slate-500">O1:</span> Revenue-generating business — \u20AC1,500 MRR target</p>
+            <p><span class="text-slate-500">O2:</span> Market credibility — 3 case studies, scores 80+</p>
+            <p><span class="text-slate-500">McKinsey 7S:</span> Alignment 7.4/10</p>
+          </div>
+        </div>`;
+      osSection.appendChild(osGrid);
+      c.appendChild(osSection);
+
+      // Matrix view — three perspectives
+      const matrixSection = el('div','');
+      matrixSection.innerHTML = `<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Three Views of the Organisation</h3>`;
+      const matrixGrid = el('div','grid grid-cols-1 md:grid-cols-3 gap-4');
+      matrixGrid.innerHTML = `
+        <div class="bg-card rounded-xl border border-border p-4 cursor-pointer hover:border-blue-500 transition-colors" onclick="navigateTo('agents');agentState.subTab='departments';render()">
+          <div class="flex items-center gap-2 mb-2"><span class="text-lg">🏢</span><h4 class="text-sm font-semibold text-white">Organisation View</h4></div>
+          <p class="text-xs text-slate-400 mb-2">BU \u2192 Department \u2192 Agent</p>
+          <p class="text-xs text-slate-500">Who owns the capability</p>
+        </div>
+        <div class="bg-card rounded-xl border border-border p-4 cursor-pointer hover:border-blue-500 transition-colors" onclick="navigateTo('agents');agentState.subTab='products';render()">
+          <div class="flex items-center gap-2 mb-2"><span class="text-lg">📦</span><h4 class="text-sm font-semibold text-white">Delivery View</h4></div>
+          <p class="text-xs text-slate-400 mb-2">Product \u2192 Process \u2192 Agent</p>
+          <p class="text-xs text-slate-500">How we package and deliver</p>
+        </div>
+        <div class="bg-card rounded-xl border border-border p-4 cursor-pointer hover:border-green-500 transition-colors" onclick="navigateTo('agents');agentState.subTab='clients';render()">
+          <div class="flex items-center gap-2 mb-2"><span class="text-lg">🤝</span><h4 class="text-sm font-semibold text-white">Client View</h4></div>
+          <p class="text-xs text-slate-400 mb-2">Client \u2192 Service \u2192 Agent</p>
+          <p class="text-xs text-slate-500">What clients consume</p>
+        </div>`;
+      matrixSection.appendChild(matrixGrid);
+      c.appendChild(matrixSection);
+    }
+
+    // ==================== CLIENT PROJECTS ====================
+    function renderClientGrid(c) {
+      const clients = D.agents.clientProjects || [];
+      const activeC = clients.filter(cp=>cp.status==='active').length;
+      const totalServices = clients.reduce((s,cp)=>(cp.services||[]).length+s,0);
+      // Summary
+      const ss = el('div','grid grid-cols-3 gap-4 mb-4');
+      ss.innerHTML = `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Client Projects</p><p class="text-2xl font-bold text-white">${clients.length}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Active</p><p class="text-2xl font-bold text-green-400">${activeC}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Total Services</p><p class="text-2xl font-bold text-blue-400">${totalServices}</p></div>`;
+      c.appendChild(ss);
+      // Client cards
+      const grid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      clients.forEach((client,i) => {
+        const d = el('div','bg-card rounded-xl border border-border p-5 animate-in clickable-card');
+        d.style.borderLeftColor = client.status==='active'?'#22c55e':'#64748b'; d.style.borderLeftWidth = '3px';
+        d.style.animationDelay = `${i*0.1}s`;
+        d.onclick = () => { agentState.client = client.id; render(); };
+        const stColor = client.status==='active'?'text-green-400':client.status==='planned'?'text-amber-400':'text-slate-500';
+        // Count unique agents
+        const agentIds = new Set();
+        (client.services||[]).forEach(svc => (svc.agents||[]).forEach(a => agentIds.add(a.agentId)));
+        d.innerHTML = `<div class="flex items-center justify-between"><div class="flex-1"><div class="flex items-center gap-3 mb-2"><h3 class="font-semibold text-white">${client.name}</h3><span class="text-xs ${stColor} uppercase font-semibold">${client.status}</span><span class="text-xs text-slate-500">${client.code}</span></div><p class="text-xs text-slate-400 mb-2">${client.description||''}</p><div class="flex gap-4 text-xs text-slate-500">${(client.services||[]).length?`<span>${(client.services||[]).length} services</span><span>${agentIds.size} agents</span>`:'<span>No services defined yet</span>'}</div></div><span class="text-slate-500">\u2192</span></div>`;
+        grid.appendChild(d);
+      });
+      c.appendChild(grid);
+    }
+
+    function renderClientDetail(c, clientId) {
+      const client = (D.agents.clientProjects||[]).find(cp=>cp.id===clientId);
+      if (!client) { agentState.client = null; render(); return; }
+      // Header
+      const hdr = el('div','flex items-center gap-4 animate-in mb-4');
+      const stColor = client.status==='active'?'text-green-400':'text-slate-500';
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.client=null;render()">\u2190</span><div><h2 class="text-lg font-semibold text-white">${client.name}</h2><p class="text-xs text-slate-400">${client.code} \u00B7 <span class="${stColor}">${client.status}</span> \u00B7 ${client.description||''}</p></div>`;
+      c.appendChild(hdr);
+      if (!(client.services||[]).length) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No services defined yet</p><p class="text-sm">This client project is in the planning phase.</p></div>'; return; }
+      // Department legend
+      const usedDepts = new Set();
+      (client.services||[]).forEach(svc => (svc.agents||[]).forEach(a => usedDepts.add(a.deptId)));
+      if (usedDepts.size > 0) {
+        const legend = el('div','flex flex-wrap gap-2 mb-4');
+        usedDepts.forEach(did => {
+          const dept = D.agents.departments.find(d=>d.id===did);
+          if (dept) legend.innerHTML += `<span class="dept-chip" style="background:${dept.color}22;color:${dept.color};border:1px solid ${dept.color}44">${dept.icon} ${dept.name}</span>`;
+        });
+        c.appendChild(legend);
+      }
+      // Services
+      client.services.forEach((svc,si) => {
+        const sCard = el('div','process-card bg-card rounded-xl border border-border p-4 mb-3 animate-in');
+        sCard.style.animationDelay = `${si*0.08}s`;
+        let agentChips = '';
+        (svc.agents||[]).forEach(ref => {
+          const found = findAgent(ref.agentId);
+          if (!found) return;
+          const dept = D.agents.departments.find(d=>d.id===ref.deptId);
+          const color = dept ? dept.color : '#64748b';
+          const stDot = found.agent.status==='live'?'#22c55e':found.agent.status==='active'?'#3b82f6':'#64748b';
+          agentChips += `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg cursor-pointer hover:brightness-125 transition-all" style="background:${color}18;color:${color};border:1px solid ${color}33" onclick="event.stopPropagation();toggleAgentDetail('cv-${found.agent.id}')"><span style="width:6px;height:6px;border-radius:50%;background:${stDot}" class="inline-block"></span>${found.agent.name}</span>`;
+        });
+        // Product reference
+        const prodRef = svc.productRef ? (D.agents.products||[]).find(p=>p.id===svc.productRef) : null;
+        const prodTag = prodRef ? `<span class="service-tag" style="background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644">via ${prodRef.name}</span>` : '';
+        sCard.innerHTML = `<div class="flex items-center gap-2 mb-2"><h4 class="text-sm font-semibold text-white">${svc.name}</h4>${prodTag}</div><div class="process-agents">${agentChips}</div>`;
+        // Inline agent detail panels
+        (svc.agents||[]).forEach(ref => {
+          const found = findAgent(ref.agentId);
+          if (!found) return;
+          const a = found.agent; const dept = D.agents.departments.find(d=>d.id===ref.deptId);
+          const color = dept ? dept.color : '#64748b';
+          const qPct = a.qualityScore||0; const cPct = a.capabilityScore||0;
+          sCard.innerHTML += `<div id="ad-cv-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50" style="border-left:2px solid ${color};padding-left:12px"><div class="flex items-center gap-2 mb-2"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="text-sm font-medium text-white">${a.name}</span><span class="dept-chip" style="background:${color}22;color:${color}">${dept?dept.name:''}</span></div><p class="text-xs text-slate-300 mb-2">${a.description}</p><div class="grid grid-cols-2 gap-3 mb-2"><div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div></div>${a.tools.length?`<div class="flex flex-wrap gap-1 mb-2">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}</div></div>`;
+        });
+        c.appendChild(sCard);
       });
     }
 
