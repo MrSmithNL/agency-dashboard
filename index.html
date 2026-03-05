@@ -134,7 +134,7 @@
 
     // State
     let calState = { month: new Date().getMonth(), year: new Date().getFullYear(), selected: null };
-    let impState = { project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
+    let impState = { level: 'all', project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
     let agentState = { dept: null, expandedAgent: null };
 
     function render() {
@@ -152,7 +152,7 @@
 
       if (route === 'home') { renderHome(main); document.getElementById('breadcrumb').textContent = 'Performance Cockpit'; document.title = 'Smith AI Agency \u2014 Cockpit'; }
       else if (route === 'calendar') { renderCalendar(main); document.getElementById('breadcrumb').textContent = 'Calendar & Scheduler'; document.title = 'Smith AI Agency \u2014 Calendar'; }
-      else if (route === 'improvement') { renderImprovement(main); document.getElementById('breadcrumb').textContent = 'Continuous Improvement'; document.title = 'Smith AI Agency \u2014 Improvement'; }
+      else if (route === 'improvement') { renderImpHierarchy(main); document.getElementById('breadcrumb').textContent = 'Continuous Improvement'; document.title = 'Smith AI Agency \u2014 Improvement'; }
       else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
@@ -482,6 +482,134 @@
     window.setRecSt = function(id, status) { const s = getRecStatuses(); if (status === 'proposed') delete s[id]; else s[id] = status; localStorage.setItem('recStatuses', JSON.stringify(s)); applyImpFilters(); };
     window.toggleResearchForm = function(id) { const f = document.getElementById('rf-'+id); if (f) { f.classList.toggle('hidden'); if (!f.classList.contains('hidden')) { const pending = JSON.parse(localStorage.getItem('pendingResearch')||'[]'); const existing = pending.find(p=>p.recId===id); if (existing) { const ta = document.getElementById('rn-'+id); if (ta) ta.value = existing.notes || ''; } } } };
     window.saveResearchReq = function(id) { const rec = D.recommendations.find(r=>r.id===id); const det = D.recommendationDetails[id]||{}; const notes = document.getElementById('rn-'+id)?.value||''; const pending = JSON.parse(localStorage.getItem('pendingResearch')||'[]'); const idx = pending.findIndex(p=>p.recId===id); const entry = { recId: id, title: rec.title, project: rec.project, category: rec.category, description: rec.description, rationale: det.rationale||'', sourceDetail: det.sourceDetail||'', relevance: det.relevance||'', notes: notes, createdAt: new Date().toISOString() }; if (idx>=0) pending[idx]=entry; else pending.push(entry); localStorage.setItem('pendingResearch',JSON.stringify(pending)); document.getElementById('rf-'+id).innerHTML='<p class="text-xs text-green-400 py-2">Research request saved. Claude will pick this up in the next session using all project context and previous research.</p>'; applyImpFilters(); };
+
+    // ==================== IMPROVEMENT TAB (Hierarchy View) ====================
+    function renderImpHierarchy(c) {
+      const statuses = getRecStatuses();
+      const all = D.recommendations;
+      const cnt = (fn) => all.filter(fn).length;
+      const approved = all.filter(r => (statuses[r.id]||r.status)==='approved').length;
+      const archived = all.filter(r => (statuses[r.id]||r.status)==='archived').length;
+      const pendingResearch = JSON.parse(localStorage.getItem('pendingResearch')||'[]').length;
+      // Stats row
+      const sr = el('div','grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3');
+      [{l:'Total',v:all.length,cl:'text-white'},{l:'Critical',v:cnt(r=>r.priority==='Critical'),cl:'text-red-400'},{l:'High',v:cnt(r=>r.priority==='High'),cl:'text-amber-400'},{l:'Approved',v:approved,cl:'text-green-400'},{l:'Archived',v:archived,cl:'text-slate-500'},{l:'Research Queued',v:pendingResearch,cl:'text-purple-400'}].forEach(s => {
+        sr.innerHTML += `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">${s.l}</p><p class="text-2xl font-bold ${s.cl}">${s.v}</p></div>`;
+      });
+      c.appendChild(sr);
+      // Top 10 across all levels
+      const top10 = [...all].sort((a,b) => b.total - a.total).slice(0, 10);
+      const t10box = el('div','mt-4');
+      const lvlColors = {agency:'#f59e0b',department:'#a855f7',project:'#3b82f6',agent:'#06b6d4'};
+      t10box.innerHTML = `<div class="bg-card rounded-xl border border-border p-4"><div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('top10list').classList.toggle('hidden');this.querySelector('.lvl-arrow').textContent=document.getElementById('top10list').classList.contains('hidden')?'▸':'▾'"><h3 class="text-sm font-semibold text-white">\u2B50 Top 10 Recommendations</h3><span class="lvl-arrow text-xs text-slate-400">▾</span></div><div id="top10list" class="mt-3 space-y-1">${top10.map(r => {
+        const lvl = r.level || 'project';
+        const pc = {Critical:'text-red-400',High:'text-amber-400',Medium:'text-blue-400',Low:'text-slate-400'};
+        return `<div class="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-0" style="border-left:3px solid ${lvlColors[lvl]};padding-left:8px"><span class="text-xs font-mono text-slate-500 w-24 shrink-0">${r.sourceRef}</span><span class="text-sm text-white flex-1 truncate">${r.title}</span><span class="text-xs text-slate-500 hidden sm:inline">${r.project}</span><span class="text-sm font-bold ${pc[r.priority]||'text-blue-400'}">${r.total}/${r.maxTotal}</span></div>`;
+      }).join('')}</div></div>`;
+      c.appendChild(t10box);
+      // Filters
+      const levels = ['all','agency','department','project','agent'];
+      const projects = [...new Set(all.map(r=>r.project))];
+      const categories = [...new Set(all.map(r=>r.category))];
+      const fr = el('div','flex flex-wrap gap-2 items-center mt-4');
+      fr.innerHTML = `<select class="filter-select" onchange="impState.level=this.value;applyImpFilters()">${levels.map(l=>`<option value="${l}">${l==='all'?'All Levels':l.charAt(0).toUpperCase()+l.slice(1)}</option>`).join('')}</select><select class="filter-select" onchange="impState.project=this.value;applyImpFilters()"><option value="all">All Projects</option>${projects.map(p=>`<option value="${p}">${p}</option>`).join('')}</select><select class="filter-select" onchange="impState.category=this.value;applyImpFilters()"><option value="all">All Categories</option>${categories.map(cat=>`<option value="${cat}">${cat}</option>`).join('')}</select><select class="filter-select" onchange="impState.priority=this.value;applyImpFilters()"><option value="all">All Priorities</option><option value="Critical">Critical</option><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select><select class="filter-select" onchange="impState.status=this.value;applyImpFilters()"><option value="all">All Statuses</option><option value="proposed">Proposed</option><option value="approved">Approved</option><option value="implementing">Implementing</option><option value="implemented">Implemented</option><option value="archived">Archived</option></select><select class="filter-select" onchange="impState.sort=this.value;applyImpFilters()"><option value="total-desc">Score (High\u2192Low)</option><option value="total-asc">Score (Low\u2192High)</option></select>`;
+      c.appendChild(fr);
+      const list = el('div','space-y-4 mt-4'); list.id = 'recList'; c.appendChild(list);
+      applyImpFilters();
+    }
+    function renderRecCard(r, st, pendingRes) {
+      const es = st[r.id] || r.status;
+      const det = D.recommendationDetails[r.id] || {};
+      const hasPending = pendingRes.some(p => p.recId === r.id);
+      const lvl = r.level || 'project';
+      const lvlColor = {agency:'#f59e0b',department:'#a855f7',project:'#3b82f6',agent:'#06b6d4'}[lvl];
+      const pc = { Critical:'bg-red-900 text-red-300', High:'bg-amber-900 text-amber-300', Medium:'bg-blue-900 text-blue-300', Low:'bg-slate-800 text-slate-400' };
+      const srcIcon = r.source === 'competitor' ? '\uD83D\uDD0D' : r.source === 'research' ? '\uD83D\uDCDA' : '\uD83D\uDCAC';
+      const srcLabel = r.source === 'competitor' ? 'Competitor Analysis' : r.source === 'research' ? 'Best Practice Research' : 'Conversation';
+      // Score normalization — supports new unified format and old competitor/research formats
+      let dims;
+      if (r.scores.strategicValue !== undefined) {
+        dims = [{l:'Strategic',v:r.scores.strategicValue,c:'#3b82f6'},{l:'Revenue',v:r.scores.revenueImpact,c:'#22c55e'},{l:'Efficiency',v:r.scores.operationalEfficiency,c:'#f59e0b'},{l:'Risk',v:r.scores.riskReduction,c:'#ef4444'},{l:'Competitive',v:r.scores.competitivePosition,c:'#a855f7'}];
+      } else if (r.scoreType === 'competitor') {
+        dims = [{l:'Strategic',v:r.scores.strategic,c:'#3b82f6'},{l:'Revenue',v:r.scores.revenue,c:'#22c55e'},{l:'Effort',v:r.scores.effort,c:'#f59e0b'},{l:'Urgency',v:r.scores.urgency,c:'#ef4444'}];
+      } else {
+        dims = [{l:'Efficiency',v:r.scores.efficiency,c:'#3b82f6'},{l:'Quality',v:r.scores.quality,c:'#22c55e'},{l:'Security',v:r.scores.security,c:'#ef4444'},{l:'Scalability',v:r.scores.scalability,c:'#a855f7'},{l:'Revenue',v:r.scores.revenue,c:'#f59e0b'}];
+      }
+      return `<div class="bg-card rounded-xl border border-border p-4 ${es==='archived'?'opacity-50':''}" style="border-left:3px solid ${lvlColor}" onclick="toggleRec('${r.id}')"><div class="flex items-center justify-between cursor-pointer"><div class="flex items-center gap-3 flex-1 min-w-0"><span class="text-xs font-mono text-slate-500 shrink-0">${r.sourceRef}</span><span class="font-medium text-white text-sm truncate">${r.title}</span><span class="text-xs text-slate-500 shrink-0 hidden sm:inline">${r.project}</span>${hasPending?'<span class="text-xs px-1.5 py-0.5 rounded bg-purple-900 text-purple-300 shrink-0">Research queued</span>':''}</div><div class="flex items-center gap-2 shrink-0"><span class="text-xs px-2 py-0.5 rounded-full ${pc[r.priority]}">${r.priority}</span><span class="text-sm font-bold ${r.priority==='Critical'?'text-red-400':r.priority==='High'?'text-amber-400':'text-blue-400'}">${r.total}/${r.maxTotal}</span></div></div>` +
+      `<div id="rd-${r.id}" class="expandable-content mt-3">` +
+      `<div class="flex flex-wrap items-center gap-2 mb-3"><span class="source-tag">${srcIcon} ${srcLabel}</span><span class="text-xs text-slate-500">${r.project}</span>${det.lastResearchDate?`<span class="text-xs text-slate-600 ml-auto">Last researched: ${new Date(det.lastResearchDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>`:''}</div>` +
+      `<p class="text-sm text-slate-300 mb-3">${r.description}</p>` +
+      (det.sourceDetail ? `<div class="detail-section"><p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Source</p><p class="text-sm text-slate-400">${det.sourceDetail}</p></div>` : '') +
+      (det.rationale ? `<div class="detail-section"><p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Why This Was Recommended</p><p class="text-sm text-slate-300">${det.rationale}</p></div>` : '') +
+      (det.relevance ? `<div class="detail-section"><p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Relevance to ${r.project}</p><p class="text-sm text-slate-300">${det.relevance}</p></div>` : '') +
+      `<div class="flex gap-4 mb-3">${dims.map(d=>`<div class="flex-1"><p class="text-xs text-slate-500">${d.l}</p><div class="score-bar mt-1"><div class="score-fill" style="width:${(d.v/3)*100}%;background:${d.c}"></div></div><p class="text-xs text-slate-400 mt-0.5">${d.v}/3</p></div>`).join('')}</div>` +
+      `<div class="flex flex-wrap gap-2"><button onclick="event.stopPropagation();setRecSt('${r.id}','approved')" class="text-xs ${es==='approved'?'bg-green-600':'bg-green-800 hover:bg-green-700'} text-green-200 px-3 py-1 rounded">${es==='approved'?'\u2713 Approved':'Approve'}</button><button onclick="event.stopPropagation();setRecSt('${r.id}','archived')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1 rounded">Archive</button>${es!=='proposed'?`<button onclick="event.stopPropagation();setRecSt('${r.id}','proposed')" class="text-xs text-slate-500 hover:text-slate-300 px-3 py-1 rounded">Reset</button>`:''}` +
+      `<button onclick="event.stopPropagation();toggleResearchForm('${r.id}')" class="text-xs bg-purple-800 hover:bg-purple-700 text-purple-200 px-3 py-1 rounded ml-auto">${hasPending?'Edit Research Request':'Start Further Research'}</button></div>` +
+      `<div id="rf-${r.id}" class="hidden mt-3 pt-3 border-t border-border/50"><p class="text-xs text-slate-400 mb-2">Queue further research on this topic. Claude will use all saved research, competitor analysis, and project memory as context.</p><textarea id="rn-${r.id}" placeholder="What specific questions should Claude research? What angles to explore? (optional \u2014 Claude will research the topic broadly if left empty)" class="w-full bg-bg border border-border rounded px-3 py-2 text-sm text-white h-20 mb-2" onclick="event.stopPropagation()"></textarea><div class="flex gap-2"><button onclick="event.stopPropagation();saveResearchReq('${r.id}')" class="text-xs bg-purple-700 hover:bg-purple-600 text-purple-200 px-3 py-1 rounded">Save Research Request</button><button onclick="event.stopPropagation();document.getElementById('rf-${r.id}').classList.add('hidden')" class="text-xs text-slate-500 hover:text-slate-300 px-3 py-1">Cancel</button></div></div>` +
+      `</div></div>`;
+    }
+    // New applyImpFilters — overrides the old one above (last assignment wins)
+    window.applyImpFilters = function() {
+      const list = document.getElementById('recList'); if (!list) return;
+      const st = getRecStatuses();
+      const pendingRes = JSON.parse(localStorage.getItem('pendingResearch')||'[]');
+      let recs = D.recommendations.filter(r => {
+        const es = st[r.id] || r.status;
+        const lvl = r.level || 'project';
+        if (impState.level !== 'all' && lvl !== impState.level) return false;
+        if (impState.project !== 'all' && r.project !== impState.project) return false;
+        if (impState.category !== 'all' && r.category !== impState.category) return false;
+        if (impState.priority !== 'all' && r.priority !== impState.priority) return false;
+        if (impState.status !== 'all' && es !== impState.status) return false;
+        return true;
+      });
+      recs.sort((a,b) => impState.sort === 'total-desc' ? b.total - a.total : a.total - b.total);
+      // Group by level
+      const levelOrder = ['agency','department','project','agent'];
+      const levelLabels = {agency:'Agency',department:'Department',project:'Project',agent:'Agent'};
+      const levelColors = {agency:'#f59e0b',department:'#a855f7',project:'#3b82f6',agent:'#06b6d4'};
+      const levelIcons = {agency:'\uD83C\uDFE2',department:'\uD83C\uDFD7\uFE0F',project:'\uD83D\uDCE6',agent:'\uD83E\uDD16'};
+      const grouped = {};
+      recs.forEach(r => { const lvl = r.level || 'project'; if (!grouped[lvl]) grouped[lvl] = []; grouped[lvl].push(r); });
+      let html = '';
+      levelOrder.forEach(lvl => {
+        const items = grouped[lvl];
+        if (!items || items.length === 0) return;
+        const critCount = items.filter(r => r.priority === 'Critical').length;
+        const highCount = items.filter(r => r.priority === 'High').length;
+        html += `<div class="mb-2">`;
+        html += `<div class="flex items-center gap-3 py-2 px-3 bg-card/50 rounded-lg border border-border/50 cursor-pointer" onclick="document.getElementById('lvl-${lvl}').classList.toggle('hidden');this.querySelector('.lvl-arrow').textContent=document.getElementById('lvl-${lvl}').classList.contains('hidden')?'\u25B8':'\u25BE'" style="border-left:4px solid ${levelColors[lvl]}">`;
+        html += `<span class="lvl-arrow text-slate-400">\u25BE</span>`;
+        html += `<span class="text-sm font-semibold text-white">${levelIcons[lvl]} ${levelLabels[lvl]}</span>`;
+        html += `<span class="text-xs text-slate-400">${items.length} rec${items.length>1?'s':''}</span>`;
+        if (critCount) html += `<span class="text-xs px-1.5 py-0.5 rounded bg-red-900/50 text-red-300">${critCount} Critical</span>`;
+        if (highCount) html += `<span class="text-xs px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300">${highCount} High</span>`;
+        html += `</div>`;
+        html += `<div id="lvl-${lvl}" class="space-y-2 mt-2 ml-2">`;
+        if (lvl === 'department') {
+          const byDept = {};
+          items.forEach(r => { const key = r.department || r.project; if (!byDept[key]) byDept[key] = []; byDept[key].push(r); });
+          Object.keys(byDept).forEach(deptKey => {
+            html += `<div class="mb-1"><p class="text-xs text-slate-500 uppercase tracking-wider mb-1 ml-1">${deptKey}</p>`;
+            byDept[deptKey].forEach(r => { html += renderRecCard(r, st, pendingRes); });
+            html += `</div>`;
+          });
+        } else if (lvl === 'agent') {
+          const byAgent = {};
+          items.forEach(r => { const key = r.agentId || 'unknown'; if (!byAgent[key]) byAgent[key] = []; byAgent[key].push(r); });
+          Object.keys(byAgent).forEach(agentKey => {
+            html += `<div class="mb-1"><p class="text-xs text-slate-500 uppercase tracking-wider mb-1 ml-1">${agentKey}</p>`;
+            byAgent[agentKey].forEach(r => { html += renderRecCard(r, st, pendingRes); });
+            html += `</div>`;
+          });
+        } else {
+          items.forEach(r => { html += renderRecCard(r, st, pendingRes); });
+        }
+        html += `</div></div>`;
+      });
+      if (html === '') html = '<p class="text-sm text-slate-500 text-center py-8">No recommendations match the current filters</p>';
+      list.innerHTML = html;
+    };
 
     // ==================== AGENTS TAB ====================
     function renderAgents(c) {
