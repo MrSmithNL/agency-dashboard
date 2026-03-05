@@ -430,10 +430,55 @@ const DASHBOARD_DATA = {
   agents: {
     // === BUSINESS UNITS (group departments by strategic function) ===
     businessUnits: [
-      { id: "bu-revenue", name: "Revenue Operations", icon: "\uD83D\uDCBC", color: "#f97316", description: "Get and keep customers", departmentIds: ["dept-sales", "dept-marketing"] },
-      { id: "bu-production", name: "Production", icon: "\uD83C\uDFED", color: "#3b82f6", description: "Build and deliver the work we sell", departmentIds: ["dept-seo", "dept-content"] },
-      { id: "bu-intelligence", name: "Intelligence", icon: "\uD83E\uDDE0", color: "#a855f7", description: "Know more than competitors", departmentIds: ["dept-research"] },
-      { id: "bu-platform", name: "Platform", icon: "\uD83D\uDD27", color: "#06b6d4", description: "Run the machine", departmentIds: ["dept-infra"] },
+      { id: "bu-revenue", name: "Revenue Operations", icon: "\uD83D\uDCBC", color: "#f97316", description: "Get and keep customers",
+        framework: "Bow-Tie Model (Winning by Design — proposed open standard)",
+        departmentIds: ["dept-sales", "dept-marketing"],
+        processes: [
+          { name: "Awareness", description: "Prospect discovers your brand and recognises they have a problem", deptIds: ["dept-marketing"], agents: [] },
+          { name: "Education", description: "Prospect consumes content and learns about possible solutions", deptIds: ["dept-marketing"], agents: [] },
+          { name: "Selection", description: "Prospect engages with sales, evaluates options, compares vendors", deptIds: ["dept-sales", "dept-marketing"], agents: [] },
+          { name: "Commitment", description: "Deal closes — mutual agreement to work together (the 'knot' of the bow-tie)", deptIds: ["dept-sales"], agents: [] },
+          { name: "Onboarding", description: "New client is activated — first value delivered, expectations set", deptIds: ["dept-sales"], agents: [] },
+          { name: "Adoption", description: "Client integrates the service into their operations; renewal secured", deptIds: ["dept-sales"], agents: [] },
+          { name: "Expansion", description: "Upsell, cross-sell, advocacy — growing revenue from existing clients", deptIds: ["dept-sales", "dept-marketing"], agents: [] },
+        ]
+      },
+      { id: "bu-production", name: "Production", icon: "\uD83C\uDFED", color: "#3b82f6", description: "Build and deliver the work we sell",
+        framework: "Professional Services Lifecycle (Kantata / SPI Research standard)",
+        departmentIds: ["dept-seo", "dept-content"],
+        processes: [
+          { name: "Sell", description: "Client need identified, solution proposed, contract signed (handoff from RevOps)", deptIds: [], agents: [] },
+          { name: "Scope", description: "Requirements gathered, deliverables defined, success criteria agreed with client", deptIds: ["dept-seo", "dept-content"], agents: ["seo-technical-audit", "seo-ai-discovery", "seo-keyword-research"] },
+          { name: "Plan", description: "Resources allocated, timelines built, milestones and dependencies mapped", deptIds: ["dept-seo", "dept-content"], agents: ["seo-keyword-research", "seo-serp-analyzer"] },
+          { name: "Deliver", description: "Work executed — content produced, SEO implemented, assets built and QA'd", deptIds: ["dept-seo", "dept-content"], agents: ["seo-content-optimizer", "seo-content-writer", "seo-technical-audit", "seo-ai-discovery", "seo-link-builder"] },
+          { name: "Close", description: "Work handed over, client signs off, project formally completed and documented", deptIds: ["dept-seo", "dept-content"], agents: ["seo-reporter"] },
+          { name: "Analyse", description: "Performance measured, lessons learned captured, improvement actions identified", deptIds: ["dept-seo", "dept-content"], agents: ["seo-rank-tracker", "seo-competitor-monitor", "seo-reporter"] },
+        ]
+      },
+      { id: "bu-intelligence", name: "Intelligence", icon: "\uD83E\uDDE0", color: "#a855f7", description: "Know more than competitors",
+        framework: "Intelligence Cycle (CIA / SCIP standard)",
+        departmentIds: ["dept-research"],
+        processes: [
+          { name: "Direction", description: "Define what intelligence is needed — questions, priorities, requirements from decision-makers", deptIds: ["dept-research"], agents: [] },
+          { name: "Collection", description: "Gather raw data from all sources — market data, competitor activity, tool outputs", deptIds: ["dept-research"], agents: ["seo-competitor-monitor"] },
+          { name: "Processing", description: "Clean, organise, and structure raw data into usable formats", deptIds: ["dept-research"], agents: [] },
+          { name: "Analysis", description: "Interpret processed data — identify patterns, draw conclusions, assess implications", deptIds: ["dept-research"], agents: [] },
+          { name: "Dissemination", description: "Deliver finished intelligence products to the right people in the right format", deptIds: ["dept-research"], agents: [] },
+          { name: "Feedback", description: "Decision-makers evaluate intelligence, provide new questions, cycle restarts", deptIds: ["dept-research"], agents: [] },
+        ]
+      },
+      { id: "bu-platform", name: "Platform", icon: "\uD83D\uDD27", color: "#06b6d4", description: "Run the machine",
+        framework: "ITIL 4 Service Value Chain (Axelos standard)",
+        departmentIds: ["dept-infra"],
+        processes: [
+          { name: "Plan", description: "Establish shared understanding of vision, current state, and improvement direction", deptIds: ["dept-infra"], agents: ["infra-004"] },
+          { name: "Engage", description: "Understand stakeholder needs, maintain relationships, capture demand from internal teams", deptIds: ["dept-infra"], agents: [] },
+          { name: "Design", description: "Architect new or changed services to meet quality, cost, and time expectations", deptIds: ["dept-infra"], agents: ["infra-002"] },
+          { name: "Obtain / Build", description: "Ensure all service components (tools, integrations, automations) meet specifications", deptIds: ["dept-infra"], agents: ["infra-001"] },
+          { name: "Deliver & Support", description: "Operate services in production, handle incidents, fulfil requests, maintain SLAs", deptIds: ["dept-infra"], agents: ["infra-003", "infra-004"] },
+          { name: "Improve", description: "Continuously assess and improve all services, processes, and practices", deptIds: ["dept-infra"], agents: ["infra-005"] },
+        ]
+      },
     ],
     // === DEPARTMENTS (organized by business function) ===
     departments: [
