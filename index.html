@@ -145,6 +145,7 @@
     let calState = { month: new Date().getMonth(), year: new Date().getFullYear(), selected: null };
     let impState = { level: 'all', project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
     let agentState = { subTab: 'departments', dept: null, product: null, client: null, expandedAgent: null };
+    let orgState = { bu: null, dept: null };
 
     function render() {
       destroyCharts();
@@ -804,6 +805,10 @@
 
     // ==================== ORGANISATION VIEW ====================
     function renderOrganisation(c) {
+      // Drill-down routing
+      if (orgState.dept) { renderOrgDeptDetail(c, orgState.dept); return; }
+      if (orgState.bu) { renderBUDetail(c, orgState.bu); return; }
+
       const bus = D.agents.businessUnits || [];
       const depts = D.agents.departments || [];
       const ta = depts.reduce((s,d)=>s+d.agentCount,0);
@@ -824,7 +829,7 @@
         <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.2s"><p class="text-xs text-slate-400">Active Clients</p><p class="text-2xl font-bold text-green-400">${clients}</p></div>`;
       c.appendChild(kpis);
 
-      // Business Unit cards — 2x2 grid
+      // Business Unit cards — 2x2 grid, clickable
       const buSection = el('div','mb-6');
       buSection.innerHTML = `<h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Business Units</h3>`;
       const buGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
@@ -833,11 +838,12 @@
         const buAgents = buDepts.reduce((s,d)=>s+d.agentCount,0);
         const buLive = buDepts.reduce((s,d)=>s+d.liveCount,0);
         const pct = buAgents > 0 ? Math.round(buDepts.reduce((s,d)=>s+d.overallCompleteness,0)/buDepts.length) : 0;
-        const card = el('div','bu-card bg-card rounded-xl border border-border p-5 animate-in');
+        const card = el('div','bu-card bg-card rounded-xl border border-border p-5 animate-in clickable-card');
         card.style.borderLeftColor = bu.color; card.style.borderLeftWidth = '4px';
         card.style.animationDelay = `${i*0.1}s`;
+        card.onclick = () => { orgState.bu = bu.id; render(); };
         let deptChips = buDepts.map(d => `<span class="dept-chip" style="background:${d.color}22;color:${d.color};border:1px solid ${d.color}44">${d.icon} ${d.name} <span class="text-slate-500">${d.liveCount}/${d.agentCount}</span></span>`).join('');
-        card.innerHTML = `<div class="flex items-center gap-3 mb-3"><span class="text-2xl">${bu.icon}</span><div class="flex-1"><h4 class="font-semibold text-white">${bu.name}</h4><p class="text-xs text-slate-400">${bu.description}</p></div><div class="text-right"><p class="text-lg font-bold text-white">${buLive}<span class="text-sm text-slate-500">/${buAgents}</span></p><p class="text-xs text-slate-500">agents live</p></div></div><div class="flex flex-wrap gap-2">${deptChips}</div><div class="mt-3"><div class="flex justify-between text-xs text-slate-500 mb-1"><span>Completeness</span><span>${pct}%</span></div><div class="w-full bg-slate-700 rounded-full h-1.5"><div class="h-1.5 rounded-full" style="width:${pct}%;background:${bu.color}"></div></div></div>`;
+        card.innerHTML = `<div class="flex items-center gap-3 mb-3"><span class="text-2xl">${bu.icon}</span><div class="flex-1"><h4 class="font-semibold text-white">${bu.name}</h4><p class="text-xs text-slate-400">${bu.description}</p></div><div class="text-right"><p class="text-lg font-bold text-white">${buLive}<span class="text-sm text-slate-500">/${buAgents}</span></p><p class="text-xs text-slate-500">agents live</p></div><span class="text-slate-500">\u2192</span></div><div class="flex flex-wrap gap-2">${deptChips}</div><div class="mt-3"><div class="flex justify-between text-xs text-slate-500 mb-1"><span>Completeness</span><span>${pct}%</span></div><div class="w-full bg-slate-700 rounded-full h-1.5"><div class="h-1.5 rounded-full" style="width:${pct}%;background:${bu.color}"></div></div></div>`;
         buGrid.appendChild(card);
       });
       buSection.appendChild(buGrid);
@@ -897,6 +903,121 @@
         </div>`;
       matrixSection.appendChild(matrixGrid);
       c.appendChild(matrixSection);
+    }
+
+    // ==================== BU DETAIL VIEW ====================
+    function renderBUDetail(c, buId) {
+      const bu = (D.agents.businessUnits||[]).find(b=>b.id===buId);
+      if (!bu) { orgState.bu = null; render(); return; }
+      const depts = D.agents.departments.filter(d=>d.buId===bu.id);
+      const buAgents = depts.reduce((s,d)=>s+d.agentCount,0);
+      const buLive = depts.reduce((s,d)=>s+d.liveCount,0);
+      const pct = buAgents > 0 ? Math.round(depts.reduce((s,d)=>s+d.overallCompleteness,0)/depts.length) : 0;
+
+      // Header with back button
+      const hdr = el('div','flex items-center gap-4 animate-in mb-2');
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="orgState.bu=null;orgState.dept=null;render()">\u2190</span><span class="text-2xl">${bu.icon}</span><div class="flex-1"><h2 class="text-lg font-semibold text-white">${bu.name}</h2><p class="text-xs text-slate-400">${bu.description}</p></div>`;
+      c.appendChild(hdr);
+
+      // BU-level KPIs
+      const kpis = el('div','grid grid-cols-2 md:grid-cols-4 gap-3 mb-6');
+      kpis.innerHTML = `
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in"><p class="text-xs text-slate-400">Departments</p><p class="text-2xl font-bold text-white">${depts.length}</p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.05s"><p class="text-xs text-slate-400">Agents Live</p><p class="text-2xl font-bold text-green-400">${buLive}<span class="text-sm text-slate-500">/${buAgents}</span></p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.1s"><p class="text-xs text-slate-400">Completeness</p><p class="text-2xl font-bold" style="color:${bu.color}">${pct}%</p></div>
+        <div class="bg-card rounded-xl border border-border p-3 org-kpi animate-in" style="animation-delay:0.15s"><p class="text-xs text-slate-400">Status</p><p class="text-2xl font-bold ${buLive>0?'text-green-400':'text-slate-500'}">${buLive>0?'Active':'Planned'}</p></div>`;
+      c.appendChild(kpis);
+
+      // Department cards — clickable, drill into dept
+      c.appendChild(el('h3','text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3','Departments'));
+      depts.forEach((dept,i) => {
+        const dCard = el('div','bg-card rounded-xl border border-border p-5 mb-3 animate-in clickable-card');
+        dCard.style.borderLeftColor = dept.color; dCard.style.borderLeftWidth = '3px';
+        dCard.style.animationDelay = `${i*0.08}s`;
+        dCard.onclick = () => { orgState.dept = dept.id; render(); };
+        const dPct = dept.overallCompleteness || 0;
+        const r = 26, circ = 2 * Math.PI * r, offset = circ - (dPct / 100) * circ;
+        // Agent status summary
+        const live = dept.agents.filter(a=>a.status==='live').length;
+        const planned = dept.agents.filter(a=>a.status==='planned').length;
+        const active = dept.agents.filter(a=>a.status==='active').length;
+        dCard.innerHTML = `<div class="flex items-center gap-4"><svg width="64" height="64" class="shrink-0"><circle class="gauge-bg" cx="32" cy="32" r="${r}"/><circle class="gauge-fill" cx="32" cy="32" r="${r}" stroke="${dept.color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 32 32)"/><text x="32" y="29" text-anchor="middle" fill="#e2e8f0" font-size="16">${dept.icon}</text><text x="32" y="44" text-anchor="middle" fill="#94a3b8" font-size="9">${dPct}%</text></svg><div class="flex-1"><h4 class="font-semibold text-white">${dept.name}</h4><p class="text-xs text-slate-400 mt-1">${dept.liveCount}/${dept.agentCount} agents live</p><div class="flex gap-3 mt-2">${live?`<span class="text-xs text-green-400">${live} live</span>`:''}${active?`<span class="text-xs text-blue-400">${active} building</span>`:''}${planned?`<span class="text-xs text-slate-500">${planned} planned</span>`:''}</div></div><span class="text-slate-500">\u2192</span></div>`;
+        c.appendChild(dCard);
+      });
+
+      // Cross-references: Products that borrow from this BU
+      const buAgentIds = new Set();
+      depts.forEach(d => d.agents.forEach(a => buAgentIds.add(a.id)));
+      const relatedProducts = (D.agents.products||[]).filter(p => (p.processes||[]).some(pr => (pr.agents||[]).some(ref => buAgentIds.has(ref.agentId))));
+      if (relatedProducts.length) {
+        c.appendChild(el('h3','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-3','Products using this BU\u2019s agents'));
+        const pGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-3');
+        relatedProducts.forEach(prod => {
+          // Count how many agents from this BU are used
+          const borrowed = new Set();
+          (prod.processes||[]).forEach(pr => (pr.agents||[]).forEach(ref => { if (buAgentIds.has(ref.agentId)) borrowed.add(ref.agentId); }));
+          const stColor = prod.status==='active'?'text-green-400':prod.status==='research'?'text-blue-400':'text-slate-500';
+          pGrid.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 cursor-pointer hover:border-blue-500 transition-colors" onclick="navigateTo('agents');agentState.subTab='products';agentState.product='${prod.id}';render()"><div class="flex items-center gap-2 mb-1"><span class="text-sm font-semibold text-white">${prod.name}</span><span class="text-xs ${stColor} uppercase">${prod.status}</span></div><p class="text-xs text-slate-400">Borrows ${borrowed.size} agent${borrowed.size!==1?'s':''} from this BU</p></div>`;
+        });
+        c.appendChild(pGrid);
+      }
+
+      // Cross-references: Clients served by agents in this BU
+      const relatedClients = (D.agents.clientProjects||[]).filter(cp => (cp.services||[]).some(svc => (svc.agents||[]).some(ref => buAgentIds.has(ref.agentId))));
+      if (relatedClients.length) {
+        c.appendChild(el('h3','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-6 mb-3','Clients served by this BU'));
+        const cGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-3');
+        relatedClients.forEach(client => {
+          const svcCount = (client.services||[]).filter(svc => (svc.agents||[]).some(ref => buAgentIds.has(ref.agentId))).length;
+          const stColor = client.status==='active'?'text-green-400':'text-slate-500';
+          cGrid.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 cursor-pointer hover:border-green-500 transition-colors" onclick="navigateTo('agents');agentState.subTab='clients';agentState.client='${client.id}';render()"><div class="flex items-center gap-2 mb-1"><span class="text-sm font-semibold text-white">${client.name}</span><span class="text-xs ${stColor} uppercase">${client.status}</span><span class="text-xs text-slate-500">${client.code}</span></div><p class="text-xs text-slate-400">${svcCount} service${svcCount!==1?'s':''} using agents from this BU</p></div>`;
+        });
+        c.appendChild(cGrid);
+      }
+    }
+
+    // ==================== ORG DEPT DETAIL (within Organisation tab) ====================
+    function renderOrgDeptDetail(c, deptId) {
+      const dept = D.agents.departments.find(d=>d.id===deptId);
+      if (!dept) { orgState.dept = null; render(); return; }
+      const bu = (D.agents.businessUnits||[]).find(b=>b.id===dept.buId);
+
+      // Header with breadcrumb back to BU
+      const hdr = el('div','flex items-center gap-3 animate-in mb-2');
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="orgState.dept=null;render()">\u2190</span><span class="text-2xl">${dept.icon}</span><div class="flex-1"><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${bu?bu.icon+' '+bu.name+' \u00B7 ':''} ${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p></div>`;
+      c.appendChild(hdr);
+
+      if (dept.agents.length === 0) {
+        c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500 mt-4"><p class="text-lg mb-2">No agents defined yet</p><p class="text-sm">This department is in the planning/research phase.</p></div>';
+        return;
+      }
+
+      // Agents grouped by tier, with expandable detail
+      const tierNames = { 1: 'Live / Core Agents', 2: 'Next Build', 3: 'Strategic / Future' };
+      [1,2,3].forEach(tier => {
+        const agents = dept.agents.filter(a=>a.tier===tier);
+        if (!agents.length) return;
+        c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2',tierNames[tier]));
+        agents.forEach((a,i) => {
+          const card = el('div','bg-card rounded-xl border border-border p-4 mb-2 animate-in');
+          card.style.borderLeftColor = dept.color; card.style.borderLeftWidth = '3px';
+          card.style.animationDelay = `${i*0.05}s`;
+          const stColor = a.status==='live'?'bg-green-900 text-green-300':a.status==='active'?'bg-blue-900 text-blue-300':'bg-slate-800 text-slate-400';
+          const qPct = a.qualityScore || 0; const cPct = a.capabilityScore || 0;
+          // Find which products and clients use this agent
+          const usedByProducts = (D.agents.products||[]).filter(p=>(p.processes||[]).some(pr=>(pr.agents||[]).some(ref=>ref.agentId===a.id)));
+          const usedByClients = (D.agents.clientProjects||[]).filter(cp=>(cp.services||[]).some(svc=>(svc.agents||[]).some(ref=>ref.agentId===a.id)));
+          let crossRefs = '';
+          if (usedByProducts.length || usedByClients.length) {
+            crossRefs = '<div class="mt-3 pt-2 border-t border-border/30"><p class="text-xs text-slate-500 mb-1">Used by</p><div class="flex flex-wrap gap-1">';
+            usedByProducts.forEach(p => { crossRefs += `<span class="text-xs px-2 py-0.5 rounded bg-blue-900/30 text-blue-300">\u{1F4E6} ${p.name}</span>`; });
+            usedByClients.forEach(cl => { crossRefs += `<span class="text-xs px-2 py-0.5 rounded bg-green-900/30 text-green-300">\u{1F91D} ${cl.name}</span>`; });
+            crossRefs += '</div></div>';
+          }
+          card.innerHTML = `<div class="flex items-center justify-between cursor-pointer" onclick="toggleAgentDetail('org-${a.id}')"><div class="flex items-center gap-3"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="font-medium text-white text-sm">${a.name}</span><span class="text-xs px-2 py-0.5 rounded-full ${stColor}">${a.status}</span></div><div class="flex items-center gap-4"><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(qPct)} h-1 rounded-full" style="width:${qPct}%"></div></div></div><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(cPct)} h-1 rounded-full" style="width:${cPct}%"></div></div></div><span class="text-slate-500 text-xs">\u25BC</span></div></div><div id="ad-org-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50"><p class="text-sm text-slate-300 mb-3">${a.description}</p><div class="grid grid-cols-2 gap-4 mb-3"><div><p class="text-xs text-slate-500 mb-1">Quality Score</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(qPct)} h-2 rounded-full" style="width:${qPct}%"></div></div><span class="text-sm font-bold text-white">${a.qualityScore !== null ? a.qualityScore + '/100' : 'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-1">Capability vs Industry</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(cPct)} h-2 rounded-full" style="width:${cPct}%"></div></div><span class="text-sm font-bold text-white">${cPct}%</span></div></div></div>${a.tools.length?`<p class="text-xs text-slate-500 mb-1">Tools</p><div class="flex flex-wrap gap-1 mb-3">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}${crossRefs}${a.subAgents.length?`<div class="mt-2"><p class="text-xs text-slate-500 mb-1">Skill / Worker Agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-1"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}</div></div>`;
+          c.appendChild(card);
+        });
+      });
     }
 
     // ==================== CLIENT PROJECTS ====================
