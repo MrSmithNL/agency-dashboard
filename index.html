@@ -62,6 +62,17 @@
     .dept-chip { font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
     .process-card { border-left: 3px solid #334155; }
     .process-agents { display: flex; flex-wrap: wrap; gap: 6px; }
+    /* Process pipeline */
+    .pipeline { display: flex; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+    .pipeline-stage { position: relative; flex: 1; min-width: 120px; padding: 10px 12px 10px 20px; background: #1e293b; color: #e2e8f0; font-size: 0.75rem; font-weight: 600; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%); cursor: pointer; transition: filter 0.15s; text-align: center; border: none; }
+    .pipeline-stage:first-child { clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%); padding-left: 12px; }
+    .pipeline-stage:hover { filter: brightness(1.3); }
+    .pipeline-stage.stage-active { outline: 2px solid #3b82f6; outline-offset: -2px; z-index: 1; }
+    .pipeline-stage .stage-num { display: block; font-size: 0.6rem; color: #64748b; font-weight: 400; margin-bottom: 2px; }
+    .pipeline-stage .stage-agents { display: block; font-size: 0.6rem; font-weight: 400; color: #94a3b8; margin-top: 2px; }
+    .process-detail { border-top: 2px solid #334155; }
+    .agent-process-card { transition: transform 0.15s, border-color 0.15s; }
+    .agent-process-card:hover { transform: translateY(-1px); }
     .bu-card { transition: transform 0.15s, border-color 0.15s; } .bu-card:hover { transform: translateY(-2px); }
     .org-kpi { text-align: center; }
     .service-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
@@ -760,13 +771,18 @@
     function renderProductDetail(c, productId) {
       const prod = (D.agents.products||[]).find(p=>p.id===productId);
       if (!prod) { agentState.product = null; render(); return; }
+      const processes = prod.processes || [];
+
       // Header
       const hdr = el('div','flex items-center gap-4 animate-in mb-4');
       hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.product=null;render()">\u2190</span><div><h2 class="text-lg font-semibold text-white">${prod.name}</h2><p class="text-xs text-slate-400">${prod.code||''} \u00B7 ${prod.description||''}</p></div>`;
       c.appendChild(hdr);
+
+      if (!processes.length) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No processes defined yet</p><p class="text-sm">This product is in the planning/research phase.</p></div>'; return; }
+
       // Department color legend
       const usedDepts = new Set();
-      (prod.processes||[]).forEach(pr => (pr.agents||[]).forEach(a => usedDepts.add(a.deptId)));
+      processes.forEach(pr => (pr.agents||[]).forEach(a => usedDepts.add(a.deptId)));
       if (usedDepts.size > 0) {
         const legend = el('div','flex flex-wrap gap-2 mb-4');
         usedDepts.forEach(did => {
@@ -775,32 +791,102 @@
         });
         c.appendChild(legend);
       }
-      // Processes
-      if (!(prod.processes||[]).length) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No processes defined yet</p><p class="text-sm">This product is in the planning/research phase.</p></div>'; return; }
-      prod.processes.forEach((proc,pi) => {
-        const pCard = el('div','process-card bg-card rounded-xl border border-border p-4 mb-3 animate-in');
-        pCard.style.animationDelay = `${pi*0.08}s`;
-        let agentChips = '';
-        (proc.agents||[]).forEach(ref => {
+
+      // Track selected process (default to first)
+      if (!agentState._procIdx || agentState._procIdx >= processes.length) agentState._procIdx = 0;
+
+      // === PIPELINE HEADER — chevron arrow flow ===
+      const pipeline = el('div','pipeline mb-1 animate-in');
+      processes.forEach((proc,pi) => {
+        const liveCount = (proc.agents||[]).filter(ref => { const f = findAgent(ref.agentId); return f && f.agent.status === 'live'; }).length;
+        const totalCount = (proc.agents||[]).length;
+        const allLive = totalCount > 0 && liveCount === totalCount;
+        const someLive = liveCount > 0;
+        const bgColor = allLive ? '#14532d' : someLive ? '#1e3a5f' : '#1e293b';
+        const stage = el('div','pipeline-stage');
+        stage.style.background = bgColor;
+        if (pi === agentState._procIdx) stage.classList.add('stage-active');
+        stage.onclick = () => { agentState._procIdx = pi; render(); };
+        stage.innerHTML = `<span class="stage-num">Step ${pi+1}</span>${proc.name}<span class="stage-agents">${liveCount}/${totalCount} agents</span>`;
+        pipeline.appendChild(stage);
+      });
+      c.appendChild(pipeline);
+
+      // === PROCESS DETAIL PANEL — selected process ===
+      const proc = processes[agentState._procIdx];
+      const detail = el('div','process-detail bg-card rounded-b-xl border border-border border-t-0 p-5 mb-4 animate-in');
+
+      // Process header
+      let detailHTML = `<div class="flex items-center justify-between mb-3"><div><h3 class="text-base font-semibold text-white">${proc.name}</h3>${proc.description?`<p class="text-xs text-slate-400 mt-1">${proc.description}</p>`:''}</div><div class="text-right"><span class="text-xs text-slate-500">Step ${agentState._procIdx+1} of ${processes.length}</span></div></div>`;
+
+      // Agent cards for this process — full cards, not just chips
+      if ((proc.agents||[]).length) {
+        detailHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+        (proc.agents||[]).forEach((ref,ai) => {
           const found = findAgent(ref.agentId);
           if (!found) return;
+          const a = found.agent;
           const dept = D.agents.departments.find(d=>d.id===ref.deptId);
           const color = dept ? dept.color : '#64748b';
-          const stDot = found.agent.status==='live'?'#22c55e':found.agent.status==='active'?'#3b82f6':'#64748b';
-          agentChips += `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg cursor-pointer hover:brightness-125 transition-all" style="background:${color}18;color:${color};border:1px solid ${color}33" onclick="event.stopPropagation();toggleAgentDetail('pv-${found.agent.id}')"><span style="width:6px;height:6px;border-radius:50%;background:${stDot}" class="inline-block"></span>${found.agent.name}</span>`;
+          const stDot = a.status==='live'?'#22c55e':a.status==='active'?'#3b82f6':'#64748b';
+          const stLabel = a.status==='live'?'text-green-400':a.status==='active'?'text-blue-400':'text-slate-500';
+          const qPct = a.qualityScore||0;
+          const cPct = a.capabilityScore||0;
+
+          detailHTML += `<div class="agent-process-card bg-slate-800/50 rounded-xl border border-border p-4" style="border-left:3px solid ${color}">
+            <div class="flex items-center gap-2 mb-2">
+              <span style="width:8px;height:8px;border-radius:50%;background:${stDot}" class="inline-block shrink-0"></span>
+              <span class="text-sm font-semibold text-white">${a.name}</span>
+              <span class="tier-badge tier-${a.tier}">T${a.tier}</span>
+              <span class="text-xs ${stLabel} ml-auto uppercase font-semibold">${a.status}</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">${a.description}</p>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="dept-chip" style="background:${color}22;color:${color};border:1px solid ${color}44">${dept?dept.icon+' '+dept.name:''}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-2">
+              <div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div>
+              <div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div>
+            </div>
+            ${a.tools.length?`<div class="flex flex-wrap gap-1"><p class="text-xs text-slate-500 w-full mb-1">Tools</p>${a.tools.map(t=>`<span class="text-xs bg-slate-900 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}
+            ${a.subAgents.length?`<div class="mt-2 pt-2 border-t border-border/30"><p class="text-xs text-slate-500 mb-1">Sub-agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-0.5"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900/50 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}
+          </div>`;
         });
-        pCard.innerHTML = `<h4 class="text-sm font-semibold text-white mb-1">${proc.name}</h4>${proc.description?`<p class="text-xs text-slate-400 mb-2">${proc.description}</p>`:''}<div class="process-agents">${agentChips}</div>`;
-        // Inline agent detail panels (collapsed by default)
-        (proc.agents||[]).forEach(ref => {
-          const found = findAgent(ref.agentId);
-          if (!found) return;
-          const a = found.agent; const dept = D.agents.departments.find(d=>d.id===ref.deptId);
+        detailHTML += '</div>';
+      } else {
+        detailHTML += '<p class="text-sm text-slate-500">No agents assigned to this process step yet.</p>';
+      }
+
+      // Navigation hint
+      const prevIdx = agentState._procIdx > 0 ? agentState._procIdx - 1 : null;
+      const nextIdx = agentState._procIdx < processes.length - 1 ? agentState._procIdx + 1 : null;
+      detailHTML += '<div class="flex justify-between mt-4 pt-3 border-t border-border/30">';
+      detailHTML += prevIdx !== null ? `<button class="text-xs text-slate-400 hover:text-white transition-colors" onclick="agentState._procIdx=${prevIdx};render()">\u2190 ${processes[prevIdx].name}</button>` : '<span></span>';
+      detailHTML += nextIdx !== null ? `<button class="text-xs text-slate-400 hover:text-white transition-colors" onclick="agentState._procIdx=${nextIdx};render()">${processes[nextIdx].name} \u2192</button>` : '<span></span>';
+      detailHTML += '</div>';
+
+      detail.innerHTML = detailHTML;
+      c.appendChild(detail);
+
+      // === PROCESS SUMMARY GRID — all processes at a glance ===
+      c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2 mb-3','All Process Steps'));
+      const summaryGrid = el('div','grid grid-cols-2 md:grid-cols-3 gap-3');
+      processes.forEach((proc,pi) => {
+        const isActive = pi === agentState._procIdx;
+        const card = el('div',`bg-card rounded-xl border p-3 cursor-pointer transition-colors ${isActive?'border-blue-500':'border-border hover:border-slate-500'}`);
+        card.onclick = () => { agentState._procIdx = pi; render(); };
+        const agentDots = (proc.agents||[]).map(ref => {
+          const f = findAgent(ref.agentId);
+          if (!f) return '';
+          const dept = D.agents.departments.find(d=>d.id===ref.deptId);
           const color = dept ? dept.color : '#64748b';
-          const qPct = a.qualityScore||0; const cPct = a.capabilityScore||0;
-          pCard.innerHTML += `<div id="ad-pv-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50" style="border-left:2px solid ${color};padding-left:12px"><div class="flex items-center gap-2 mb-2"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="text-sm font-medium text-white">${a.name}</span><span class="dept-chip" style="background:${color}22;color:${color}">${dept?dept.name:''}</span></div><p class="text-xs text-slate-300 mb-2">${a.description}</p><div class="grid grid-cols-2 gap-3 mb-2"><div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div></div>${a.tools.length?`<div class="flex flex-wrap gap-1 mb-2">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}</div></div>`;
-        });
-        c.appendChild(pCard);
+          const stBg = f.agent.status==='live'?'#22c55e':f.agent.status==='active'?'#3b82f6':'#64748b';
+          return `<span title="${f.agent.name}" style="width:10px;height:10px;border-radius:50%;background:${color};border:2px solid ${stBg};display:inline-block"></span>`;
+        }).join('');
+        card.innerHTML = `<div class="flex items-center gap-2 mb-1"><span class="text-xs text-slate-500">Step ${pi+1}</span>${isActive?'<span class="text-xs text-blue-400">\u25CF</span>':''}</div><p class="text-sm font-medium text-white mb-1">${proc.name}</p><div class="flex gap-1.5">${agentDots}</div>`;
+        summaryGrid.appendChild(card);
       });
+      c.appendChild(summaryGrid);
     }
 
     // ==================== ORGANISATION VIEW ====================
