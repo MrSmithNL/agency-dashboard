@@ -338,6 +338,42 @@
       if (pt.length) { renderTasksTable(c, pt.filter(t=>t.status!=='Done'), `Active Tasks \u2014 ${det.name}`); const done = pt.filter(t=>t.status==='Done'); if (done.length) renderTasksTable(c, done, `Completed \u2014 ${det.name}`); }
       const pc = costsForProject(pid);
       if (pc.length) renderFinancialTable(c, pc, `Costs \u2014 ${det.name}`);
+      // Recommendations relevant to this project
+      const pidUpper = pid.toUpperCase();
+      const ovMatch = D.overview.find(p => p.id === pid);
+      const projectName = ovMatch ? ovMatch.project : '';
+      const projRecs = D.recommendations.filter(r => {
+        if (r.project === projectName) return true;
+        if (r.project.toUpperCase().startsWith(pidUpper)) return true;
+        if (r.department === pid) return true;
+        if (r.department && pid.startsWith(r.department)) return true;
+        return false;
+      }).sort((a,b) => b.total - a.total);
+      if (projRecs.length) {
+        const recSt = getRecStatuses();
+        const pendingRes = JSON.parse(localStorage.getItem('pendingResearch')||'[]');
+        const rcBox = el('div','mt-4 animate-in');
+        const critCount = projRecs.filter(r => r.priority === 'Critical').length;
+        const highCount = projRecs.filter(r => r.priority === 'High').length;
+        let badge = '';
+        if (critCount) badge += `<span class="text-xs px-1.5 py-0.5 rounded bg-red-900/50 text-red-300 ml-2">${critCount} Critical</span>`;
+        if (highCount) badge += `<span class="text-xs px-1.5 py-0.5 rounded bg-amber-900/50 text-amber-300 ml-2">${highCount} High</span>`;
+        rcBox.innerHTML = `<div class="flex items-center gap-2 mb-3"><h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Improvement Recommendations</h2><span class="text-xs text-slate-500">${projRecs.length} total</span>${badge}</div>`;
+        const levelOrder = ['department','project','agent'];
+        const levelLabels = {department:'Department',project:'Project',agent:'Agent'};
+        const levelColors = {department:'#a855f7',project:'#3b82f6',agent:'#06b6d4'};
+        const grouped = {};
+        projRecs.forEach(r => { const lvl = r.level || 'project'; if (!grouped[lvl]) grouped[lvl] = []; grouped[lvl].push(r); });
+        let recHtml = '';
+        levelOrder.forEach(lvl => {
+          const items = grouped[lvl];
+          if (!items || items.length === 0) return;
+          recHtml += `<p class="text-xs text-slate-500 uppercase tracking-wider mb-1 mt-3" style="border-left:3px solid ${levelColors[lvl]};padding-left:8px">${levelLabels[lvl]} Level \u00B7 ${items.length}</p>`;
+          items.forEach(r => { recHtml += renderRecCard(r, recSt, pendingRes); });
+        });
+        rcBox.innerHTML += `<div class="space-y-2">${recHtml}</div>`;
+        c.appendChild(rcBox);
+      }
     }
 
     // ==================== CALENDAR TAB ====================
