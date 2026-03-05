@@ -708,10 +708,11 @@
         const d = el('div','bg-card rounded-xl border border-border p-5 animate-in clickable-card');
         d.style.borderLeftColor = dept.color; d.style.borderLeftWidth = '3px';
         d.style.animationDelay = `${i*0.08}s`;
-        d.onclick = () => { agentState.dept = dept.id; render(); };
+        d.onclick = () => { agentState.dept = dept.id; agentState._deptProcIdx = 0; render(); };
         const pct = dept.agentCount > 0 ? dept.overallCompleteness : 0;
         const r = 30, circ = 2 * Math.PI * r, offset = circ - (pct / 100) * circ;
-        d.innerHTML = `<div class="flex items-center gap-4"><svg width="76" height="76" class="shrink-0"><circle class="gauge-bg" cx="38" cy="38" r="${r}"/><circle class="gauge-fill" cx="38" cy="38" r="${r}" stroke="${dept.color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 38 38)"/><text x="38" y="35" text-anchor="middle" fill="#e2e8f0" font-size="20">${dept.icon}</text><text x="38" y="52" text-anchor="middle" fill="#94a3b8" font-size="10">${pct}%</text></svg><div class="flex-1"><h3 class="font-semibold text-white">${dept.name}</h3><p class="text-xs text-slate-400 mt-1">${dept.liveCount}/${dept.agentCount} agents live</p><p class="text-xs mt-1 ${dept.status==='active'?'text-green-400':dept.status==='planned'?'text-blue-400':'text-slate-500'}">${dept.status}</p></div><span class="text-slate-500">\u2192</span></div>`;
+        const procCount = (dept.processes||[]).length;
+        d.innerHTML = `<div class="flex items-center gap-4"><svg width="76" height="76" class="shrink-0"><circle class="gauge-bg" cx="38" cy="38" r="${r}"/><circle class="gauge-fill" cx="38" cy="38" r="${r}" stroke="${dept.color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 38 38)"/><text x="38" y="35" text-anchor="middle" fill="#e2e8f0" font-size="20">${dept.icon}</text><text x="38" y="52" text-anchor="middle" fill="#94a3b8" font-size="10">${pct}%</text></svg><div class="flex-1"><h3 class="font-semibold text-white">${dept.name}</h3><p class="text-xs text-slate-400 mt-1">${dept.liveCount}/${dept.agentCount} agents \u00B7 ${procCount} process steps</p>${dept.framework?`<p class="text-xs text-slate-500 mt-0.5">${dept.framework.split('(')[0].trim()}</p>`:''}<p class="text-xs mt-1 ${dept.status==='active'?'text-green-400':dept.status==='planned'?'text-blue-400':'text-slate-500'}">${dept.status}</p></div><span class="text-slate-500">\u2192</span></div>`;
         grid.appendChild(d);
       });
       c.appendChild(grid);
@@ -720,19 +721,129 @@
     function renderDeptDetail(c, deptId) {
       const dept = D.agents.departments.find(d=>d.id===deptId);
       if (!dept) { agentState.dept = null; render(); return; }
-      // Header with back button, icon, color
+      const processes = dept.processes || [];
+
+      // Header with back button, framework badge
       const hdr = el('div','flex items-center gap-4 animate-in mb-4');
-      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.dept=null;render()">\u2190</span><span class="text-2xl">${dept.icon}</span><div><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p></div>`;
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.dept=null;render()">\u2190</span><span class="text-2xl">${dept.icon}</span><div><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p>${dept.framework?`<p class="text-xs text-slate-500 mt-1">Framework: <span class="text-slate-300">${dept.framework}</span></p>`:''}</div>`;
       c.appendChild(hdr);
-      if (dept.agents.length === 0) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No agents defined yet</p><p class="text-sm">This department is in the planning/research phase.</p></div>'; return; }
-      // Group by tier
-      const tierNames = { 1: 'Competence Agents \u2014 Live / Core', 2: 'Next Build', 3: 'Strategic' };
-      [1,2,3].forEach(tier => {
-        const agents = dept.agents.filter(a=>a.tier===tier);
-        if (!agents.length) return;
-        c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2',tierNames[tier]));
-        agents.forEach((a,i) => renderAgentCard(c, a, dept, i));
+
+      if (dept.agents.length === 0 && processes.length === 0) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No agents defined yet</p><p class="text-sm">This department is in the planning/research phase.</p></div>'; return; }
+
+      // If no processes defined, fall back to tier grouping
+      if (!processes.length) {
+        const tierNames = { 1: 'Competence Agents \u2014 Live / Core', 2: 'Next Build', 3: 'Strategic' };
+        [1,2,3].forEach(tier => {
+          const agents = dept.agents.filter(a=>a.tier===tier);
+          if (!agents.length) return;
+          c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2',tierNames[tier]));
+          agents.forEach((a,i) => renderAgentCard(c, a, dept, i));
+        });
+        return;
+      }
+
+      // === PIPELINE VISUALIZATION (same pattern as products) ===
+      if (agentState._deptProcIdx === undefined || agentState._deptProcIdx >= processes.length) agentState._deptProcIdx = 0;
+
+      // Pipeline chevron header
+      const pipeline = el('div','pipeline mb-1 animate-in');
+      processes.forEach((proc,pi) => {
+        const agents = (proc.agents||[]).map(id => findAgent(id)).filter(Boolean);
+        const liveCount = agents.filter(f => f.agent.status === 'live' || f.agent.status === 'active').length;
+        const totalCount = agents.length;
+        const allLive = totalCount > 0 && liveCount === totalCount;
+        const someLive = liveCount > 0;
+        const bgColor = allLive ? '#14532d' : someLive ? '#1e3a5f' : '#1e293b';
+        const stage = el('div','pipeline-stage');
+        stage.style.background = bgColor;
+        if (pi === agentState._deptProcIdx) stage.classList.add('stage-active');
+        stage.onclick = () => { agentState._deptProcIdx = pi; render(); };
+        stage.innerHTML = `<span class="stage-num">${pi+1}</span>${proc.name}<span class="stage-agents">${totalCount > 0 ? liveCount+'/'+totalCount+' agents' : 'no agents'}</span>`;
+        pipeline.appendChild(stage);
       });
+      c.appendChild(pipeline);
+
+      // === PROCESS DETAIL PANEL ===
+      const proc = processes[agentState._deptProcIdx];
+      const detail = el('div','process-detail bg-card rounded-b-xl border border-border border-t-0 p-5 mb-4 animate-in');
+
+      let detailHTML = `<div class="flex items-center justify-between mb-3"><div><h3 class="text-base font-semibold text-white">${proc.name}</h3>${proc.description?`<p class="text-xs text-slate-400 mt-1">${proc.description}</p>`:''}</div><div class="text-right"><span class="text-xs text-slate-500">Step ${agentState._deptProcIdx+1} of ${processes.length}</span></div></div>`;
+
+      const agents = (proc.agents||[]).map(id => findAgent(id)).filter(Boolean);
+      if (agents.length) {
+        detailHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+        agents.forEach(found => {
+          const a = found.agent;
+          const adept = found.dept;
+          const color = adept ? adept.color : '#64748b';
+          const stDot = a.status==='live'?'#22c55e':a.status==='active'?'#3b82f6':'#64748b';
+          const stLabel = a.status==='live'?'text-green-400':a.status==='active'?'text-blue-400':'text-slate-500';
+          const qPct = a.qualityScore||0;
+          const cPct = a.capabilityScore||0;
+          // Show cross-dept badge if agent belongs to a different dept
+          const crossDept = adept && adept.id !== deptId;
+          detailHTML += `<div class="agent-process-card bg-slate-800/50 rounded-xl border border-border p-4" style="border-left:3px solid ${color}">
+            <div class="flex items-center gap-2 mb-2">
+              <span style="width:8px;height:8px;border-radius:50%;background:${stDot}" class="inline-block shrink-0"></span>
+              <span class="text-sm font-semibold text-white">${a.name}</span>
+              <span class="tier-badge tier-${a.tier}">T${a.tier}</span>
+              <span class="text-xs ${stLabel} ml-auto uppercase font-semibold">${a.status}</span>
+            </div>
+            <p class="text-xs text-slate-400 mb-3">${a.description}</p>
+            ${crossDept?`<div class="flex items-center gap-2 mb-2"><span class="dept-chip" style="background:${color}22;color:${color};border:1px solid ${color}44">${adept.icon} ${adept.name}</span><span class="text-xs text-slate-500">cross-department</span></div>`:''}
+            <div class="grid grid-cols-2 gap-3 mb-2">
+              <div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div>
+              <div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div>
+            </div>
+            ${a.tools.length?`<div class="flex flex-wrap gap-1"><p class="text-xs text-slate-500 w-full mb-1">Tools</p>${a.tools.map(t=>`<span class="text-xs bg-slate-900 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}
+            ${a.subAgents.length?`<div class="mt-2 pt-2 border-t border-border/30"><p class="text-xs text-slate-500 mb-1">Sub-agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-0.5"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900/50 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}
+          </div>`;
+        });
+        detailHTML += '</div>';
+      } else {
+        detailHTML += '<div class="bg-slate-800/30 rounded-lg p-4 text-center"><p class="text-sm text-slate-500">No agents assigned to this process step yet</p><p class="text-xs text-slate-600 mt-1">This stage is waiting for agent development</p></div>';
+      }
+
+      // Navigation
+      const prevIdx = agentState._deptProcIdx > 0 ? agentState._deptProcIdx - 1 : null;
+      const nextIdx = agentState._deptProcIdx < processes.length - 1 ? agentState._deptProcIdx + 1 : null;
+      detailHTML += '<div class="flex justify-between mt-4 pt-3 border-t border-border/30">';
+      detailHTML += prevIdx !== null ? `<button class="text-xs text-slate-400 hover:text-white transition-colors" onclick="agentState._deptProcIdx=${prevIdx};render()">\u2190 ${processes[prevIdx].name}</button>` : '<span></span>';
+      detailHTML += nextIdx !== null ? `<button class="text-xs text-slate-400 hover:text-white transition-colors" onclick="agentState._deptProcIdx=${nextIdx};render()">${processes[nextIdx].name} \u2192</button>` : '<span></span>';
+      detailHTML += '</div>';
+
+      detail.innerHTML = detailHTML;
+      c.appendChild(detail);
+
+      // === PROCESS SUMMARY GRID ===
+      c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2 mb-3','All Process Steps'));
+      const summaryGrid = el('div','grid grid-cols-2 md:grid-cols-3 gap-3');
+      processes.forEach((proc,pi) => {
+        const isActive = pi === agentState._deptProcIdx;
+        const card = el('div',`bg-card rounded-xl border p-3 cursor-pointer transition-colors ${isActive?'border-blue-500':'border-border hover:border-slate-500'}`);
+        card.onclick = () => { agentState._deptProcIdx = pi; render(); };
+        const procAgents = (proc.agents||[]).map(id => findAgent(id)).filter(Boolean);
+        const agentDots = procAgents.map(f => {
+          const stBg = f.agent.status==='live'?'#22c55e':f.agent.status==='active'?'#3b82f6':'#64748b';
+          return `<span title="${f.agent.name}" style="width:10px;height:10px;border-radius:50%;background:${dept.color};border:2px solid ${stBg};display:inline-block"></span>`;
+        }).join('');
+        const emptyDots = procAgents.length === 0 ? '<span class="text-xs text-slate-600">no agents</span>' : '';
+        card.innerHTML = `<div class="flex items-center gap-2 mb-1"><span class="text-xs text-slate-500">Step ${pi+1}</span>${isActive?'<span class="text-xs text-blue-400">\u25CF</span>':''}</div><p class="text-sm font-medium text-white mb-1">${proc.name}</p><div class="flex gap-1.5">${agentDots}${emptyDots}</div>`;
+        summaryGrid.appendChild(card);
+      });
+      c.appendChild(summaryGrid);
+
+      // === FULL AGENT ROSTER (tier grouped, below pipeline) ===
+      if (dept.agents.length > 0) {
+        c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-3','All Department Agents'));
+        const tierNames = { 1: 'Core / Live', 2: 'Next Build', 3: 'Strategic' };
+        [1,2,3].forEach(tier => {
+          const tierAgents = dept.agents.filter(a=>a.tier===tier);
+          if (!tierAgents.length) return;
+          c.appendChild(el('h4','text-xs text-slate-600 mb-1 mt-2',tierNames[tier]));
+          tierAgents.forEach((a,i) => renderAgentCard(c, a, dept, i));
+        });
+      }
     }
 
     function renderAgentCard(c, a, dept, i) {

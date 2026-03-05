@@ -439,7 +439,15 @@ const DASHBOARD_DATA = {
     departments: [
       {
         id: "dept-seo", buId: "bu-production", name: "SEO & Search", icon: "\uD83D\uDD0D", color: "#3b82f6", status: "active",
+        framework: "SEO Process (Moz / Ahrefs / SEMrush standard)",
         agentCount: 5, liveCount: 5, overallCompleteness: 52,
+        processes: [
+          { name: "Research & Audit", description: "Analyse current site health, crawlability, indexation, and competitive landscape to establish a baseline", agents: ["seo-technical-audit", "seo-ai-discovery"] },
+          { name: "Keyword Research", description: "Identify target search terms based on volume, difficulty, intent, and business relevance", agents: ["seo-keyword-research", "seo-serp-analyzer"] },
+          { name: "On-Page Optimisation", description: "Optimise page content, titles, meta descriptions, headings, internal links, and schema markup", agents: ["seo-content-optimizer"] },
+          { name: "Off-Page & Links", description: "Build domain authority through backlink acquisition, digital PR, and external signals", agents: ["seo-link-builder"] },
+          { name: "Monitor & Improve", description: "Track rankings, organic traffic, and conversions; iterate based on data", agents: ["seo-rank-tracker", "seo-competitor-monitor"] },
+        ],
         agents: [
           { id: "seo-technical-audit", name: "Technical Audit", tier: 1, status: "live", recipeId: "rcp_fUfiRNt8Bh8b", originProduct: "prod-001", qualityScore: 90, capabilityScore: 65, description: "Automated technical SEO audit \u2014 crawls site, checks structure, performance, accessibility", tools: ["GSC", "WebFetch", "DataForSEO"], benchmarks: [{ competitor: "Screaming Frog", capability: "Deep crawl analysis (1000s pages/min)", ourCoverage: 70 }, { competitor: "Ahrefs Site Audit", capability: "100+ technical checks with fix suggestions", ourCoverage: 60 }, { competitor: "SEMrush Site Audit", capability: "140+ checks + auto-fix suggestions", ourCoverage: 55 }], subAgents: [] },
           { id: "seo-keyword-research", name: "Keyword Research", tier: 1, status: "live", recipeId: "rcp_083WOBwKYeNo", originProduct: "prod-001", qualityScore: null, capabilityScore: 45, description: "AI-powered keyword clustering and opportunity identification", tools: ["GSC", "SerpAPI", "Composio Search", "invoke_llm"], benchmarks: [{ competitor: "Ahrefs Keywords Explorer", capability: "Keyword difficulty + volume for 170 countries", ourCoverage: 30 }, { competitor: "SEMrush Keyword Magic Tool", capability: "20B+ keyword database with intent data", ourCoverage: 25 }], subAgents: [] },
@@ -450,7 +458,16 @@ const DASHBOARD_DATA = {
       },
       {
         id: "dept-content", buId: "bu-production", name: "Content & Creative", icon: "\u270D\uFE0F", color: "#22c55e", status: "active",
+        framework: "Content Lifecycle (Content Marketing Institute / HubSpot standard)",
         agentCount: 3, liveCount: 1, overallCompleteness: 17,
+        processes: [
+          { name: "Strategy & Planning", description: "Define goals, audience personas, key messages, editorial calendar, and content pillars", agents: ["seo-keyword-research"] },
+          { name: "Creation & Production", description: "Write, design, and produce content assets — articles, guides, graphics, emails", agents: ["seo-content-writer"] },
+          { name: "Review & Governance", description: "Edit, approve, and ensure brand/SEO compliance before publication", agents: ["seo-content-optimizer"] },
+          { name: "Distribution & Promotion", description: "Publish and amplify content across owned, earned, and paid channels", agents: [] },
+          { name: "Analysis & Optimisation", description: "Measure performance (traffic, engagement, conversions), A/B test, and refine", agents: ["seo-reporter"] },
+          { name: "Maintenance & Archival", description: "Update outdated content, consolidate underperformers, retire stale pages", agents: [] },
+        ],
         agents: [
           { id: "seo-content-optimizer", name: "Content Optimizer", tier: 1, status: "live", recipeId: "rcp_-msCRAZI2mln", originProduct: "prod-001", qualityScore: 74, capabilityScore: 50, description: "Analyzes content quality and provides optimization recommendations", tools: ["WebFetch", "invoke_llm"], benchmarks: [{ competitor: "Surfer SEO", capability: "NLP scoring against top-ranking pages in real-time", ourCoverage: 40 }, { competitor: "Clearscope", capability: "Content grading with A-F scores + semantic terms", ourCoverage: 50 }], subAgents: [] },
           { id: "seo-content-writer", name: "Content Writer", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "AI content generation from keyword research data", tools: [], benchmarks: [{ competitor: "Surfer SEO AI Writer", capability: "SEO-optimized article generation with NLP", ourCoverage: 0 }, { competitor: "SEMrush ContentShake AI", capability: "AI content creation with NLP optimization", ourCoverage: 0 }], subAgents: [] },
@@ -459,6 +476,14 @@ const DASHBOARD_DATA = {
       },
       {
         id: "dept-marketing", buId: "bu-revenue", name: "Marketing & Outreach", icon: "\uD83D\uDCE2", color: "#f59e0b", status: "planned",
+        framework: "RACE Framework (Smart Insights — Dr. Dave Chaffey)",
+        processes: [
+          { name: "Plan", description: "Define integrated digital strategy, set objectives, segment audiences, allocate budget", agents: [] },
+          { name: "Reach", description: "Build awareness and drive traffic through SEO, paid ads, social media, PR, partnerships", agents: ["seo-link-builder"] },
+          { name: "Act", description: "Encourage interaction — get visitors to explore, subscribe, download, or request info", agents: [] },
+          { name: "Convert", description: "Turn leads into paying customers through nurture sequences, demos, checkout optimisation", agents: [] },
+          { name: "Engage", description: "Build long-term loyalty through onboarding, retention, community, upsells, advocacy", agents: [] },
+        ],
         agentCount: 1, liveCount: 0, overallCompleteness: 0,
         agents: [
           { id: "seo-link-builder", name: "Link Builder", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated link building with 6 specialized sub-agents", tools: [], benchmarks: [{ competitor: "Ahrefs", capability: "16 trillion link index + content explorer", ourCoverage: 0 }, { competitor: "SEMrush Link Building Tool", capability: "Prospect discovery + outreach management", ourCoverage: 0 }], subAgents: [{ id: "lb-backlink-profiler", name: "Backlink Profiler", status: "planned" }, { id: "lb-prospect-discovery", name: "Prospect Discovery", status: "planned" }, { id: "lb-linkable-asset", name: "Linkable Asset Creator", status: "planned" }, { id: "lb-outreach-manager", name: "Outreach Manager", status: "planned" }, { id: "lb-competitor-spy", name: "Competitor Link Spy", status: "planned" }, { id: "lb-health-monitor", name: "Link Health Monitor", status: "planned" }] },
@@ -466,18 +491,46 @@ const DASHBOARD_DATA = {
       },
       {
         id: "dept-sales", buId: "bu-revenue", name: "Sales & CRM", icon: "\uD83D\uDCB0", color: "#ef4444", status: "not-started",
+        framework: "Sales Pipeline (Salesforce / HubSpot standard + MEDDIC)",
+        processes: [
+          { name: "Prospecting", description: "Identify potential customers through outbound outreach, inbound leads, events, referrals", agents: [] },
+          { name: "Qualification", description: "Assess fit and intent using BANT/MEDDIC to determine if a lead is worth pursuing", agents: [] },
+          { name: "Discovery", description: "Deeply understand the prospect's pain points, goals, decision process, and timeline", agents: [] },
+          { name: "Proposal", description: "Present the tailored solution, pricing, and business case; demonstrate value", agents: [] },
+          { name: "Negotiation", description: "Address concerns, negotiate terms, involve decision-makers, refine deal structure", agents: [] },
+          { name: "Close", description: "Finalise the contract, process payment, officially win the deal", agents: [] },
+          { name: "Post-Sale", description: "Hand off to onboarding/success, ensure smooth implementation, pursue upsells", agents: [] },
+        ],
         agentCount: 0, liveCount: 0, overallCompleteness: 0, agents: []
       },
       {
         id: "dept-research", buId: "bu-intelligence", name: "Research & Intelligence", icon: "\uD83D\uDD2C", color: "#a855f7", status: "planned",
+        framework: "CI Cycle (SCIP / Crayon competitive intelligence standard)",
         agentCount: 1, liveCount: 0, overallCompleteness: 0,
+        processes: [
+          { name: "Define Requirements", description: "Identify the intelligence questions, business decisions to support, and scope of research", agents: [] },
+          { name: "Identify Sources", description: "Map direct, indirect, and aspirational competitors; identify data sources", agents: [] },
+          { name: "Gather Intel", description: "Systematically collect data on competitor products, pricing, positioning, and market moves", agents: ["seo-competitor-monitor"] },
+          { name: "Analyse & Synthesise", description: "Break down raw data into trends, patterns, and actionable insights; build battlecards", agents: [] },
+          { name: "Communicate", description: "Deliver findings to stakeholders via reports, dashboards, and sales enablement materials", agents: [] },
+          { name: "Activate & Measure", description: "Turn insights into decisions; track impact of intelligence on win rates and positioning", agents: [] },
+        ],
         agents: [
           { id: "seo-competitor-monitor", name: "Competitor Monitor", tier: 3, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated competitive intelligence and positioning tracking", tools: [], benchmarks: [{ competitor: "SEMrush Competitive Research", capability: "Traffic analytics + gap analysis + position changes", ourCoverage: 0 }], subAgents: [] },
         ]
       },
       {
         id: "dept-infra", buId: "bu-platform", name: "Infrastructure & Operations", icon: "\u2699\uFE0F", color: "#06b6d4", status: "active",
+        framework: "DevOps Lifecycle (DORA / Google SRE standard)",
         agentCount: 5, liveCount: 2, overallCompleteness: 26,
+        processes: [
+          { name: "Plan", description: "Define requirements, prioritise work, allocate resources, set sprint/release goals", agents: ["infra-004"] },
+          { name: "Build & Code", description: "Develop features, write infrastructure-as-code, manage version control", agents: ["infra-002"] },
+          { name: "Test & QA", description: "Run automated tests, security scans, and code reviews before deployment", agents: [] },
+          { name: "Deploy & Release", description: "Push changes to production through CI/CD pipelines with staged rollouts", agents: [] },
+          { name: "Operate & Monitor", description: "Keep systems running, respond to incidents, track uptime and performance", agents: ["infra-003", "infra-001"] },
+          { name: "Feedback & Improve", description: "Collect feedback, run post-mortems, and feed learnings back into planning", agents: ["infra-005"] },
+        ],
         agents: [
           { id: "infra-001", name: "Overnight CLI Runner", tier: 1, status: "planned", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 0, description: "Autonomous overnight task runner via Claude Code headless mode + cron", tools: [], benchmarks: [], subAgents: [] },
           { id: "infra-002", name: "Project Template Repo", tier: 1, status: "planned", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 0, description: "GitHub template for instant project setup with 7-file blueprint", tools: [], benchmarks: [], subAgents: [] },
