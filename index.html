@@ -57,6 +57,11 @@
     .tier-badge { font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
     .tier-1 { background: #14532d; color: #86efac; } .tier-2 { background: #1e3a5f; color: #60a5fa; } .tier-3 { background: #27272a; color: #a1a1aa; }
     .sub-agent { border-left: 2px solid #334155; margin-left: 16px; padding-left: 12px; }
+    .agent-subtab { cursor: pointer; transition: color 0.15s, border-color 0.15s; }
+    .agent-subtab.active { color: #fff; border-bottom-color: currentColor; }
+    .dept-chip { font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+    .process-card { border-left: 3px solid #334155; }
+    .process-agents { display: flex; flex-wrap: wrap; gap: 6px; }
     select.filter-select { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 0.75rem; color: #e2e8f0; }
     /* Architecture diagrams */
     .arch-node { cursor: pointer; transition: opacity 0.15s, filter 0.15s; } .arch-node:hover { opacity: 0.9; filter: brightness(1.2); }
@@ -135,7 +140,7 @@
     // State
     let calState = { month: new Date().getMonth(), year: new Date().getFullYear(), selected: null };
     let impState = { level: 'all', project: 'all', category: 'all', priority: 'all', status: 'all', sort: 'total-desc' };
-    let agentState = { dept: null, expandedAgent: null };
+    let agentState = { subTab: 'departments', dept: null, product: null, expandedAgent: null };
 
     function render() {
       destroyCharts();
@@ -648,49 +653,148 @@
     };
 
     // ==================== AGENTS TAB ====================
+    function findAgent(agentId) {
+      for (const dept of D.agents.departments) {
+        const a = dept.agents.find(x => x.id === agentId);
+        if (a) return { agent: a, dept };
+      }
+      return null;
+    }
+
     function renderAgents(c) {
+      // Sub-tab routing
       if (agentState.dept) { renderDeptDetail(c, agentState.dept); return; }
-      c.innerHTML += '<div class="mb-4"><h2 class="text-lg font-semibold text-white">Agent Registry</h2><p class="text-sm text-slate-400">Products and infrastructure organized as agent departments</p></div>';
-      // Summary
-      const ta = D.agents.departments.reduce((s,d)=>s+d.agentCount,0), la = D.agents.departments.reduce((s,d)=>s+d.liveCount,0);
+      if (agentState.product) { renderProductDetail(c, agentState.product); return; }
+
+      // Header + sub-tabs
+      c.innerHTML += `<div class="mb-4"><h2 class="text-lg font-semibold text-white">Agent Registry</h2><p class="text-sm text-slate-400">Organizational hierarchy — departments own capabilities, products compose them</p></div>`;
+      const tabs = el('div','flex gap-6 border-b border-border mb-4');
+      tabs.innerHTML = `<button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='departments'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='departments';agentState.dept=null;agentState.product=null;render()">Departments</button><button class="agent-subtab pb-2 text-sm font-medium border-b-2 ${agentState.subTab==='products'?'active text-white border-blue-400':'text-slate-400 border-transparent hover:text-white'}" onclick="agentState.subTab='products';agentState.dept=null;agentState.product=null;render()">Products / Platforms</button>`;
+      c.appendChild(tabs);
+
+      if (agentState.subTab === 'departments') renderDeptGrid(c);
+      else renderProductGrid(c);
+    }
+
+    function renderDeptGrid(c) {
+      const ta = D.agents.departments.reduce((s,d)=>s+d.agentCount,0);
+      const la = D.agents.departments.reduce((s,d)=>s+d.liveCount,0);
+      // Summary row
       const ss = el('div','grid grid-cols-3 gap-4 mb-4');
       ss.innerHTML = `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Total Agents</p><p class="text-2xl font-bold text-white">${ta}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Live</p><p class="text-2xl font-bold text-green-400">${la}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Departments</p><p class="text-2xl font-bold text-blue-400">${D.agents.departments.length}</p></div>`;
       c.appendChild(ss);
-      const grid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      // Department cards — 2x3 grid
+      const grid = el('div','grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4');
       D.agents.departments.forEach((dept,i) => {
-        const d = el('div', `bg-card rounded-xl border border-border p-5 animate-in clickable-card ${typeClass(dept.type)}`);
-        d.style.animationDelay = `${i*0.1}s`;
+        const d = el('div','bg-card rounded-xl border border-border p-5 animate-in clickable-card');
+        d.style.borderLeftColor = dept.color; d.style.borderLeftWidth = '3px';
+        d.style.animationDelay = `${i*0.08}s`;
         d.onclick = () => { agentState.dept = dept.id; render(); };
         const pct = dept.agentCount > 0 ? dept.overallCompleteness : 0;
         const r = 30, circ = 2 * Math.PI * r, offset = circ - (pct / 100) * circ;
-        const gaugeColor = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : pct > 0 ? '#ef4444' : '#334155';
-        d.innerHTML = `<div class="flex items-center gap-4"><svg width="76" height="76" class="shrink-0"><circle class="gauge-bg" cx="38" cy="38" r="${r}"/><circle class="gauge-fill" cx="38" cy="38" r="${r}" stroke="${gaugeColor}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 38 38)"/><text x="38" y="42" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="bold">${pct}%</text></svg><div class="flex-1"><h3 class="font-semibold text-white">${dept.name}</h3><p class="text-xs text-slate-400 mt-1">${dept.type} \u00B7 ${dept.liveCount}/${dept.agentCount} agents live</p><p class="text-xs ${dept.status==='active'?'text-green-400':dept.status==='research'?'text-blue-400':'text-slate-500'} mt-1">${dept.status}</p></div><span class="text-slate-500">\u2192</span></div>`;
+        d.innerHTML = `<div class="flex items-center gap-4"><svg width="76" height="76" class="shrink-0"><circle class="gauge-bg" cx="38" cy="38" r="${r}"/><circle class="gauge-fill" cx="38" cy="38" r="${r}" stroke="${dept.color}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" transform="rotate(-90 38 38)"/><text x="38" y="35" text-anchor="middle" fill="#e2e8f0" font-size="20">${dept.icon}</text><text x="38" y="52" text-anchor="middle" fill="#94a3b8" font-size="10">${pct}%</text></svg><div class="flex-1"><h3 class="font-semibold text-white">${dept.name}</h3><p class="text-xs text-slate-400 mt-1">${dept.liveCount}/${dept.agentCount} agents live</p><p class="text-xs mt-1 ${dept.status==='active'?'text-green-400':dept.status==='planned'?'text-blue-400':'text-slate-500'}">${dept.status}</p></div><span class="text-slate-500">\u2192</span></div>`;
         grid.appendChild(d);
       });
       c.appendChild(grid);
     }
+
     function renderDeptDetail(c, deptId) {
       const dept = D.agents.departments.find(d=>d.id===deptId);
       if (!dept) { agentState.dept = null; render(); return; }
-      c.innerHTML += `<div class="flex items-center gap-4 animate-in mb-4"><span class="back-btn text-slate-400 text-xl" onclick="agentState.dept=null;render()">\u2190</span><div><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${dept.type} \u00B7 ${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p></div></div>`;
+      // Header with back button, icon, color
+      const hdr = el('div','flex items-center gap-4 animate-in mb-4');
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.dept=null;render()">\u2190</span><span class="text-2xl">${dept.icon}</span><div><h2 class="text-lg font-semibold text-white">${dept.name}</h2><p class="text-xs text-slate-400">${dept.liveCount}/${dept.agentCount} agents live \u00B7 ${dept.overallCompleteness}% complete</p></div>`;
+      c.appendChild(hdr);
       if (dept.agents.length === 0) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No agents defined yet</p><p class="text-sm">This department is in the planning/research phase.</p></div>'; return; }
       // Group by tier
-      const tiers = [1,2,3];
-      const tierNames = { 1: 'Tier 1 \u2014 Live / Core', 2: 'Tier 2 \u2014 Next Build', 3: 'Tier 3 \u2014 Strategic' };
-      tiers.forEach(tier => {
+      const tierNames = { 1: 'Competence Agents \u2014 Live / Core', 2: 'Next Build', 3: 'Strategic' };
+      [1,2,3].forEach(tier => {
         const agents = dept.agents.filter(a=>a.tier===tier);
         if (!agents.length) return;
-        c.appendChild(el('h3',`text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2`,tierNames[tier]));
-        agents.forEach((a,i) => {
-          const card = el('div','bg-card rounded-xl border border-border p-4 mb-2 animate-in');
-          card.style.animationDelay = `${i*0.05}s`;
-          const stColor = a.status==='live'?'bg-green-900 text-green-300':a.status==='active'?'bg-blue-900 text-blue-300':'bg-slate-800 text-slate-400';
-          const qPct = a.qualityScore || 0; const cPct = a.capabilityScore || 0;
-          card.innerHTML = `<div class="flex items-center justify-between cursor-pointer" onclick="toggleAgentDetail('${a.id}')"><div class="flex items-center gap-3"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="font-medium text-white text-sm">${a.name}</span><span class="text-xs px-2 py-0.5 rounded-full ${stColor}">${a.status}</span></div><div class="flex items-center gap-4"><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(qPct)} h-1 rounded-full" style="width:${qPct}%"></div></div></div><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(cPct)} h-1 rounded-full" style="width:${cPct}%"></div></div></div><span class="text-slate-500 text-xs">\u25BC</span></div></div><div id="ad-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50"><p class="text-sm text-slate-300 mb-3">${a.description}</p><div class="grid grid-cols-2 gap-4 mb-3"><div><p class="text-xs text-slate-500 mb-1">Quality Score</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(qPct)} h-2 rounded-full" style="width:${qPct}%"></div></div><span class="text-sm font-bold text-white">${a.qualityScore !== null ? a.qualityScore + '/100' : 'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-1">Capability vs Industry</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(cPct)} h-2 rounded-full" style="width:${cPct}%"></div></div><span class="text-sm font-bold text-white">${cPct}%</span></div></div></div>${a.tools.length?`<p class="text-xs text-slate-500 mb-1">Tools</p><div class="flex flex-wrap gap-1 mb-3">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}${a.benchmarks.length?`<p class="text-xs text-slate-500 mb-1">Industry Benchmarks</p><div class="overflow-x-auto"><table class="w-full text-xs mb-2"><thead><tr class="text-slate-500"><th class="text-left py-1 pr-3">Competitor</th><th class="text-left py-1 pr-3">Capability</th><th class="text-right py-1">Coverage</th></tr></thead><tbody>${a.benchmarks.map(b=>`<tr class="border-t border-border/30"><td class="py-1 pr-3 text-slate-300">${b.competitor}</td><td class="py-1 pr-3 text-slate-400">${b.capability}</td><td class="py-1 text-right"><span class="font-bold ${b.ourCoverage>=80?'text-green-400':b.ourCoverage>=50?'text-amber-400':b.ourCoverage>0?'text-red-400':'text-slate-500'}">${b.ourCoverage}%</span></td></tr>`).join('')}</tbody></table></div>`:''}</div>${a.subAgents.length?`<div class="mt-2"><p class="text-xs text-slate-500 mb-1">Sub-Agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-1"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}</div>`;
-          c.appendChild(card);
-        });
+        c.appendChild(el('h3','text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4 mb-2',tierNames[tier]));
+        agents.forEach((a,i) => renderAgentCard(c, a, dept, i));
       });
     }
+
+    function renderAgentCard(c, a, dept, i) {
+      const card = el('div','bg-card rounded-xl border border-border p-4 mb-2 animate-in');
+      card.style.borderLeftColor = dept.color; card.style.borderLeftWidth = '3px';
+      card.style.animationDelay = `${i*0.05}s`;
+      const stColor = a.status==='live'?'bg-green-900 text-green-300':a.status==='active'?'bg-blue-900 text-blue-300':'bg-slate-800 text-slate-400';
+      const qPct = a.qualityScore || 0; const cPct = a.capabilityScore || 0;
+      card.innerHTML = `<div class="flex items-center justify-between cursor-pointer" onclick="toggleAgentDetail('${a.id}')"><div class="flex items-center gap-3"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="font-medium text-white text-sm">${a.name}</span><span class="text-xs px-2 py-0.5 rounded-full ${stColor}">${a.status}</span></div><div class="flex items-center gap-4"><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(qPct)} h-1 rounded-full" style="width:${qPct}%"></div></div></div><div class="w-24 hidden sm:block"><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="w-full bg-slate-700 rounded-full h-1"><div class="${barColor(cPct)} h-1 rounded-full" style="width:${cPct}%"></div></div></div><span class="text-slate-500 text-xs">\u25BC</span></div></div><div id="ad-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50"><p class="text-sm text-slate-300 mb-3">${a.description}</p><div class="grid grid-cols-2 gap-4 mb-3"><div><p class="text-xs text-slate-500 mb-1">Quality Score</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(qPct)} h-2 rounded-full" style="width:${qPct}%"></div></div><span class="text-sm font-bold text-white">${a.qualityScore !== null ? a.qualityScore + '/100' : 'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-1">Capability vs Industry</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-2"><div class="${barColor(cPct)} h-2 rounded-full" style="width:${cPct}%"></div></div><span class="text-sm font-bold text-white">${cPct}%</span></div></div></div>${a.tools.length?`<p class="text-xs text-slate-500 mb-1">Tools</p><div class="flex flex-wrap gap-1 mb-3">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}${a.benchmarks.length?`<p class="text-xs text-slate-500 mb-1">Industry Benchmarks</p><div class="overflow-x-auto"><table class="w-full text-xs mb-2"><thead><tr class="text-slate-500"><th class="text-left py-1 pr-3">Competitor</th><th class="text-left py-1 pr-3">Capability</th><th class="text-right py-1">Coverage</th></tr></thead><tbody>${a.benchmarks.map(b=>`<tr class="border-t border-border/30"><td class="py-1 pr-3 text-slate-300">${b.competitor}</td><td class="py-1 pr-3 text-slate-400">${b.capability}</td><td class="py-1 text-right"><span class="font-bold ${b.ourCoverage>=80?'text-green-400':b.ourCoverage>=50?'text-amber-400':b.ourCoverage>0?'text-red-400':'text-slate-500'}">${b.ourCoverage}%</span></td></tr>`).join('')}</tbody></table></div>`:''}</div>${a.subAgents.length?`<div class="mt-2"><p class="text-xs text-slate-500 mb-1">Skill / Worker Agents (${a.subAgents.length})</p>${a.subAgents.map(sa=>`<div class="sub-agent py-1"><span class="text-xs text-slate-300">${sa.name}</span> <span class="text-xs px-1.5 py-0.5 rounded ${sa.status==='live'?'bg-green-900 text-green-300':'bg-slate-800 text-slate-400'}">${sa.status}</span></div>`).join('')}</div>`:''}</div>`;
+      c.appendChild(card);
+    }
+
+    function renderProductGrid(c) {
+      const products = D.agents.products || [];
+      // Summary
+      const activeP = products.filter(p=>p.status==='active').length;
+      const totalProcesses = products.reduce((s,p)=>s+(p.processes||[]).length,0);
+      const ss = el('div','grid grid-cols-3 gap-4 mb-4');
+      ss.innerHTML = `<div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Products / Platforms</p><p class="text-2xl font-bold text-white">${products.length}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Active</p><p class="text-2xl font-bold text-green-400">${activeP}</p></div><div class="bg-card rounded-xl border border-border p-3 text-center"><p class="text-xs text-slate-400">Total Processes</p><p class="text-2xl font-bold text-blue-400">${totalProcesses}</p></div>`;
+      c.appendChild(ss);
+      const grid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+      products.forEach((prod,i) => {
+        const d = el('div','bg-card rounded-xl border border-border p-5 animate-in clickable-card');
+        d.style.animationDelay = `${i*0.1}s`;
+        d.onclick = () => { agentState.product = prod.id; render(); };
+        const stColor = prod.status==='active'?'text-green-400':prod.status==='research'?'text-blue-400':prod.status==='planned'?'text-amber-400':'text-slate-500';
+        // Count unique agents and departments
+        const agentIds = new Set(); const deptIds = new Set();
+        (prod.processes||[]).forEach(pr => (pr.agents||[]).forEach(a => { agentIds.add(a.agentId); deptIds.add(a.deptId); }));
+        d.innerHTML = `<div class="flex items-center justify-between"><div class="flex-1"><div class="flex items-center gap-3 mb-2"><h3 class="font-semibold text-white">${prod.name}</h3><span class="text-xs ${stColor} uppercase font-semibold">${prod.status}</span></div><p class="text-xs text-slate-400 mb-2">${prod.description||''}</p><div class="flex gap-4 text-xs text-slate-500">${(prod.processes||[]).length?`<span>${(prod.processes||[]).length} processes</span><span>${agentIds.size} agents</span><span>${deptIds.size} departments</span>`:'<span>No processes defined yet</span>'}</div></div><span class="text-slate-500">\u2192</span></div>`;
+        grid.appendChild(d);
+      });
+      c.appendChild(grid);
+    }
+
+    function renderProductDetail(c, productId) {
+      const prod = (D.agents.products||[]).find(p=>p.id===productId);
+      if (!prod) { agentState.product = null; render(); return; }
+      // Header
+      const hdr = el('div','flex items-center gap-4 animate-in mb-4');
+      hdr.innerHTML = `<span class="back-btn text-slate-400 text-xl" onclick="agentState.product=null;render()">\u2190</span><div><h2 class="text-lg font-semibold text-white">${prod.name}</h2><p class="text-xs text-slate-400">${prod.code||''} \u00B7 ${prod.description||''}</p></div>`;
+      c.appendChild(hdr);
+      // Department color legend
+      const usedDepts = new Set();
+      (prod.processes||[]).forEach(pr => (pr.agents||[]).forEach(a => usedDepts.add(a.deptId)));
+      if (usedDepts.size > 0) {
+        const legend = el('div','flex flex-wrap gap-2 mb-4');
+        usedDepts.forEach(did => {
+          const dept = D.agents.departments.find(d=>d.id===did);
+          if (dept) legend.innerHTML += `<span class="dept-chip" style="background:${dept.color}22;color:${dept.color};border:1px solid ${dept.color}44">${dept.icon} ${dept.name}</span>`;
+        });
+        c.appendChild(legend);
+      }
+      // Processes
+      if (!(prod.processes||[]).length) { c.innerHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center text-slate-500"><p class="text-lg mb-2">No processes defined yet</p><p class="text-sm">This product is in the planning/research phase.</p></div>'; return; }
+      prod.processes.forEach((proc,pi) => {
+        const pCard = el('div','process-card bg-card rounded-xl border border-border p-4 mb-3 animate-in');
+        pCard.style.animationDelay = `${pi*0.08}s`;
+        let agentChips = '';
+        (proc.agents||[]).forEach(ref => {
+          const found = findAgent(ref.agentId);
+          if (!found) return;
+          const dept = D.agents.departments.find(d=>d.id===ref.deptId);
+          const color = dept ? dept.color : '#64748b';
+          const stDot = found.agent.status==='live'?'#22c55e':found.agent.status==='active'?'#3b82f6':'#64748b';
+          agentChips += `<span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg cursor-pointer hover:brightness-125 transition-all" style="background:${color}18;color:${color};border:1px solid ${color}33" onclick="event.stopPropagation();toggleAgentDetail('pv-${found.agent.id}')"><span style="width:6px;height:6px;border-radius:50%;background:${stDot}" class="inline-block"></span>${found.agent.name}</span>`;
+        });
+        pCard.innerHTML = `<h4 class="text-sm font-semibold text-white mb-1">${proc.name}</h4>${proc.description?`<p class="text-xs text-slate-400 mb-2">${proc.description}</p>`:''}<div class="process-agents">${agentChips}</div>`;
+        // Inline agent detail panels (collapsed by default)
+        (proc.agents||[]).forEach(ref => {
+          const found = findAgent(ref.agentId);
+          if (!found) return;
+          const a = found.agent; const dept = D.agents.departments.find(d=>d.id===ref.deptId);
+          const color = dept ? dept.color : '#64748b';
+          const qPct = a.qualityScore||0; const cPct = a.capabilityScore||0;
+          pCard.innerHTML += `<div id="ad-pv-${a.id}" class="expandable-content"><div class="mt-3 pt-3 border-t border-border/50" style="border-left:2px solid ${color};padding-left:12px"><div class="flex items-center gap-2 mb-2"><span class="tier-badge tier-${a.tier}">T${a.tier}</span><span class="text-sm font-medium text-white">${a.name}</span><span class="dept-chip" style="background:${color}22;color:${color}">${dept?dept.name:''}</span></div><p class="text-xs text-slate-300 mb-2">${a.description}</p><div class="grid grid-cols-2 gap-3 mb-2"><div><p class="text-xs text-slate-500 mb-0.5">Quality</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(qPct)} h-1.5 rounded-full" style="width:${qPct}%"></div></div><span class="text-xs text-white">${a.qualityScore!==null?a.qualityScore+'/100':'N/A'}</span></div></div><div><p class="text-xs text-slate-500 mb-0.5">Capability</p><div class="flex items-center gap-2"><div class="flex-1 bg-slate-700 rounded-full h-1.5"><div class="${barColor(cPct)} h-1.5 rounded-full" style="width:${cPct}%"></div></div><span class="text-xs text-white">${cPct}%</span></div></div></div>${a.tools.length?`<div class="flex flex-wrap gap-1 mb-2">${a.tools.map(t=>`<span class="text-xs bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">${t}</span>`).join('')}</div>`:''}</div></div>`;
+        });
+        c.appendChild(pCard);
+      });
+    }
+
     window.toggleAgentDetail = function(id) { const el = document.getElementById('ad-'+id); if (el) el.classList.toggle('open'); };
 
     // ==================== SHARED COMPONENTS ====================

@@ -428,42 +428,71 @@ const DASHBOARD_DATA = {
   // AGENTS (Agents Tab)
   // ============================================================
   agents: {
+    // === DEPARTMENTS (organized by business function) ===
     departments: [
       {
-        id: "prod-001", name: "SEO Toolkit", type: "Product", status: "active",
-        agentCount: 10, liveCount: 5, overallCompleteness: 50,
+        id: "dept-seo", name: "SEO & Search", icon: "\uD83D\uDD0D", color: "#3b82f6", status: "active",
+        agentCount: 5, liveCount: 5, overallCompleteness: 52,
         agents: [
-          { id: "seo-technical-audit", name: "Technical Audit", tier: 1, status: "live", recipeId: "rcp_fUfiRNt8Bh8b", qualityScore: 90, capabilityScore: 65, description: "Automated technical SEO audit — crawls site, checks structure, performance, accessibility", tools: ["GSC", "WebFetch", "DataForSEO"], benchmarks: [{ competitor: "Screaming Frog", capability: "Deep crawl analysis (1000s pages/min)", ourCoverage: 70 }, { competitor: "Ahrefs Site Audit", capability: "100+ technical checks with fix suggestions", ourCoverage: 60 }, { competitor: "SEMrush Site Audit", capability: "140+ checks + auto-fix suggestions", ourCoverage: 55 }], subAgents: [] },
-          { id: "seo-content-optimizer", name: "Content Optimizer", tier: 1, status: "live", recipeId: "rcp_-msCRAZI2mln", qualityScore: 74, capabilityScore: 50, description: "Analyzes content quality and provides optimization recommendations", tools: ["WebFetch", "invoke_llm"], benchmarks: [{ competitor: "Surfer SEO", capability: "NLP scoring against top-ranking pages in real-time", ourCoverage: 40 }, { competitor: "Clearscope", capability: "Content grading with A-F scores + semantic terms", ourCoverage: 50 }], subAgents: [] },
-          { id: "seo-keyword-research", name: "Keyword Research", tier: 1, status: "live", recipeId: "rcp_083WOBwKYeNo", qualityScore: null, capabilityScore: 45, description: "AI-powered keyword clustering and opportunity identification", tools: ["GSC", "SerpAPI", "Composio Search", "invoke_llm"], benchmarks: [{ competitor: "Ahrefs Keywords Explorer", capability: "Keyword difficulty + volume for 170 countries", ourCoverage: 30 }, { competitor: "SEMrush Keyword Magic Tool", capability: "20B+ keyword database with intent data", ourCoverage: 25 }], subAgents: [] },
-          { id: "seo-serp-analyzer", name: "SERP Analyzer", tier: 1, status: "live", recipeId: "rcp_tebS66AkhuYq", qualityScore: null, capabilityScore: 55, description: "Analyzes search engine results pages for competitive insights", tools: ["SerpAPI", "invoke_llm"], benchmarks: [{ competitor: "Ahrefs SERP Overview", capability: "Full SERP feature tracking + historical data", ourCoverage: 45 }, { competitor: "Surfer SEO SERP Analyzer", capability: "Top-ranking page analysis with NLP scoring", ourCoverage: 50 }], subAgents: [] },
-          { id: "seo-ai-discovery", name: "AI Discovery Audit", tier: 1, status: "live", recipeId: "rcp_3LBwPfkiTtRT", qualityScore: 100, capabilityScore: 95, description: "34-factor audit for AI search engine visibility (ChatGPT, Perplexity, Gemini, AI Overviews)", tools: ["WebFetch", "invoke_llm", "Composio Search"], benchmarks: [{ competitor: "No direct competitor", capability: "AI search optimization is unaddressed by all major SEO tools", ourCoverage: 95 }], subAgents: [] },
-          { id: "seo-rank-tracker", name: "Rank Tracker", tier: 2, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "Automated keyword position tracking over time", tools: [], benchmarks: [{ competitor: "SE Ranking", capability: "Daily rank tracking for 1000+ keywords", ourCoverage: 0 }, { competitor: "Ahrefs Rank Tracker", capability: "Desktop + mobile tracking with SERP features", ourCoverage: 0 }], subAgents: [] },
-          { id: "seo-content-writer", name: "Content Writer", tier: 2, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "AI content generation from keyword research data", tools: [], benchmarks: [{ competitor: "Surfer SEO AI Writer", capability: "SEO-optimized article generation with NLP", ourCoverage: 0 }, { competitor: "SEMrush ContentShake AI", capability: "AI content creation with NLP optimization", ourCoverage: 0 }], subAgents: [] },
-          { id: "seo-link-builder", name: "Link Builder", tier: 2, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "Automated link building with 6 specialized sub-agents", tools: [], benchmarks: [{ competitor: "Ahrefs", capability: "16 trillion link index + content explorer", ourCoverage: 0 }, { competitor: "SEMrush Link Building Tool", capability: "Prospect discovery + outreach management", ourCoverage: 0 }], subAgents: [{ id: "lb-backlink-profiler", name: "Backlink Profiler", status: "planned" }, { id: "lb-prospect-discovery", name: "Prospect Discovery", status: "planned" }, { id: "lb-linkable-asset", name: "Linkable Asset Creator", status: "planned" }, { id: "lb-outreach-manager", name: "Outreach Manager", status: "planned" }, { id: "lb-competitor-spy", name: "Competitor Link Spy", status: "planned" }, { id: "lb-health-monitor", name: "Link Health Monitor", status: "planned" }] },
-          { id: "seo-competitor-monitor", name: "Competitor Monitor", tier: 3, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "Automated competitive intelligence and positioning tracking", tools: [], benchmarks: [{ competitor: "SEMrush Competitive Research", capability: "Traffic analytics + gap analysis + position changes", ourCoverage: 0 }], subAgents: [] },
-          { id: "seo-reporter", name: "Reporter", tier: 3, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "Automated plain-English SEO reporting with charts and recommendations", tools: [], benchmarks: [{ competitor: "SEMrush My Reports", capability: "White-label PDF reports with custom branding", ourCoverage: 0 }], subAgents: [] },
+          { id: "seo-technical-audit", name: "Technical Audit", tier: 1, status: "live", recipeId: "rcp_fUfiRNt8Bh8b", originProduct: "prod-001", qualityScore: 90, capabilityScore: 65, description: "Automated technical SEO audit \u2014 crawls site, checks structure, performance, accessibility", tools: ["GSC", "WebFetch", "DataForSEO"], benchmarks: [{ competitor: "Screaming Frog", capability: "Deep crawl analysis (1000s pages/min)", ourCoverage: 70 }, { competitor: "Ahrefs Site Audit", capability: "100+ technical checks with fix suggestions", ourCoverage: 60 }, { competitor: "SEMrush Site Audit", capability: "140+ checks + auto-fix suggestions", ourCoverage: 55 }], subAgents: [] },
+          { id: "seo-keyword-research", name: "Keyword Research", tier: 1, status: "live", recipeId: "rcp_083WOBwKYeNo", originProduct: "prod-001", qualityScore: null, capabilityScore: 45, description: "AI-powered keyword clustering and opportunity identification", tools: ["GSC", "SerpAPI", "Composio Search", "invoke_llm"], benchmarks: [{ competitor: "Ahrefs Keywords Explorer", capability: "Keyword difficulty + volume for 170 countries", ourCoverage: 30 }, { competitor: "SEMrush Keyword Magic Tool", capability: "20B+ keyword database with intent data", ourCoverage: 25 }], subAgents: [] },
+          { id: "seo-serp-analyzer", name: "SERP Analyzer", tier: 1, status: "live", recipeId: "rcp_tebS66AkhuYq", originProduct: "prod-001", qualityScore: null, capabilityScore: 55, description: "Analyzes search engine results pages for competitive insights", tools: ["SerpAPI", "invoke_llm"], benchmarks: [{ competitor: "Ahrefs SERP Overview", capability: "Full SERP feature tracking + historical data", ourCoverage: 45 }, { competitor: "Surfer SEO SERP Analyzer", capability: "Top-ranking page analysis with NLP scoring", ourCoverage: 50 }], subAgents: [] },
+          { id: "seo-rank-tracker", name: "Rank Tracker", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated keyword position tracking over time", tools: [], benchmarks: [{ competitor: "SE Ranking", capability: "Daily rank tracking for 1000+ keywords", ourCoverage: 0 }, { competitor: "Ahrefs Rank Tracker", capability: "Desktop + mobile tracking with SERP features", ourCoverage: 0 }], subAgents: [] },
+          { id: "seo-ai-discovery", name: "AI Discovery Audit", tier: 1, status: "live", recipeId: "rcp_3LBwPfkiTtRT", originProduct: "prod-001", qualityScore: 100, capabilityScore: 95, description: "34-factor audit for AI search engine visibility (ChatGPT, Perplexity, Gemini, AI Overviews)", tools: ["WebFetch", "invoke_llm", "Composio Search"], benchmarks: [{ competitor: "No direct competitor", capability: "AI search optimization is unaddressed by all major SEO tools", ourCoverage: 95 }], subAgents: [] },
         ]
       },
       {
-        id: "prod-002", name: "SellFunnel", type: "Product", status: "research",
-        agentCount: 0, liveCount: 0, overallCompleteness: 0, agents: []
-      },
-      {
-        id: "prod-003", name: "Marketing Engine", type: "Product", status: "not-started",
-        agentCount: 0, liveCount: 0, overallCompleteness: 0, agents: []
-      },
-      {
-        id: "infra", name: "Infrastructure Services", type: "Infrastructure", status: "active",
-        agentCount: 5, liveCount: 2, overallCompleteness: 40,
+        id: "dept-content", name: "Content & Creative", icon: "\u270D\uFE0F", color: "#22c55e", status: "active",
+        agentCount: 3, liveCount: 1, overallCompleteness: 17,
         agents: [
-          { id: "infra-001", name: "Overnight CLI Runner", tier: 1, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "Autonomous overnight task runner via Claude Code headless mode + cron", tools: [], benchmarks: [], subAgents: [] },
-          { id: "infra-002", name: "Project Template Repo", tier: 1, status: "planned", recipeId: null, qualityScore: null, capabilityScore: 0, description: "GitHub template for instant project setup with 7-file blueprint", tools: [], benchmarks: [], subAgents: [] },
-          { id: "infra-003", name: "Monitoring Dashboard", tier: 1, status: "live", recipeId: null, qualityScore: null, capabilityScore: 35, description: "Agency performance cockpit with drill-down project pages", tools: ["GitHub Pages", "Chart.js", "Google Sheets"], benchmarks: [], subAgents: [] },
-          { id: "infra-004", name: "Task Management", tier: 1, status: "live", recipeId: null, qualityScore: null, capabilityScore: 70, description: "Trello-based task management via Composio MCP (15 tools)", tools: ["Trello", "Composio"], benchmarks: [], subAgents: [] },
-          { id: "infra-005", name: "Continuous Improvement", tier: 1, status: "active", recipeId: null, qualityScore: null, capabilityScore: 25, description: "Research and improvement engine — 10 coverage areas, 4-criterion filter", tools: [], benchmarks: [], subAgents: [] },
+          { id: "seo-content-optimizer", name: "Content Optimizer", tier: 1, status: "live", recipeId: "rcp_-msCRAZI2mln", originProduct: "prod-001", qualityScore: 74, capabilityScore: 50, description: "Analyzes content quality and provides optimization recommendations", tools: ["WebFetch", "invoke_llm"], benchmarks: [{ competitor: "Surfer SEO", capability: "NLP scoring against top-ranking pages in real-time", ourCoverage: 40 }, { competitor: "Clearscope", capability: "Content grading with A-F scores + semantic terms", ourCoverage: 50 }], subAgents: [] },
+          { id: "seo-content-writer", name: "Content Writer", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "AI content generation from keyword research data", tools: [], benchmarks: [{ competitor: "Surfer SEO AI Writer", capability: "SEO-optimized article generation with NLP", ourCoverage: 0 }, { competitor: "SEMrush ContentShake AI", capability: "AI content creation with NLP optimization", ourCoverage: 0 }], subAgents: [] },
+          { id: "seo-reporter", name: "Reporter", tier: 3, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated plain-English SEO reporting with charts and recommendations", tools: [], benchmarks: [{ competitor: "SEMrush My Reports", capability: "White-label PDF reports with custom branding", ourCoverage: 0 }], subAgents: [] },
+        ]
+      },
+      {
+        id: "dept-marketing", name: "Marketing & Outreach", icon: "\uD83D\uDCE2", color: "#f59e0b", status: "planned",
+        agentCount: 1, liveCount: 0, overallCompleteness: 0,
+        agents: [
+          { id: "seo-link-builder", name: "Link Builder", tier: 2, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated link building with 6 specialized sub-agents", tools: [], benchmarks: [{ competitor: "Ahrefs", capability: "16 trillion link index + content explorer", ourCoverage: 0 }, { competitor: "SEMrush Link Building Tool", capability: "Prospect discovery + outreach management", ourCoverage: 0 }], subAgents: [{ id: "lb-backlink-profiler", name: "Backlink Profiler", status: "planned" }, { id: "lb-prospect-discovery", name: "Prospect Discovery", status: "planned" }, { id: "lb-linkable-asset", name: "Linkable Asset Creator", status: "planned" }, { id: "lb-outreach-manager", name: "Outreach Manager", status: "planned" }, { id: "lb-competitor-spy", name: "Competitor Link Spy", status: "planned" }, { id: "lb-health-monitor", name: "Link Health Monitor", status: "planned" }] },
+        ]
+      },
+      {
+        id: "dept-sales", name: "Sales & CRM", icon: "\uD83D\uDCB0", color: "#ef4444", status: "not-started",
+        agentCount: 0, liveCount: 0, overallCompleteness: 0, agents: []
+      },
+      {
+        id: "dept-research", name: "Research & Intelligence", icon: "\uD83D\uDD2C", color: "#a855f7", status: "planned",
+        agentCount: 1, liveCount: 0, overallCompleteness: 0,
+        agents: [
+          { id: "seo-competitor-monitor", name: "Competitor Monitor", tier: 3, status: "planned", recipeId: null, originProduct: "prod-001", qualityScore: null, capabilityScore: 0, description: "Automated competitive intelligence and positioning tracking", tools: [], benchmarks: [{ competitor: "SEMrush Competitive Research", capability: "Traffic analytics + gap analysis + position changes", ourCoverage: 0 }], subAgents: [] },
+        ]
+      },
+      {
+        id: "dept-infra", name: "Infrastructure & Operations", icon: "\u2699\uFE0F", color: "#06b6d4", status: "active",
+        agentCount: 5, liveCount: 2, overallCompleteness: 26,
+        agents: [
+          { id: "infra-001", name: "Overnight CLI Runner", tier: 1, status: "planned", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 0, description: "Autonomous overnight task runner via Claude Code headless mode + cron", tools: [], benchmarks: [], subAgents: [] },
+          { id: "infra-002", name: "Project Template Repo", tier: 1, status: "planned", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 0, description: "GitHub template for instant project setup with 7-file blueprint", tools: [], benchmarks: [], subAgents: [] },
+          { id: "infra-003", name: "Monitoring Dashboard", tier: 1, status: "live", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 35, description: "Agency performance cockpit with drill-down project pages", tools: ["GitHub Pages", "Chart.js", "Google Sheets"], benchmarks: [], subAgents: [] },
+          { id: "infra-004", name: "Task Management", tier: 1, status: "live", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 70, description: "Trello-based task management via Composio MCP (15 tools)", tools: ["Trello", "Composio"], benchmarks: [], subAgents: [] },
+          { id: "infra-005", name: "Continuous Improvement", tier: 1, status: "active", recipeId: null, originProduct: "infra", qualityScore: null, capabilityScore: 25, description: "Research and improvement engine \u2014 10 coverage areas, 4-criterion filter", tools: [], benchmarks: [], subAgents: [] },
         ]
       }
+    ],
+    // === PRODUCTS / PLATFORMS (cross-department process mapping) ===
+    products: [
+      { id: "prod-001", name: "SEO Toolkit", code: "PROD-001", status: "active", description: "Modular SEO analysis platform \u2014 10 agents across 6 processes", processes: [
+        { name: "Technical Site Audit", description: "Crawl, analyze, and score technical SEO health + AI visibility", agents: [{ agentId: "seo-technical-audit", deptId: "dept-seo" }, { agentId: "seo-ai-discovery", deptId: "dept-seo" }] },
+        { name: "Keyword Strategy", description: "Research keywords, analyze SERPs, identify opportunities", agents: [{ agentId: "seo-keyword-research", deptId: "dept-seo" }, { agentId: "seo-serp-analyzer", deptId: "dept-seo" }] },
+        { name: "Content Optimization", description: "Analyze and optimize content quality, generate new content", agents: [{ agentId: "seo-content-optimizer", deptId: "dept-content" }, { agentId: "seo-content-writer", deptId: "dept-content" }] },
+        { name: "Link Building", description: "Prospect, outreach, and monitor backlink acquisition", agents: [{ agentId: "seo-link-builder", deptId: "dept-marketing" }] },
+        { name: "Rank Monitoring", description: "Track keyword positions and competitor movements over time", agents: [{ agentId: "seo-rank-tracker", deptId: "dept-seo" }, { agentId: "seo-competitor-monitor", deptId: "dept-research" }] },
+        { name: "Reporting", description: "Generate plain-English SEO reports with charts and recommendations", agents: [{ agentId: "seo-reporter", deptId: "dept-content" }] },
+      ]},
+      { id: "prod-002", name: "SellFunnel", code: "PROD-002", status: "research", description: "AI sales automation \u2014 research phase", processes: [] },
+      { id: "prod-003", name: "Marketing Engine", code: "PROD-003", status: "not-started", description: "Multi-channel marketing automation", processes: [] },
+      { id: "vert-book-rocket", name: "Book Rocket", code: "VERTICAL", status: "planned", description: "SEO + Marketing vertical for authors", processes: [] },
     ]
   },
 
