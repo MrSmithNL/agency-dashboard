@@ -798,20 +798,20 @@ const DASHBOARD_DATA = {
     selfImprovement: {
       framework: {
         title: "Self-Improving Skills Framework",
-        status: "Phase 2 — Experience Accumulation",
+        status: "Phase 2 Complete — Starting Phase 3",
         description: "Autonomous self-improvement system with three interlocking loops: Experience (learns from doing), Research (learns from the world), and Evolution (improves the improvement system).",
         capabilityDoc: "docs/capabilities/self-improving-skills.md",
         researchDoc: "research/self-improving-agent-skills-research.md"
       },
       loops: [
         { name: "Experience Loop", description: "Execute → Log → Reflect → Extract Patterns → Update Skill → Test → Promote/Rollback", frequency: "Every execution", status: "active", icon: "🔄" },
-        { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly per domain", status: "designed", icon: "🔍" },
+        { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly per domain", status: "active", icon: "🔍" },
         { name: "Evolution Loop", description: "Review system performance → Measure improvement rates → Identify bottlenecks → Evolve the loops", frequency: "Quarterly", status: "designed", icon: "🧬" }
       ],
       phases: [
         { id: 1, name: "Foundation", status: "complete", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
-        { id: 2, name: "Experience Accumulation", status: "in_progress", description: "Distillation pipeline, failure flywheel, confidence scoring, enhanced logging", weeks: "3-4" },
-        { id: 3, name: "Active Self-Improvement", status: "not_started", description: "DSPy/TextGrad prompt optimisation, cross-skill pattern detection", weeks: "5-8" },
+        { id: 2, name: "Experience Accumulation", status: "complete", description: "Distillation pipeline, failure flywheel, confidence scoring, research monitoring, enhanced logging", weeks: "3-4" },
+        { id: 3, name: "Active Self-Improvement", status: "not_started", description: "GEPA prompt evolution, cross-skill pattern detection, A/B testing", weeks: "5-8" },
         { id: 4, name: "Autonomous Evolution", status: "not_started", description: "Genetic prompt evolution, auto-roadmaps, Memento Case Banks", weeks: "9-12" },
         { id: 5, name: "Meta-Improvement", status: "not_started", description: "Evolve the improvement system itself, skill composition, Constitutional AI", weeks: "Ongoing" }
       ],
