@@ -953,4 +953,217 @@ const DASHBOARD_DATA = {
       }
     }
   },
+
+  // ============================================================
+  // AUTONOMOUS DEVOPS
+  // ============================================================
+  devops: {
+    // Section 1 — Execution Summary KPIs
+    kpis: [
+      { name: "Objectives Active", value: 2, target: null, format: "number", trend: "flat", description: "Objectives currently being worked on" },
+      { name: "Task Completion Rate", value: 0, target: 85, format: "percent", trend: "flat", description: "% tasks completed without human intervention" },
+      { name: "Tasks Completed", value: 0, target: null, format: "number", trend: "flat", description: "Tasks marked done (all time)" },
+      { name: "Tasks Pending", value: 19, target: null, format: "number", trend: "flat", description: "Tasks not yet started" },
+      { name: "Human Interventions", value: 0, target: 0, format: "number", trend: "flat", description: "Times agent needed human help" },
+      { name: "Autonomous Sessions", value: 2, target: null, format: "number", trend: "flat", description: "Autonomous execution sessions run" },
+    ],
+
+    // Section 2 — DORA-Adapted Metrics
+    dora: [
+      {
+        name: "Commit Frequency",
+        value: "13.5/day",
+        raw: 13.5,
+        benchmark: "elite",
+        description: "Average commits per active day (last 8 days)",
+        history: [
+          { period: "Mar 1", value: 13 },
+          { period: "Mar 2", value: 7 },
+          { period: "Mar 3", value: 6 },
+          { period: "Mar 4", value: 19 },
+          { period: "Mar 5", value: 12 },
+          { period: "Mar 6", value: 1 },
+          { period: "Mar 7", value: 6 },
+          { period: "Mar 8", value: 44 },
+        ],
+        bands: { elite: "Multiple/day", high: "Daily", medium: "Weekly", low: "Monthly+" }
+      },
+      {
+        name: "Lead Time",
+        value: "N/A",
+        raw: null,
+        benchmark: "pending",
+        description: "Objective created → all tasks completed. No objectives completed yet.",
+        history: [],
+        bands: { elite: "<1 day", high: "1-7 days", medium: "1-4 weeks", low: ">1 month" }
+      },
+      {
+        name: "Change Failure Rate",
+        value: "0%",
+        raw: 0,
+        benchmark: "elite",
+        description: "% of executions requiring rework or manual fix",
+        history: [],
+        bands: { elite: "≤5%", high: "≤10%", medium: "~15%", low: "≥64%" }
+      },
+      {
+        name: "Recovery Time",
+        value: "N/A",
+        raw: null,
+        benchmark: "pending",
+        description: "Time to fix agent-caused issues. No failures recorded yet.",
+        history: [],
+        bands: { elite: "<1 hour", high: "<1 day", medium: "1-7 days", low: ">1 week" }
+      },
+    ],
+
+    // Section 3 — Quality & Outcomes
+    quality: [
+      {
+        name: "Rework Rate",
+        value: "0%",
+        raw: 0,
+        target: 15,
+        rag: "Green",
+        description: "Tasks that needed re-execution",
+        detail: "No tasks have been executed yet, so no rework has occurred."
+      },
+      {
+        name: "Documentation Coverage",
+        value: "100%",
+        raw: 100,
+        target: 100,
+        rag: "Green",
+        description: "Projects with complete documentation",
+        detail: "All 6 active projects have architecture docs, READMEs, decision logs, and process docs."
+      },
+      {
+        name: "Production Health",
+        value: "Not monitored",
+        raw: null,
+        target: null,
+        rag: "Amber",
+        description: "Composite score of TTFB + SSL + security headers",
+        detail: "Production monitoring tools (curl TTFB, openssl SSL, security headers) are researched but not yet scheduled. See research/production-monitoring-tools-research.md."
+      },
+    ],
+
+    // Section 4 — Objectives Progress
+    objectives: [
+      {
+        id: "seo-apply",
+        title: "Apply SEO Audit Recommendations",
+        project: "PROD-001 + CLIENT-001 + CLIENT-002",
+        status: "Active",
+        created: "2026-03-07",
+        totalTasks: 11,
+        completedTasks: 0,
+        blockedTasks: 0,
+        rag: "Amber",
+        file: "objectives/PROD-001-seo-apply-recommendations.md",
+        tasks: [
+          { id: "T-001", task: "Re-run Technical Audit on loveoverexile.com", status: "pending" },
+          { id: "T-002", task: "Re-run Content Optimizer on LOE top 5 pages", status: "pending" },
+          { id: "T-003", task: "Re-run Technical Audit on hairgenetix.com", status: "pending" },
+          { id: "T-004", task: "Compile LOE findings into prioritised fix list", status: "pending" },
+          { id: "T-005", task: "Compile Hairgenetix findings into fix list", status: "pending" },
+          { id: "T-006", task: "Prepare LOE meta title/description fixes", status: "pending" },
+          { id: "T-007", task: "Prepare LOE image alt text fixes", status: "pending" },
+          { id: "T-008", task: "Prepare LOE heading structure fixes", status: "pending" },
+          { id: "T-009", task: "Draft llms.txt for hairgenetix.com", status: "pending" },
+          { id: "T-010", task: "Prepare Hairgenetix meta title fixes", status: "pending" },
+          { id: "T-011", task: "Re-run audits to verify improvements", status: "pending" },
+        ]
+      },
+      {
+        id: "seo-content",
+        title: "Build SEO Content Pipeline",
+        project: "PROD-001",
+        status: "Active",
+        created: "2026-03-07",
+        totalTasks: 8,
+        completedTasks: 0,
+        blockedTasks: 0,
+        rag: "Amber",
+        file: "objectives/PROD-001-seo-content-pipeline.md",
+        tasks: [
+          { id: "T-001", task: "Analyse LOE keyword research for content gaps", status: "pending" },
+          { id: "T-002", task: "Analyse Hairgenetix keyword research for gaps", status: "pending" },
+          { id: "T-003", task: "Create reusable content brief template", status: "pending" },
+          { id: "T-004", task: "Generate 5 content briefs for LOE", status: "pending" },
+          { id: "T-005", task: "Generate 5 content briefs for Hairgenetix", status: "pending" },
+          { id: "T-006", task: "Draft first LOE article", status: "pending" },
+          { id: "T-007", task: "Draft first Hairgenetix article", status: "pending" },
+          { id: "T-008", task: "Document the full content pipeline process", status: "pending" },
+        ]
+      },
+    ],
+
+    // Section 5 — Activity Log
+    activityLog: [
+      {
+        date: "2026-03-08",
+        type: "manual",
+        project: "Agency",
+        description: "Autonomous Objectives Framework — built v2.1 through v2.10 with testing, self-healing, code quality, SDD, documentation, visual docs",
+        outcome: "success",
+        tasksCompleted: 0,
+        filesChanged: 8,
+      },
+      {
+        date: "2026-03-08",
+        type: "manual",
+        project: "Agency",
+        description: "Research: production monitoring tools, E2E testing, documentation engineering, visual docs, DevOps dashboarding",
+        outcome: "success",
+        tasksCompleted: 0,
+        filesChanged: 5,
+      },
+      {
+        date: "2026-03-07",
+        type: "manual",
+        project: "Agency",
+        description: "Created 2 objective files: SEO Apply Recommendations (11 tasks) and SEO Content Pipeline (8 tasks)",
+        outcome: "success",
+        tasksCompleted: 0,
+        filesChanged: 2,
+      },
+      {
+        date: "2026-03-04",
+        type: "standing-order",
+        project: "Agency",
+        description: "Standing order #12: Memory restructure — split MEMORY.md into 7 topic files",
+        outcome: "success",
+        tasksCompleted: 1,
+        filesChanged: 8,
+      },
+      {
+        date: "2026-03-04",
+        type: "standing-order",
+        project: "Agency",
+        description: "Standing order #13: Execution log created",
+        outcome: "success",
+        tasksCompleted: 1,
+        filesChanged: 1,
+      },
+    ],
+
+    // Section 6 — Quick Access Links
+    quickAccess: [
+      { name: "Autonomous Objectives Framework", path: "docs/capabilities/autonomous-objectives.md", type: "doc" },
+      { name: "Master Strategy", path: "docs/master-strategy.md", type: "doc" },
+      { name: "Operations Dashboard", path: "docs/operations-dashboard.md", type: "doc" },
+      { name: "Execution Log", path: "docs/execution-log.md", type: "log" },
+      { name: "Objective: SEO Apply Recommendations", path: "objectives/PROD-001-seo-apply-recommendations.md", type: "objective" },
+      { name: "Objective: SEO Content Pipeline", path: "objectives/PROD-001-seo-content-pipeline.md", type: "objective" },
+      { name: "Worker Prompt", path: "objectives/_worker-prompt.md", type: "doc" },
+      { name: "Security Risk Log", path: "docs/security-risk-log.md", type: "log" },
+      { name: "Research: Production Monitoring", path: "research/production-monitoring-tools-research.md", type: "research" },
+      { name: "Research: E2E Testing", path: "research/autonomous-production-e2e-testing.md", type: "research" },
+      { name: "Research: Documentation Engineering", path: "research/autonomous-documentation-engineering.md", type: "research" },
+      { name: "Research: DevOps Dashboard", path: "research/devops-reporting-dashboard-research.md", type: "research" },
+      { name: "Google Sheets Cockpit", url: "https://docs.google.com/spreadsheets/d/1iZUsOKh1hAR0qtnu5HGk9WxTEXMuaZcvKY5pF0TVEJI/edit", type: "external" },
+      { name: "GitHub Repository", url: "https://github.com/MrSmithNL/smith-ai-agency", type: "external" },
+    ],
+  },
 };

@@ -122,6 +122,7 @@
       <button onclick="navigateTo('organisation')" data-tab="organisation" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Organisation</button>
       <button onclick="navigateTo('agents')" data-tab="agents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agents</button>
       <button onclick="navigateTo('agent-army')" data-tab="agent-army" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agent Army</button>
+      <button onclick="navigateTo('devops')" data-tab="devops" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">DevOps</button>
     </div>
   </nav>
 
@@ -178,7 +179,7 @@
       main.innerHTML = '';
       // Tab highlighting
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army' };
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', devops:'devops' };
       const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
       if (ab) ab.classList.add('active');
       const isProject = !!D.projectDetails[route];
@@ -190,6 +191,7 @@
       else if (route === 'organisation') { renderOrganisation(main); document.getElementById('breadcrumb').textContent = 'Organisation'; document.title = 'Smith AI Agency \u2014 Organisation'; }
       else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
       else if (route === 'agent-army') { renderAgentArmy(main); document.getElementById('breadcrumb').textContent = 'Agent Army'; document.title = 'Smith AI Agency \u2014 Agent Army'; }
+      else if (route === 'devops') { renderDevOps(main); document.getElementById('breadcrumb').textContent = 'Autonomous DevOps'; document.title = 'Smith AI Agency \u2014 DevOps'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
     }
@@ -1897,6 +1899,203 @@
           }
         }
       }
+    }
+
+    // ==================== DEVOPS VIEW ====================
+    let devopsState = { expandedObj: null, logFilter: 'all', logOutcome: 'all' };
+
+    function renderDevOps(c) {
+      const DV = D.devops;
+      const repoBase = 'https://github.com/MrSmithNL/smith-ai-agency/blob/main/';
+
+      // ---------- Section 1: Execution Summary KPIs ----------
+      const s1 = document.createElement('div');
+      s1.className = 'animate-in';
+      let kpiHTML = '<h2 class="text-lg font-semibold text-white mb-4">Execution Summary</h2><div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">';
+      DV.kpis.forEach(k => {
+        const trendCls = k.trend === 'up' ? 'trend-up' : k.trend === 'down' ? 'trend-down' : 'trend-flat';
+        const valDisplay = k.format === 'percent' ? k.value + '%' : k.value;
+        const targetDisplay = k.target !== null ? `<span class="text-slate-500 text-xs">/ ${k.target}${k.format === 'percent' ? '%' : ''}</span>` : '';
+        const ragColor = k.target === null ? '' : (k.format === 'percent' ? (k.value >= k.target ? 'border-green-500/50' : k.value >= k.target * 0.7 ? 'border-amber-500/50' : 'border-red-500/50') : '');
+        kpiHTML += `<div class="bg-card rounded-xl p-4 border border-border ${ragColor}">
+          <p class="text-xs text-slate-400 mb-1">${k.name}</p>
+          <p class="text-xl font-bold text-white ${trendCls}">${valDisplay} ${targetDisplay}</p>
+          <p class="text-xs text-slate-500 mt-1">${k.description}</p>
+        </div>`;
+      });
+      kpiHTML += '</div>';
+      s1.innerHTML = kpiHTML;
+      c.appendChild(s1);
+
+      // ---------- Section 2: DORA-Adapted Metrics ----------
+      const s2 = document.createElement('div');
+      s2.className = 'animate-in mt-6';
+      let doraHTML = '<h2 class="text-lg font-semibold text-white mb-4">DORA-Adapted Metrics</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">';
+      DV.dora.forEach(d => {
+        const benchColors = { elite: 'text-green-400 bg-green-900/30', high: 'text-blue-400 bg-blue-900/30', medium: 'text-amber-400 bg-amber-900/30', low: 'text-red-400 bg-red-900/30', pending: 'text-slate-400 bg-slate-800' };
+        const bc = benchColors[d.benchmark] || benchColors.pending;
+        let histHTML = '';
+        if (d.history.length > 0) {
+          const maxVal = Math.max(...d.history.map(h => h.value), 1);
+          histHTML = '<div class="flex items-end gap-1 mt-3 h-12">';
+          d.history.forEach(h => {
+            const pct = Math.max((h.value / maxVal) * 100, 4);
+            histHTML += `<div class="flex-1 rounded-t" style="height:${pct}%;background:#3b82f6;" title="${h.period}: ${h.value}"></div>`;
+          });
+          histHTML += '</div><div class="flex justify-between text-slate-600" style="font-size:0.6rem;"><span>' + d.history[0].period + '</span><span>' + d.history[d.history.length-1].period + '</span></div>';
+        }
+        doraHTML += `<div class="bg-card rounded-xl p-4 border border-border">
+          <p class="text-xs text-slate-400 mb-1">${d.name}</p>
+          <p class="text-2xl font-bold text-white mb-2">${d.value}</p>
+          <span class="text-xs px-2 py-0.5 rounded ${bc}">${d.benchmark.toUpperCase()}</span>
+          <p class="text-xs text-slate-500 mt-2">${d.description}</p>
+          <div class="mt-2 pt-2 border-t border-border/50">
+            <div class="grid grid-cols-2 gap-1">
+              ${Object.entries(d.bands).map(([k,v]) => `<span class="text-slate-600" style="font-size:0.6rem;">${k}: ${v}</span>`).join('')}
+            </div>
+          </div>
+          ${histHTML}
+        </div>`;
+      });
+      doraHTML += '</div>';
+      s2.innerHTML = doraHTML;
+      c.appendChild(s2);
+
+      // ---------- Section 3: Quality & Outcomes ----------
+      const s3 = document.createElement('div');
+      s3.className = 'animate-in mt-6';
+      let qualHTML = '<h2 class="text-lg font-semibold text-white mb-4">Quality & Outcomes</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+      DV.quality.forEach(q => {
+        const ragBorder = q.rag === 'Green' ? 'border-green-500/50' : q.rag === 'Amber' ? 'border-amber-500/50' : 'border-red-500/50';
+        const ragDot = q.rag === 'Green' ? 'bg-green-500' : q.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
+        qualHTML += `<div class="bg-card rounded-xl p-4 border ${ragBorder}">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-slate-400">${q.name}</p>
+            <span class="w-2 h-2 rounded-full ${ragDot}"></span>
+          </div>
+          <p class="text-2xl font-bold text-white">${q.value}</p>
+          ${q.target !== null ? `<p class="text-xs text-slate-500">Target: <${q.target}%</p>` : ''}
+          <p class="text-xs text-slate-500 mt-2">${q.description}</p>
+          <div class="mt-3 pt-3 border-t border-border/50">
+            <p class="text-xs text-slate-400">${q.detail}</p>
+          </div>
+        </div>`;
+      });
+      qualHTML += '</div>';
+      s3.innerHTML = qualHTML;
+      c.appendChild(s3);
+
+      // ---------- Section 4: Objectives Progress ----------
+      const s4 = document.createElement('div');
+      s4.className = 'animate-in mt-6';
+      let objHTML = '<h2 class="text-lg font-semibold text-white mb-4">Objectives Progress</h2><div class="space-y-4">';
+      DV.objectives.forEach(obj => {
+        const pct = obj.totalTasks > 0 ? Math.round((obj.completedTasks / obj.totalTasks) * 100) : 0;
+        const ragDot = obj.rag === 'Green' ? 'bg-green-500' : obj.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
+        const barColor = pct >= 70 ? 'bg-green-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
+        const isExpanded = devopsState.expandedObj === obj.id;
+        objHTML += `<div class="bg-card rounded-xl border border-border overflow-hidden">
+          <div class="p-4 cursor-pointer hover:bg-slate-800/50" onclick="devopsState.expandedObj = devopsState.expandedObj === '${obj.id}' ? null : '${obj.id}'; render();">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${ragDot}"></span>
+                <h3 class="text-sm font-semibold text-white">${obj.title}</h3>
+                <span class="arch-chevron text-slate-400 text-xs ${isExpanded ? 'open' : ''}">\u25B6</span>
+              </div>
+              <span class="text-xs text-slate-400">${obj.project}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-2 rounded-full bg-slate-700">
+                <div class="h-2 rounded-full ${barColor} progress-bar" style="width:${pct}%"></div>
+              </div>
+              <span class="text-xs text-slate-300 font-mono">${obj.completedTasks}/${obj.totalTasks}</span>
+              ${obj.blockedTasks > 0 ? `<span class="status-chip chip-blocked">${obj.blockedTasks} blocked</span>` : ''}
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Created ${obj.created} \u00B7 Status: ${obj.status}</p>
+          </div>`;
+        if (isExpanded) {
+          objHTML += `<div class="border-t border-border p-4 bg-slate-900/50">
+            <div class="flex justify-between items-center mb-3">
+              <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Task List</p>
+              <a href="${repoBase}${obj.file}" target="_blank" class="text-xs text-blue-400 hover:underline">View objective file \u2192</a>
+            </div>
+            <div class="space-y-1">`;
+          obj.tasks.forEach(t => {
+            const icon = t.status === 'done' ? '\u2705' : t.status === 'in_progress' ? '\u23F3' : t.status === 'blocked' ? '\uD83D\uDED1' : '\u25CB';
+            const textCls = t.status === 'done' ? 'text-slate-500 line-through' : t.status === 'blocked' ? 'text-red-400' : 'text-slate-300';
+            objHTML += `<div class="flex items-center gap-2 py-1">
+              <span class="text-xs">${icon}</span>
+              <span class="text-xs font-mono text-slate-500">${t.id}</span>
+              <span class="text-xs ${textCls}">${t.task}</span>
+            </div>`;
+          });
+          objHTML += '</div></div>';
+        }
+        objHTML += '</div>';
+      });
+      objHTML += '</div>';
+      s4.innerHTML = objHTML;
+      c.appendChild(s4);
+
+      // ---------- Section 5: Activity Log ----------
+      const s5 = document.createElement('div');
+      s5.className = 'animate-in mt-6';
+      const filteredLog = DV.activityLog.filter(e => {
+        if (devopsState.logFilter !== 'all' && !e.project.toLowerCase().includes(devopsState.logFilter)) return false;
+        if (devopsState.logOutcome !== 'all' && e.outcome !== devopsState.logOutcome) return false;
+        return true;
+      });
+      let logHTML = `<div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-white">Activity Log</h2>
+        <div class="flex gap-2">
+          <select class="filter-select" onchange="devopsState.logOutcome = this.value; render();">
+            <option value="all" ${devopsState.logOutcome==='all'?'selected':''}>All outcomes</option>
+            <option value="success" ${devopsState.logOutcome==='success'?'selected':''}>Success</option>
+            <option value="partial" ${devopsState.logOutcome==='partial'?'selected':''}>Partial</option>
+            <option value="failed" ${devopsState.logOutcome==='failed'?'selected':''}>Failed</option>
+          </select>
+        </div>
+      </div>`;
+      logHTML += '<div class="bg-card rounded-xl border border-border overflow-hidden"><table class="w-full text-left"><thead><tr class="border-b border-border bg-slate-800/50"><th class="p-3 text-xs text-slate-400 font-medium">Date</th><th class="p-3 text-xs text-slate-400 font-medium">Type</th><th class="p-3 text-xs text-slate-400 font-medium">Project</th><th class="p-3 text-xs text-slate-400 font-medium">Description</th><th class="p-3 text-xs text-slate-400 font-medium text-center">Outcome</th><th class="p-3 text-xs text-slate-400 font-medium text-center">Files</th></tr></thead><tbody>';
+      filteredLog.forEach(e => {
+        const outcomeColors = { success: 'bg-green-900/30 text-green-400', partial: 'bg-amber-900/30 text-amber-400', failed: 'bg-red-900/30 text-red-400' };
+        const oc = outcomeColors[e.outcome] || 'bg-slate-800 text-slate-400';
+        const typeColors = { manual: 'bg-blue-900/30 text-blue-400', scheduled: 'bg-purple-900/30 text-purple-400', 'standing-order': 'bg-purple-900/30 text-purple-400' };
+        const tc = typeColors[e.type] || 'bg-slate-800 text-slate-400';
+        logHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50">
+          <td class="p-3 text-xs text-slate-500">${e.date}</td>
+          <td class="p-3"><span class="text-xs px-2 py-0.5 rounded ${tc}">${e.type}</span></td>
+          <td class="p-3 text-xs text-slate-300">${e.project}</td>
+          <td class="p-3 text-xs text-slate-300">${e.description}</td>
+          <td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${oc}">${e.outcome}</span></td>
+          <td class="p-3 text-center text-xs text-slate-400">${e.filesChanged}</td>
+        </tr>`;
+      });
+      logHTML += '</tbody></table></div>';
+      s5.innerHTML = logHTML;
+      c.appendChild(s5);
+
+      // ---------- Section 6: Quick Access ----------
+      const s6 = document.createElement('div');
+      s6.className = 'animate-in mt-6';
+      let qaHTML = '<h2 class="text-lg font-semibold text-white mb-4">Quick Access</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+      const typeIcons = { doc: '\uD83D\uDCC4', log: '\uD83D\uDCCB', objective: '\uD83C\uDFAF', research: '\uD83D\uDD2C', external: '\uD83D\uDD17' };
+      const typeColors = { doc: 'border-blue-500/30', log: 'border-amber-500/30', objective: 'border-green-500/30', research: 'border-purple-500/30', external: 'border-slate-500/30' };
+      DV.quickAccess.forEach(qa => {
+        const icon = typeIcons[qa.type] || '\uD83D\uDCC1';
+        const borderCls = typeColors[qa.type] || '';
+        const href = qa.url || (repoBase + qa.path);
+        qaHTML += `<a href="${href}" target="_blank" class="bg-card rounded-lg p-3 border ${borderCls} hover:bg-slate-800/80 flex items-center gap-3 transition-colors">
+          <span class="text-lg">${icon}</span>
+          <div>
+            <p class="text-sm text-white">${qa.name}</p>
+            <p class="text-xs text-slate-500">${qa.path || qa.url}</p>
+          </div>
+        </a>`;
+      });
+      qaHTML += '</div>';
+      s6.innerHTML = qaHTML;
+      c.appendChild(s6);
     }
 
     render();
