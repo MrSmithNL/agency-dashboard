@@ -798,7 +798,7 @@ const DASHBOARD_DATA = {
     selfImprovement: {
       framework: {
         title: "Self-Improving Skills Framework",
-        status: "Phase 0 — Pilot",
+        status: "Phase 1 — Foundation",
         description: "Autonomous self-improvement system with three interlocking loops: Experience (learns from doing), Research (learns from the world), and Evolution (improves the improvement system).",
         capabilityDoc: "docs/capabilities/self-improving-skills.md",
         researchDoc: "research/self-improving-agent-skills-research.md"
@@ -809,19 +809,40 @@ const DASHBOARD_DATA = {
         { name: "Evolution Loop", description: "Review system performance → Measure improvement rates → Identify bottlenecks → Evolve the loops", frequency: "Quarterly", status: "designed", icon: "🧬" }
       ],
       phases: [
-        { id: 1, name: "Foundation", status: "not_started", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
+        { id: 1, name: "Foundation", status: "in_progress", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
         { id: 2, name: "Experience Accumulation", status: "not_started", description: "Reflexion steps, experience distillation, research monitoring", weeks: "3-4" },
         { id: 3, name: "Active Self-Improvement", status: "not_started", description: "DSPy/TextGrad prompt optimisation, cross-skill pattern detection", weeks: "5-8" },
         { id: 4, name: "Autonomous Evolution", status: "not_started", description: "Genetic prompt evolution, auto-roadmaps, Memento Case Banks", weeks: "9-12" },
         { id: 5, name: "Meta-Improvement", status: "not_started", description: "Evolve the improvement system itself, skill composition, Constitutional AI", weeks: "Ongoing" }
       ],
       pilotSkills: [
+        // Tier 1 — used almost every session
         { name: "content-research-writer", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
-        { name: "challenge", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null }
+        { name: "challenge", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "pdf", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "canvas-design", domain: "design", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "website-image-generator", domain: "design", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "skill-creator", domain: "integration", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "drift", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "emerge", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        // Tier 2 — used weekly
+        { name: "docx", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "xlsx", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "pptx", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "connect", domain: "integration", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "brand-guidelines", domain: "design", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "json-image-prompting", domain: "design", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "competitive-ads-extractor", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        // Tier 3 — used regularly
+        { name: "youtube-processor", domain: "utility", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "changelog-generator", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "lead-research-assistant", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "twitter-algorithm-optimizer", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "webapp-testing", domain: "utility", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null }
       ],
       metrics: {
-        totalSkillsTracked: 2,
-        totalGoldenTests: 10,
+        totalSkillsTracked: 20,
+        totalGoldenTests: 100,
         totalExecutionsLogged: 0,
         totalImprovementsMade: 0,
         averageSuccessRate: null,
