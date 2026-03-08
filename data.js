@@ -804,7 +804,7 @@ const DASHBOARD_DATA = {
         researchDoc: "research/self-improving-agent-skills-research.md"
       },
       loops: [
-        { name: "Experience Loop", description: "Execute → Log → Reflect → Extract Patterns → Update Skill → Test → Promote/Rollback", frequency: "Every execution", status: "designed", icon: "🔄" },
+        { name: "Experience Loop", description: "Execute → Log → Reflect → Extract Patterns → Update Skill → Test → Promote/Rollback", frequency: "Every execution", status: "active", icon: "🔄" },
         { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly per domain", status: "designed", icon: "🔍" },
         { name: "Evolution Loop", description: "Review system performance → Measure improvement rates → Identify bottlenecks → Evolve the loops", frequency: "Quarterly", status: "designed", icon: "🧬" }
       ],
