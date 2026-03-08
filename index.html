@@ -1781,6 +1781,121 @@
           mBar.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center" style="animation-delay:${i*0.05}s"><p class="text-xs text-slate-500">${m.l}</p><p class="text-lg font-bold ${m.c}">${m.v}</p></div>`;
         });
         c.appendChild(mBar);
+
+        // === EVOLUTION TRACKING SECTION ===
+        if (SI.evolutionTracking) {
+          const ET = SI.evolutionTracking;
+
+          c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-8','Evolution Tracking — System Performance'));
+
+          // Top-level cumulative stats
+          const cumBar = el('div','grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 animate-in');
+          const cumItems = [
+            {l:'Research Findings', v: ET.cumulativeTotals.totalResearchFindings, c:'text-cyan-400', icon:'🔍'},
+            {l:'Improvements Proposed', v: ET.cumulativeTotals.totalImprovementsProposed, c:'text-amber-400', icon:'💡'},
+            {l:'Improvements Promoted', v: ET.cumulativeTotals.totalImprovementsPromoted, c:'text-green-400', icon:'✓'},
+            {l:'Propagations', v: ET.cumulativeTotals.totalPropagationsSuccessful + '/' + ET.cumulativeTotals.totalPropagationsAttempted, c:'text-purple-400', icon:'🔄'},
+            {l:'Pipeline Runs', v: ET.cumulativeTotals.totalPipelineRuns, c:'text-blue-400', icon:'⚡'},
+            {l:'Docs Updated', v: ET.cumulativeTotals.totalDocsUpdatedByResearch, c:'text-pink-400', icon:'📄'}
+          ];
+          cumItems.forEach((m,i) => {
+            cumBar.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center" style="animation-delay:${i*0.04}s"><p class="text-lg mb-1">${m.icon}</p><p class="text-lg font-bold ${m.c}">${m.v}</p><p class="text-xs text-slate-500">${m.l}</p></div>`;
+          });
+          c.appendChild(cumBar);
+
+          // Pipeline Scripts Status
+          const pipeWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
+          let pipeHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Pipeline Scripts — 9 Active</h4></div>';
+          pipeHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Script</th><th class="text-left p-3 hidden md:table-cell">Purpose</th><th class="p-3 text-center">Category</th><th class="p-3 text-center">Runs</th><th class="p-3 text-center">Findings</th><th class="p-3 text-center hidden lg:table-cell">Last Run</th></tr></thead><tbody>';
+          const catColors = {experience:'bg-blue-900/30 text-blue-400',research:'bg-cyan-900/30 text-cyan-400',evolution:'bg-purple-900/30 text-purple-400',meta:'bg-pink-900/30 text-pink-400'};
+          ET.pipelines.forEach(p => {
+            const cc = catColors[p.category]||'bg-slate-800 text-slate-400';
+            pipeHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-white font-mono text-xs">${p.name}</td><td class="p-3 text-slate-400 text-xs hidden md:table-cell">${p.purpose}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${cc}">${p.category}</span></td><td class="p-3 text-center text-slate-300">${p.runsTotal}</td><td class="p-3 text-center text-slate-300">${p.findingsTotal}</td><td class="p-3 text-center text-slate-500 text-xs hidden lg:table-cell">${p.lastRun||'—'}</td></tr>`;
+          });
+          pipeHTML += '</tbody></table>';
+          pipeWrap.innerHTML = pipeHTML;
+          c.appendChild(pipeWrap);
+
+          // Scheduled Tasks + Doc Freshness side by side
+          const trackGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+
+          // Scheduled Autonomous Tasks
+          let taskHTML = '<div class="bg-card rounded-xl border border-border p-4 animate-in"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Scheduled Autonomous Tasks</h4>';
+          ET.scheduledTasks.forEach(t => {
+            const stColor = t.status==='active'?'text-green-400':'text-slate-500';
+            taskHTML += `<div class="flex items-center justify-between py-2 border-b border-border/30"><div><p class="text-sm text-white font-medium">${t.name}</p><p class="text-xs text-slate-500 mt-0.5">${t.scope}</p></div><div class="text-right"><p class="text-xs font-mono text-slate-300">${t.schedule}</p><p class="text-xs ${stColor} font-semibold mt-0.5">${t.status}</p></div></div>`;
+          });
+          taskHTML += '</div>';
+
+          // Documentation Freshness
+          let freshHTML = '<div class="bg-card rounded-xl border border-border p-4 animate-in"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Documentation Freshness</h4>';
+          const df = ET.docsFreshness;
+          freshHTML += `<div class="flex items-center gap-3 mb-3"><div class="flex-1 bg-green-900/20 rounded-lg p-2 text-center border border-green-800/30"><p class="text-lg font-bold text-green-400">${df.fresh}</p><p class="text-xs text-slate-500">Fresh</p></div><div class="flex-1 bg-amber-900/20 rounded-lg p-2 text-center border border-amber-800/30"><p class="text-lg font-bold text-amber-400">${df.stale}</p><p class="text-xs text-slate-500">Stale</p></div><div class="flex-1 bg-red-900/20 rounded-lg p-2 text-center border border-red-800/30"><p class="text-lg font-bold text-red-400">${df.missing}</p><p class="text-xs text-slate-500">Missing</p></div></div>`;
+          Object.entries(df.categories).forEach(([name, cat]) => {
+            const pct = cat.docs > 0 ? Math.round(cat.fresh / cat.docs * 100) : 0;
+            const barColor = pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+            freshHTML += `<div class="flex items-center gap-2 py-1"><span class="text-xs text-slate-400 w-28">${name}</span><div class="flex-1 bg-slate-800 rounded-full h-2"><div class="${barColor} rounded-full h-2" style="width:${pct}%"></div></div><span class="text-xs text-slate-500 w-16 text-right">${cat.fresh}/${cat.docs}</span></div>`;
+          });
+          freshHTML += '</div>';
+
+          trackGrid.innerHTML = taskHTML + freshHTML;
+          c.appendChild(trackGrid);
+
+          // Evolution Timeline
+          if (ET.weeklyTimeline.length > 0) {
+            const tlWrap = el('div','bg-card rounded-xl border border-border p-4 animate-in');
+            let tlHTML = '<h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Evolution Timeline</h4>';
+            ET.weeklyTimeline.slice().reverse().forEach((week, i) => {
+              const borderColor = i === 0 ? 'border-green-600' : 'border-slate-700';
+              tlHTML += `<div class="border-l-2 ${borderColor} pl-4 pb-4 ml-2 relative"><div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full ${i===0?'bg-green-500':'bg-slate-600'}"></div><div class="flex items-center gap-2 mb-1"><span class="text-xs font-bold text-white">${week.week}</span><span class="text-xs text-slate-500">${week.date}</span>`;
+              if (week.milestone) tlHTML += `<span class="text-xs px-2 py-0.5 rounded bg-green-900/30 text-green-400">${week.milestone}</span>`;
+              tlHTML += '</div>';
+              // Stats row
+              tlHTML += `<div class="flex gap-3 text-xs text-slate-400 mb-1"><span>📊 ${week.executionsLogged} executions</span><span>🔍 ${week.researchFindings} findings</span><span>💡 ${week.improvementsProposed} proposed</span><span>✓ ${week.improvementsPromoted} promoted</span><span>🔄 ${week.propagations} propagated</span></div>`;
+              // Highlights
+              if (week.highlights && week.highlights.length > 0) {
+                tlHTML += '<div class="mt-1">';
+                week.highlights.forEach(h => {
+                  tlHTML += `<p class="text-xs text-slate-500 leading-relaxed">• ${h}</p>`;
+                });
+                tlHTML += '</div>';
+              }
+              tlHTML += '</div>';
+            });
+            tlWrap.innerHTML = tlHTML;
+            c.appendChild(tlWrap);
+          }
+
+          // Recent Research Findings (if any)
+          if (ET.researchFindings.length > 0) {
+            const rfWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
+            let rfHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Recent Research Findings</h4></div>';
+            rfHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Date</th><th class="text-left p-3">Domain</th><th class="text-left p-3">Skill</th><th class="text-left p-3">Finding</th><th class="p-3 text-center">Score</th><th class="text-left p-3">Action</th></tr></thead><tbody>';
+            ET.researchFindings.slice(-10).reverse().forEach(f => {
+              const scoreColor = f.score >= 9 ? 'text-green-400' : f.score >= 7 ? 'text-cyan-400' : 'text-slate-400';
+              rfHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-slate-500">${f.date}</td><td class="p-3 text-xs text-slate-400">${f.domain}</td><td class="p-3 text-xs text-white">${f.skill}</td><td class="p-3 text-xs text-slate-300">${f.finding.length > 80 ? f.finding.substring(0,80)+'...' : f.finding}</td><td class="p-3 text-center ${scoreColor} font-bold">${f.score}/10</td><td class="p-3 text-xs text-slate-400">${f.actionTaken}</td></tr>`;
+            });
+            rfHTML += '</tbody></table>';
+            rfWrap.innerHTML = rfHTML;
+            c.appendChild(rfWrap);
+          }
+
+          // Improvement Proposals (if any)
+          if (ET.improvementProposals.length > 0) {
+            const ipWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
+            let ipHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Improvement Proposals</h4></div>';
+            ipHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Date</th><th class="text-left p-3">Skill</th><th class="text-left p-3">Proposal</th><th class="p-3 text-center">Source</th><th class="p-3 text-center">Status</th><th class="p-3 text-center">Score Change</th></tr></thead><tbody>';
+            const statusColors = {proposed:'bg-amber-900/30 text-amber-400',testing:'bg-blue-900/30 text-blue-400',promoted:'bg-green-900/30 text-green-400',rejected:'bg-red-900/30 text-red-400'};
+            ET.improvementProposals.slice(-10).reverse().forEach(p => {
+              const sc = statusColors[p.status]||'bg-slate-800 text-slate-400';
+              const scoreChange = p.scoreBefore !== null && p.scoreAfter !== null ? `${p.scoreBefore}% → ${p.scoreAfter}%` : '—';
+              ipHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-slate-500">${p.date}</td><td class="p-3 text-xs text-white">${p.skill}</td><td class="p-3 text-xs text-slate-300">${p.proposal.length > 60 ? p.proposal.substring(0,60)+'...' : p.proposal}</td><td class="p-3 text-center text-xs text-slate-400">${p.source}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${sc}">${p.status}</span></td><td class="p-3 text-center text-xs text-slate-300">${scoreChange}</td></tr>`;
+            });
+            ipHTML += '</tbody></table>';
+            ipWrap.innerHTML = ipHTML;
+            c.appendChild(ipWrap);
+          }
+        }
       }
     }
 
