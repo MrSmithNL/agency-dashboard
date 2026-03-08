@@ -805,8 +805,8 @@ const DASHBOARD_DATA = {
       },
       loops: [
         { name: "Experience Loop", description: "Execute → Log → Reflect → Extract Patterns → Update Skill → Test → Promote/Rollback", frequency: "Every execution", status: "active", icon: "🔄" },
-        { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly per domain", status: "active", icon: "🔍" },
-        { name: "Evolution Loop", description: "Review system performance → Measure improvement rates → Identify bottlenecks → Evolve the loops", frequency: "Quarterly", status: "designed", icon: "🧬" }
+        { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly + Saturday scan", status: "active", icon: "🔍" },
+        { name: "Evolution Loop", description: "Monitor operational docs freshness → Research infrastructure improvements → Update ways of working → Evolve the system", frequency: "Weekly", status: "active", icon: "🧬" }
       ],
       phases: [
         { id: 1, name: "Foundation", status: "complete", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
