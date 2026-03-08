@@ -760,12 +760,45 @@ const DASHBOARD_DATA = {
       { name: "tailored-resume-generator", label: "Tailored Resume Generator", domain: "utility", type: "atomic", maturity: "tested", version: "1.0", deps: [], description: "Generate resumes tailored to specific job descriptions with ATS optimisation", source: "Composio/awesome-claude-skills", invoke: "/tailored-resume-generator" }
     ],
     customAgents: [
-      { name: "shopify-manager", label: "Shopify Manager", domain: "commerce", model: "Opus", skills: [], description: "Manages Shopify stores — products, translations, themes, articles, blog posts" },
-      { name: "seo-researcher", label: "SEO Researcher", domain: "intelligence", model: "Sonnet", skills: ["competitive-ads-extractor", "lead-research-assistant"], description: "Keyword research, competitor analysis, content gaps, backlink opportunities" },
-      { name: "code-reviewer", label: "Code Reviewer", domain: "utility", model: "Haiku", skills: [], description: "Reviews code for quality, security, OWASP issues (read-only)" },
-      { name: "content-writer", label: "Content Writer", domain: "content", model: "Sonnet", skills: ["content-research-writer"], description: "Blog articles, product descriptions, marketing copy, translations" },
-      { name: "docs-maintainer", label: "Docs Maintainer", domain: "utility", model: "Haiku", skills: [], description: "Updates docs, diagrams, todos, architecture files after changes" }
+      { name: "shopify-manager", label: "Shopify Manager", domain: "commerce", model: "Opus", version: "1.0.0", maturity: "production", skills: [], description: "Manages Shopify stores — products, translations, themes, articles, blog posts", evalTests: 2 },
+      { name: "seo-researcher", label: "SEO Researcher", domain: "intelligence", model: "Sonnet", version: "1.0.0", maturity: "production", skills: ["competitive-ads-extractor", "lead-research-assistant"], description: "Keyword research, competitor analysis, content gaps, backlink opportunities", evalTests: 3 },
+      { name: "code-reviewer", label: "Code Reviewer", domain: "utility", model: "Haiku", version: "1.0.0", maturity: "production", skills: [], description: "Reviews code for quality, security, OWASP issues (read-only)", evalTests: 2 },
+      { name: "content-writer", label: "Content Writer", domain: "content", model: "Sonnet", version: "1.0.0", maturity: "production", skills: ["content-research-writer"], description: "Blog articles, product descriptions, marketing copy, translations", evalTests: 3 },
+      { name: "docs-maintainer", label: "Docs Maintainer", domain: "utility", model: "Haiku", version: "1.0.0", maturity: "production", skills: [], description: "Updates docs, diagrams, todos, architecture files after changes", evalTests: 2 }
     ],
+    orchestration: {
+      patterns: [
+        { name: "Specialist Dispatch", icon: "🎯", description: "Route entire task to single best-fit agent", cost: "$0.01-0.20", useWhen: "Most tasks — default pattern" },
+        { name: "Lead-Worker", icon: "👔", description: "Opus lead decomposes, Sonnet/Haiku workers execute", cost: "$0.20-2.00", useWhen: "Complex multi-domain tasks" },
+        { name: "Fan-Out Research", icon: "🔍", description: "Multiple agents research same topic from different angles, merge findings", cost: "$0.10-1.00", useWhen: "Research where multiple perspectives improve quality" },
+        { name: "Pipeline Chain", icon: "⛓️", description: "Sequential agents — each adds value to previous output", cost: "$0.05-0.50", useWhen: "Content production workflows" }
+      ],
+      modelRouting: [
+        { tier: "Simple", model: "Haiku", cost: "$0.80 / $4.00 per M tokens", examples: "Formatting, filing, doc updates, code review" },
+        { tier: "Standard", model: "Sonnet", cost: "$3.00 / $15.00 per M tokens", examples: "Content creation, research, analysis, coding" },
+        { tier: "Complex", model: "Opus", cost: "$15.00 / $75.00 per M tokens", examples: "Strategy, multi-step reasoning, architecture" }
+      ],
+      cascadeRule: "Default to Sonnet. Escalate to Opus when task requires multi-step reasoning or Sonnet scores < 6/10. Downgrade to Haiku when purely mechanical.",
+      governanceTiers: [
+        { tier: "Minimal", agents: "code-reviewer", description: "Read-only, can't write. No kill switch needed." },
+        { tier: "Moderate", agents: "docs-maintainer", description: "Can write .md files only. Git-tracked, reversible." },
+        { tier: "Robust", agents: "shopify-manager, content-writer, seo-researcher", description: "Approval needed for external actions. No mutations without confirmation." }
+      ],
+      lifecycle: [
+        { stage: "Draft", description: "Instructions being developed", autonomous: false },
+        { stage: "Tested", description: "Has evaluation set + baseline scores", autonomous: true, note: "with monitoring" },
+        { stage: "Production", description: "Proven reliable (>90% success, >7/10 quality)", autonomous: true, note: "full autonomy" }
+      ],
+      selfImprovement: {
+        summary: "Agents improve through the same 3-loop system as skills: Experience → Research → Evolution. 3 pipeline scripts monitor and improve agent performance.",
+        cycle: "Execute → Log → Analyse → Propose → Evaluate → Gate (>5% regression = block) → Promote → Monitor 7d → Confirm/Rollback",
+        scripts: [
+          { name: "agent_metrics.py", purpose: "Structured execution logging with cost tracking" },
+          { name: "agent_evaluator.py", purpose: "Regression testing with LLM-as-judge" },
+          { name: "agent_improvement.py", purpose: "Auto-detect issues and generate proposals" }
+        ]
+      }
+    },
     composioHighlights: [
       { name: "serpapi-automation", label: "SerpAPI", domain: "intelligence", description: "Search engine results scraping" },
       { name: "semrush-automation", label: "SEMrush", domain: "intelligence", description: "SEO and keyword research" },
