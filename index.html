@@ -97,7 +97,7 @@
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
-  <script src="data.js"></script>
+  <script src="data.js?v=20260308b"></script>
 
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -1905,6 +1905,7 @@
     let devopsState = { expandedObj: null, logFilter: 'all', logOutcome: 'all' };
 
     function renderDevOps(c) {
+      if (!D.devops) { c.innerHTML = '<p class="text-amber-400">DevOps data not loaded. Try a hard refresh (Cmd+Shift+R) to clear the browser cache.</p>'; return; }
       const DV = D.devops;
       const repoBase = 'https://github.com/MrSmithNL/smith-ai-agency/blob/main/';
 
