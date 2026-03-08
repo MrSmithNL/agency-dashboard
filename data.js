@@ -794,6 +794,56 @@ const DASHBOARD_DATA = {
       { name: "googledrive-automation", label: "Google Drive", domain: "utility", description: "File storage and sharing" },
       { name: "clockify-automation", label: "Clockify", domain: "utility", description: "Time tracking" },
       { name: "ticktick-automation", label: "TickTick", domain: "utility", description: "To-do lists" }
-    ]
+    ],
+    selfImprovement: {
+      framework: {
+        title: "Self-Improving Skills Framework",
+        status: "Phase 0 — Pilot",
+        description: "Autonomous self-improvement system with three interlocking loops: Experience (learns from doing), Research (learns from the world), and Evolution (improves the improvement system).",
+        capabilityDoc: "docs/capabilities/self-improving-skills.md",
+        researchDoc: "research/self-improving-agent-skills-research.md"
+      },
+      loops: [
+        { name: "Experience Loop", description: "Execute → Log → Reflect → Extract Patterns → Update Skill → Test → Promote/Rollback", frequency: "Every execution", status: "designed", icon: "🔄" },
+        { name: "Research Loop", description: "Monitor Web → Filter Relevance → Store Findings → Generate Proposals → Score → Add to Backlog", frequency: "Weekly per domain", status: "designed", icon: "🔍" },
+        { name: "Evolution Loop", description: "Review system performance → Measure improvement rates → Identify bottlenecks → Evolve the loops", frequency: "Quarterly", status: "designed", icon: "🧬" }
+      ],
+      phases: [
+        { id: 1, name: "Foundation", status: "not_started", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
+        { id: 2, name: "Experience Accumulation", status: "not_started", description: "Reflexion steps, experience distillation, research monitoring", weeks: "3-4" },
+        { id: 3, name: "Active Self-Improvement", status: "not_started", description: "DSPy/TextGrad prompt optimisation, cross-skill pattern detection", weeks: "5-8" },
+        { id: 4, name: "Autonomous Evolution", status: "not_started", description: "Genetic prompt evolution, auto-roadmaps, Memento Case Banks", weeks: "9-12" },
+        { id: 5, name: "Meta-Improvement", status: "not_started", description: "Evolve the improvement system itself, skill composition, Constitutional AI", weeks: "Ongoing" }
+      ],
+      pilotSkills: [
+        { name: "content-research-writer", domain: "content", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null },
+        { name: "challenge", domain: "intelligence", status: "pilot", goldenTests: 5, executions: 0, reflections: 0, improvements: 0, successRate: null, lastImproved: null }
+      ],
+      metrics: {
+        totalSkillsTracked: 2,
+        totalGoldenTests: 10,
+        totalExecutionsLogged: 0,
+        totalImprovementsMade: 0,
+        averageSuccessRate: null,
+        researchFindingsThisMonth: 0,
+        crossSkillPropagations: 0
+      },
+      tools: [
+        { name: "DSPy", purpose: "Prompt optimisation", priority: "high", status: "to_evaluate" },
+        { name: "TextGrad", purpose: "Gradient-based refinement", priority: "high", status: "to_evaluate" },
+        { name: "DeepEval", purpose: "Skill evaluation", priority: "high", status: "to_evaluate" },
+        { name: "Letta SDK", purpose: "Continual learning", priority: "high", status: "to_evaluate" },
+        { name: "Tavily", purpose: "Research monitoring", priority: "high", status: "connected" },
+        { name: "Exa", purpose: "Semantic search", priority: "high", status: "connected" },
+        { name: "n8n/Rube", purpose: "Workflow automation", priority: "high", status: "in_stack" }
+      ],
+      safetyModel: {
+        tiers: [
+          { confidence: "High (>90%)", action: "Auto-apply, log for review", scope: "Prompt wording, examples" },
+          { confidence: "Medium (50-90%)", action: "Stage + flag for human review", scope: "New approaches, added steps" },
+          { confidence: "Low (<50%)", action: "Propose only, require approval", scope: "Structural changes" }
+        ]
+      }
+    }
   },
 };

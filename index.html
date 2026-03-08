@@ -1696,6 +1696,92 @@
         });
         c.appendChild(compGrid);
       }
+
+      // === Self-Improvement System ===
+      if (T.selfImprovement) {
+        const SI = T.selfImprovement;
+
+        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-8','Self-Improvement System'));
+
+        // Framework status card
+        const fwCard = el('div','bg-card rounded-xl border border-border p-5 animate-in');
+        fwCard.style.borderLeftColor = '#f59e0b'; fwCard.style.borderLeftWidth = '3px';
+        fwCard.innerHTML = `<div class="flex items-center justify-between mb-3"><div><h3 class="text-white font-semibold">${SI.framework.title}</h3><p class="text-xs text-slate-400 mt-1">${SI.framework.description}</p></div><span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-900/30 text-amber-400">${SI.framework.status}</span></div>`;
+        c.appendChild(fwCard);
+
+        // Three Loops
+        const loopGrid = el('div','grid grid-cols-1 md:grid-cols-3 gap-4');
+        SI.loops.forEach((loop,i) => {
+          const statusColor = loop.status==='active'?'text-green-400':loop.status==='designed'?'text-amber-400':'text-slate-500';
+          loopGrid.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.1}s"><div class="flex items-center gap-2 mb-2"><span class="text-xl">${loop.icon}</span><h4 class="text-white font-semibold text-sm">${loop.name}</h4></div><p class="text-xs text-slate-400 mb-2">${loop.description}</p><div class="flex items-center justify-between"><span class="text-xs text-slate-500">${loop.frequency}</span><span class="text-xs ${statusColor} uppercase font-semibold">${loop.status}</span></div></div>`;
+        });
+        c.appendChild(loopGrid);
+
+        // Implementation Phases (horizontal timeline)
+        const phaseWrap = el('div','bg-card rounded-xl border border-border p-4 animate-in');
+        let phaseHTML = '<h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Implementation Roadmap</h4><div class="flex flex-wrap gap-2">';
+        SI.phases.forEach(p => {
+          const bg = p.status==='complete'?'bg-green-900/30 text-green-400 border-green-700':p.status==='in_progress'?'bg-blue-900/30 text-blue-400 border-blue-700':'bg-slate-800/50 text-slate-400 border-slate-700';
+          const icon = p.status==='complete'?'✓':p.status==='in_progress'?'▶':'○';
+          phaseHTML += `<div class="flex-1 min-w-[140px] p-3 rounded-lg border ${bg}"><div class="flex items-center gap-1 mb-1"><span class="text-xs">${icon}</span><span class="text-xs font-bold">Phase ${p.id}</span><span class="text-xs opacity-60">Wk ${p.weeks}</span></div><p class="text-xs font-medium">${p.name}</p><p class="text-xs opacity-60 mt-1">${p.description}</p></div>`;
+        });
+        phaseHTML += '</div>';
+        phaseWrap.innerHTML = phaseHTML;
+        c.appendChild(phaseWrap);
+
+        // Pilot Skills
+        if (SI.pilotSkills.length > 0) {
+          const pilotWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
+          let pilotHTML = '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Pilot Skill</th><th class="text-left p-3">Domain</th><th class="p-3 text-center">Golden Tests</th><th class="p-3 text-center">Executions</th><th class="p-3 text-center">Reflections</th><th class="p-3 text-center">Improvements</th><th class="p-3 text-center">Success Rate</th></tr></thead><tbody>';
+          SI.pilotSkills.forEach(ps => {
+            const dom = T.domains.find(d=>d.id===ps.domain);
+            pilotHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3"><span class="text-white font-medium">${ps.name}</span><span class="text-xs ml-2 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-400">pilot</span></td><td class="p-3"><span class="text-xs" style="color:${dom?dom.color:'#64748b'}">${dom?dom.icon+' '+dom.name:ps.domain}</span></td><td class="p-3 text-center text-slate-300">${ps.goldenTests}</td><td class="p-3 text-center text-slate-300">${ps.executions}</td><td class="p-3 text-center text-slate-300">${ps.reflections}</td><td class="p-3 text-center text-slate-300">${ps.improvements}</td><td class="p-3 text-center">${ps.successRate !== null ? '<span class="text-green-400">'+ps.successRate+'%</span>' : '<span class="text-slate-600">—</span>'}</td></tr>`;
+          });
+          pilotHTML += '</tbody></table>';
+          pilotWrap.innerHTML = pilotHTML;
+          c.appendChild(pilotWrap);
+        }
+
+        // Tools & Safety (side by side)
+        const bottomGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4');
+
+        // Tools
+        let toolHTML = '<div class="bg-card rounded-xl border border-border p-4 animate-in"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Tools Stack</h4>';
+        SI.tools.forEach(t => {
+          const stColor = t.status==='connected'||t.status==='in_stack'?'text-green-400':t.status==='to_evaluate'?'text-amber-400':'text-slate-500';
+          const stLabel = t.status==='connected'?'Connected':t.status==='in_stack'?'In Stack':t.status==='to_evaluate'?'To Evaluate':'Planned';
+          const prColor = t.priority==='high'?'bg-red-900/30 text-red-300':'bg-slate-800 text-slate-400';
+          toolHTML += `<div class="flex items-center justify-between py-1.5 border-b border-border/30"><div class="flex items-center gap-2"><span class="text-sm text-white font-medium">${t.name}</span><span class="text-xs ${prColor} px-1.5 py-0.5 rounded">${t.priority}</span></div><div class="flex items-center gap-2"><span class="text-xs text-slate-500">${t.purpose}</span><span class="text-xs ${stColor} font-semibold">${stLabel}</span></div></div>`;
+        });
+        toolHTML += '</div>';
+
+        // Safety
+        let safeHTML = '<div class="bg-card rounded-xl border border-border p-4 animate-in"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Safety Model — Confidence Tiers</h4>';
+        SI.safetyModel.tiers.forEach((t,i) => {
+          const colors = ['bg-green-900/20 border-green-700','bg-amber-900/20 border-amber-700','bg-red-900/20 border-red-700'];
+          safeHTML += `<div class="p-2.5 rounded-lg border mb-2 ${colors[i]}"><div class="flex items-center justify-between"><span class="text-xs text-white font-semibold">${t.confidence}</span><span class="text-xs text-slate-400">${t.scope}</span></div><p class="text-xs text-slate-300 mt-1">${t.action}</p></div>`;
+        });
+        safeHTML += '</div>';
+
+        bottomGrid.innerHTML = toolHTML + safeHTML;
+        c.appendChild(bottomGrid);
+
+        // KPI metrics bar
+        const mBar = el('div','grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 animate-in');
+        const mItems = [
+          {l:'Skills Tracked', v: SI.metrics.totalSkillsTracked, c:'text-blue-400'},
+          {l:'Golden Tests', v: SI.metrics.totalGoldenTests, c:'text-green-400'},
+          {l:'Executions Logged', v: SI.metrics.totalExecutionsLogged, c:'text-purple-400'},
+          {l:'Improvements Made', v: SI.metrics.totalImprovementsMade, c:'text-amber-400'},
+          {l:'Avg Success Rate', v: SI.metrics.averageSuccessRate !== null ? SI.metrics.averageSuccessRate + '%' : '—', c:'text-cyan-400'},
+          {l:'Research Findings', v: SI.metrics.researchFindingsThisMonth, c:'text-pink-400'},
+          {l:'Cross-Skill Props', v: SI.metrics.crossSkillPropagations, c:'text-orange-400'}
+        ];
+        mItems.forEach((m,i) => {
+          mBar.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center" style="animation-delay:${i*0.05}s"><p class="text-xs text-slate-500">${m.l}</p><p class="text-lg font-bold ${m.c}">${m.v}</p></div>`;
+        });
+        c.appendChild(mBar);
+      }
     }
 
     render();
