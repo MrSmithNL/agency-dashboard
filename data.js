@@ -798,7 +798,7 @@ const DASHBOARD_DATA = {
     selfImprovement: {
       framework: {
         title: "Self-Improving Skills Framework",
-        status: "Phase 1 Complete — Ready for Phase 2",
+        status: "Phase 2 — Experience Accumulation",
         description: "Autonomous self-improvement system with three interlocking loops: Experience (learns from doing), Research (learns from the world), and Evolution (improves the improvement system).",
         capabilityDoc: "docs/capabilities/self-improving-skills.md",
         researchDoc: "research/self-improving-agent-skills-research.md"
@@ -810,7 +810,7 @@ const DASHBOARD_DATA = {
       ],
       phases: [
         { id: 1, name: "Foundation", status: "complete", description: "Execution logging, golden tests, skill versioning for top 20 skills", weeks: "1-2" },
-        { id: 2, name: "Experience Accumulation", status: "not_started", description: "Reflexion steps, experience distillation, research monitoring", weeks: "3-4" },
+        { id: 2, name: "Experience Accumulation", status: "in_progress", description: "Distillation pipeline, failure flywheel, confidence scoring, enhanced logging", weeks: "3-4" },
         { id: 3, name: "Active Self-Improvement", status: "not_started", description: "DSPy/TextGrad prompt optimisation, cross-skill pattern detection", weeks: "5-8" },
         { id: 4, name: "Autonomous Evolution", status: "not_started", description: "Genetic prompt evolution, auto-roadmaps, Memento Case Banks", weeks: "9-12" },
         { id: 5, name: "Meta-Improvement", status: "not_started", description: "Evolve the improvement system itself, skill composition, Constitutional AI", weeks: "Ongoing" }
