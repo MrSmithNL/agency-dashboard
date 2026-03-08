@@ -935,6 +935,19 @@ const DASHBOARD_DATA = {
             ]
           }
         ],
+        // Agent Army metrics (updated by agent_metrics.py)
+        agentMetrics: [
+          { name: "content-writer", version: "1.0.0", model: "sonnet", domain: "content", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "seo-researcher", version: "1.0.0", model: "sonnet", domain: "intelligence", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "shopify-manager", version: "1.0.0", model: "opus", domain: "commerce", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "code-reviewer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "docs-maintainer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null }
+        ],
+        agentCostBreakdown: {
+          totalAgentCost: 0,
+          totalAgentExecutions: 0,
+          byModel: { opus: 0, sonnet: 0, haiku: 0 }
+        },
         // Cumulative totals updated by pipeline scripts
         cumulativeTotals: {
           totalResearchFindings: 20,

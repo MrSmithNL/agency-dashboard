@@ -1897,6 +1897,45 @@
             ipWrap.innerHTML = ipHTML;
             c.appendChild(ipWrap);
           }
+
+          // === AGENT ARMY SECTION ===
+          if (ET.agentMetrics && ET.agentMetrics.length > 0) {
+            c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-8','Agent Army — Performance & Cost'));
+
+            // Agent cost summary bar
+            const costData = ET.agentCostBreakdown || {};
+            const costBar = el('div','grid grid-cols-2 md:grid-cols-4 gap-3 mt-3');
+            const costItems = [
+              {label:'Total Agent Executions', value: costData.totalAgentExecutions || 0},
+              {label:'Total Cost', value: '$' + (costData.totalAgentCost || 0).toFixed(2)},
+              {label:'Opus Cost', value: '$' + ((costData.byModel||{}).opus || 0).toFixed(2)},
+              {label:'Sonnet Cost', value: '$' + ((costData.byModel||{}).sonnet || 0).toFixed(2)}
+            ];
+            costItems.forEach(item => {
+              const card = el('div','bg-card rounded-lg border border-border p-3 text-center');
+              card.innerHTML = `<div class="text-lg font-bold text-white">${item.value}</div><div class="text-xs text-slate-400">${item.label}</div>`;
+              costBar.appendChild(card);
+            });
+            c.appendChild(costBar);
+
+            // Agent performance table
+            const agentWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in mt-3');
+            let agentHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Agent Performance</h4></div>';
+            agentHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Agent</th><th class="p-3 text-center">Version</th><th class="p-3 text-center">Model</th><th class="p-3 text-center">Domain</th><th class="p-3 text-center">Runs</th><th class="p-3 text-center">Success</th><th class="p-3 text-center">Avg Cost</th><th class="p-3 text-center">Quality</th></tr></thead><tbody>';
+            const modelColors = {opus:'bg-purple-900/30 text-purple-400',sonnet:'bg-blue-900/30 text-blue-400',haiku:'bg-green-900/30 text-green-400'};
+            const domainColors = {content:'bg-amber-900/30 text-amber-400',intelligence:'bg-cyan-900/30 text-cyan-400',commerce:'bg-pink-900/30 text-pink-400',utility:'bg-slate-700/50 text-slate-300'};
+            ET.agentMetrics.forEach(a => {
+              const mc = modelColors[a.model]||'bg-slate-800 text-slate-400';
+              const dc = domainColors[a.domain]||'bg-slate-800 text-slate-400';
+              const sr = a.successRate !== null ? `${a.successRate}%` : '—';
+              const srClass = a.successRate >= 90 ? 'text-green-400' : a.successRate >= 70 ? 'text-amber-400' : a.successRate !== null ? 'text-red-400' : 'text-slate-500';
+              const quality = a.avgQuality !== null ? `${a.avgQuality}/10` : '—';
+              agentHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-white font-medium">${a.name}</td><td class="p-3 text-center text-xs text-slate-400">${a.version}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${mc}">${a.model}</span></td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${dc}">${a.domain}</span></td><td class="p-3 text-center text-xs text-white">${a.executions}</td><td class="p-3 text-center text-xs ${srClass}">${sr}</td><td class="p-3 text-center text-xs text-slate-300">$${(a.avgCost||0).toFixed(3)}</td><td class="p-3 text-center text-xs text-slate-300">${quality}</td></tr>`;
+            });
+            agentHTML += '</tbody></table>';
+            agentWrap.innerHTML = agentHTML;
+            c.appendChild(agentWrap);
+          }
         }
       }
     }
