@@ -122,6 +122,7 @@
       <button onclick="navigateTo('organisation')" data-tab="organisation" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Organisation</button>
       <button onclick="navigateTo('agents')" data-tab="agents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agents</button>
       <button onclick="navigateTo('agent-army')" data-tab="agent-army" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agent Army</button>
+      <button onclick="navigateTo('tasks')" data-tab="tasks" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Tasks</button>
       <button onclick="navigateTo('devops')" data-tab="devops" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">DevOps</button>
     </div>
   </nav>
@@ -191,6 +192,7 @@
       else if (route === 'organisation') { renderOrganisation(main); document.getElementById('breadcrumb').textContent = 'Organisation'; document.title = 'Smith AI Agency \u2014 Organisation'; }
       else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
       else if (route === 'agent-army') { renderAgentArmy(main); document.getElementById('breadcrumb').textContent = 'Agent Army'; document.title = 'Smith AI Agency \u2014 Agent Army'; }
+      else if (route === 'tasks') { renderTasks(main); document.getElementById('breadcrumb').textContent = 'Tasks'; document.title = 'Smith AI Agency \u2014 Tasks'; }
       else if (route === 'devops') { renderDevOps(main); document.getElementById('breadcrumb').textContent = 'Autonomous DevOps'; document.title = 'Smith AI Agency \u2014 DevOps'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
@@ -227,7 +229,13 @@
       cr.innerHTML = '<div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3><canvas id="taskStatusChart" height="200"></canvas></div><div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3><canvas id="costChart" height="200"></canvas></div>';
       c.appendChild(cr);
       requestAnimationFrame(() => { renderTaskStatusChart(); renderCostChart(); });
-      renderTasksTable(c, D.tasks.filter(t=>t.status!=='Done'), 'Active Tasks');
+      // Task summary with link to Tasks tab
+      const taskSummary = el('div','bg-card rounded-xl border border-border p-4 animate-in');
+      const active = D.tasks.filter(t=>t.status!=='Done');
+      const blocked = D.tasks.filter(t=>t.status==='Blocked');
+      const thisWeek = D.tasks.filter(t=>t.status==='This Week');
+      taskSummary.innerHTML = `<div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tasks Overview</h2><button onclick="navigateTo('tasks')" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">View all tasks \u2192</button></div><div class="grid grid-cols-4 gap-3">${[{l:'This Week',v:thisWeek.length,c:'text-blue-400'},{l:'Blocked',v:blocked.length,c:blocked.length>0?'text-red-400':'text-green-400'},{l:'Active Total',v:active.length,c:'text-slate-300'},{l:'Completed',v:D.tasks.filter(t=>t.status==='Done').length,c:'text-green-400'}].map(k=>`<div class="text-center p-2 rounded-lg bg-bg"><p class="text-xs text-slate-500">${k.l}</p><p class="text-lg font-bold ${k.c}">${k.v}</p></div>`).join('')}</div>${blocked.length>0?`<div class="mt-3 pt-3 border-t border-border/50"><p class="text-xs text-red-400 mb-1">Blocked tasks:</p>${blocked.map(t=>`<p class="text-xs text-slate-400">\u2022 ${t.name}</p>`).join('')}</div>`:''}`;
+      c.appendChild(taskSummary);
       renderFinancialTable(c, D.financial);
     }
 
@@ -2178,6 +2186,137 @@
       }
     }
 
+    // ==================== TASKS VIEW ====================
+    let tasksState = { view: 'board', filter: 'all', projectFilter: 'all', expandedObj: null };
+
+    function renderTasks(c) {
+      const tasks = D.tasks || [];
+      const columns = ['This Week','In Progress','Blocked','Review','Backlog','Done'];
+      const colColors = {'This Week':'#3b82f6','In Progress':'#22c55e','Blocked':'#ef4444','Review':'#a855f7','Backlog':'#64748b','Done':'#14532d'};
+      const colIcons = {'This Week':'📋','In Progress':'▶️','Blocked':'🚫','Review':'🔍','Backlog':'📦','Done':'✅'};
+
+      // Task KPIs
+      const active = tasks.filter(t=>t.status!=='Done');
+      const blocked = tasks.filter(t=>t.status==='Blocked');
+      const thisWeek = tasks.filter(t=>t.status==='This Week');
+      const done = tasks.filter(t=>t.status==='Done');
+      const kpis = el('div','grid grid-cols-2 md:grid-cols-5 gap-3');
+      [{l:'Total Tasks',v:tasks.length,c:'text-slate-300'},{l:'This Week',v:thisWeek.length,c:'text-blue-400'},{l:'In Progress',v:tasks.filter(t=>t.status==='In Progress').length,c:'text-green-400'},{l:'Blocked',v:blocked.length,c:blocked.length>0?'text-red-400':'text-green-400'},{l:'Completed',v:done.length,c:'text-green-400'}].forEach((k,i) => {
+        kpis.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 text-center animate-in" style="animation-delay:${i*0.06}s"><p class="text-xs text-slate-500">${k.l}</p><p class="text-2xl font-bold ${k.c}">${k.v}</p></div>`;
+      });
+      c.appendChild(kpis);
+
+      // View toggle + filters
+      const toolbar = el('div','flex flex-wrap items-center gap-3 bg-card rounded-xl border border-border p-3');
+      // View toggle
+      toolbar.innerHTML = `<div class="flex gap-1 bg-bg rounded-lg p-0.5"><button onclick="tasksState.view='board';render()" class="text-xs px-3 py-1.5 rounded ${tasksState.view==='board'?'bg-blue-600 text-white':'text-slate-400 hover:text-white'} cursor-pointer">Board</button><button onclick="tasksState.view='table';render()" class="text-xs px-3 py-1.5 rounded ${tasksState.view==='table'?'bg-blue-600 text-white':'text-slate-400 hover:text-white'} cursor-pointer">Table</button></div>`;
+      // Project filter
+      const projects = [...new Set(tasks.map(t=>t.project))].sort();
+      let projOpts = '<option value="all">All Projects</option>';
+      projects.forEach(p => { projOpts += `<option value="${p}" ${tasksState.projectFilter===p?'selected':''}>${p}</option>`; });
+      toolbar.innerHTML += `<select class="filter-select" onchange="tasksState.projectFilter=this.value;render()">${projOpts}</select>`;
+      // Status filter (for table view)
+      let statusOpts = '<option value="all">All Status</option>';
+      columns.forEach(s => { statusOpts += `<option value="${s}" ${tasksState.filter===s?'selected':''}>${s}</option>`; });
+      toolbar.innerHTML += `<select class="filter-select" onchange="tasksState.filter=this.value;render()">${statusOpts}</select>`;
+      if (tasksState.projectFilter !== 'all' || tasksState.filter !== 'all') {
+        toolbar.innerHTML += `<button onclick="tasksState.projectFilter='all';tasksState.filter='all';render()" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">\u2715 Clear</button>`;
+      }
+      c.appendChild(toolbar);
+
+      // Filter tasks
+      let filtered = [...tasks];
+      if (tasksState.projectFilter !== 'all') filtered = filtered.filter(t => t.project === tasksState.projectFilter);
+      if (tasksState.filter !== 'all') filtered = filtered.filter(t => t.status === tasksState.filter);
+
+      if (tasksState.view === 'board') {
+        // === KANBAN BOARD ===
+        const board = el('div','grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3');
+        board.style.minHeight = '300px';
+        columns.forEach(col => {
+          const colTasks = filtered.filter(t => t.status === col);
+          const color = colColors[col];
+          const column = el('div','bg-card rounded-xl border border-border overflow-hidden');
+          column.style.borderTopColor = color; column.style.borderTopWidth = '3px';
+          let colHTML = `<div class="p-3 border-b border-border/50"><div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${colIcons[col]} ${col}</span><span class="text-xs font-bold px-1.5 py-0.5 rounded-full" style="background:${color}22;color:${color}">${colTasks.length}</span></div></div>`;
+          colHTML += '<div class="p-2 space-y-2" style="max-height:500px;overflow-y:auto">';
+          if (colTasks.length === 0) {
+            colHTML += '<p class="text-xs text-slate-600 text-center py-4">No tasks</p>';
+          } else {
+            colTasks.forEach(t => {
+              const priColors = {High:'border-red-500/50',Medium:'border-amber-500/50',Low:'border-slate-600'};
+              const priC = priColors[t.priority] || priColors.Low;
+              colHTML += `<a href="${t.url}" target="_blank" class="block bg-bg rounded-lg p-2.5 border ${priC} hover:bg-slate-800/80 transition-colors"><p class="text-xs text-white leading-relaxed">${t.name}</p><div class="flex items-center justify-between mt-2"><span class="text-xs text-slate-500">${t.project}</span>${t.daysInStatus > 5 ? `<span class="text-xs text-amber-400">${t.daysInStatus}d</span>` : ''}</div></a>`;
+            });
+          }
+          colHTML += '</div>';
+          column.innerHTML = colHTML;
+          board.appendChild(column);
+        });
+        c.appendChild(board);
+      } else {
+        // === TABLE VIEW ===
+        renderTasksTable(c, filtered, `Tasks (${filtered.length})`);
+      }
+
+      // === TASK DISTRIBUTION CHARTS ===
+      const chartRow = el('div','grid grid-cols-1 md:grid-cols-2 gap-4 mt-3');
+      chartRow.innerHTML = `<div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Tasks by Status</h4><canvas id="taskBoardChart" height="180"></canvas></div><div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Tasks by Project</h4><canvas id="taskProjectChart" height="180"></canvas></div>`;
+      c.appendChild(chartRow);
+
+      // === OBJECTIVES PROGRESS ===
+      if (D.devops && D.devops.objectives) {
+        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4','Objectives Progress'));
+        const objWrap = el('div','space-y-4');
+        const repoBase = 'https://github.com/MrSmithNL/smith-ai-agency/blob/main/';
+        D.devops.objectives.forEach(obj => {
+          const pct = obj.totalTasks > 0 ? Math.round((obj.completedTasks / obj.totalTasks) * 100) : 0;
+          const ragDot = obj.rag === 'Green' ? 'bg-green-500' : obj.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
+          const bColor = pct >= 70 ? 'bg-green-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
+          const isExpanded = tasksState.expandedObj === obj.id;
+          let objHTML = `<div class="bg-card rounded-xl border border-border overflow-hidden"><div class="p-4 cursor-pointer hover:bg-slate-800/50" onclick="tasksState.expandedObj = tasksState.expandedObj === '${obj.id}' ? null : '${obj.id}'; render();"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${ragDot}"></span><h3 class="text-sm font-semibold text-white">${obj.title}</h3><span class="arch-chevron text-slate-400 text-xs ${isExpanded ? 'open' : ''}">\u25B6</span></div><span class="text-xs text-slate-400">${obj.project}</span></div><div class="flex items-center gap-3"><div class="flex-1 h-2 rounded-full bg-slate-700"><div class="h-2 rounded-full ${bColor} progress-bar" style="width:${pct}%"></div></div><span class="text-xs text-slate-300 font-mono">${obj.completedTasks}/${obj.totalTasks}</span>${obj.blockedTasks > 0 ? `<span class="status-chip chip-blocked">${obj.blockedTasks} blocked</span>` : ''}</div><p class="text-xs text-slate-500 mt-1">Created ${obj.created} \u00B7 Status: ${obj.status}</p></div>`;
+          if (isExpanded) {
+            objHTML += `<div class="border-t border-border p-4 bg-slate-900/50"><div class="flex justify-between items-center mb-3"><p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Task List</p><a href="${repoBase}${obj.file}" target="_blank" class="text-xs text-blue-400 hover:underline">View objective file \u2192</a></div><div class="space-y-1">`;
+            obj.tasks.forEach(t => {
+              const icon = t.status === 'done' ? '\u2705' : t.status === 'in_progress' ? '\u23F3' : t.status === 'blocked' ? '\uD83D\uDED1' : '\u25CB';
+              const textCls = t.status === 'done' ? 'text-slate-500 line-through' : t.status === 'blocked' ? 'text-red-400' : 'text-slate-300';
+              objHTML += `<div class="flex items-center gap-2 py-1"><span class="text-xs">${icon}</span><span class="text-xs font-mono text-slate-500">${t.id}</span><span class="text-xs ${textCls}">${t.task}</span></div>`;
+            });
+            objHTML += '</div></div>';
+          }
+          objHTML += '</div>';
+          objWrap.innerHTML += objHTML;
+        });
+        c.appendChild(objWrap);
+      }
+
+      // === BLOCKED TASKS ALERT ===
+      if (blocked.length > 0) {
+        const alertWrap = el('div','mt-4');
+        alertWrap.innerHTML = `<div class="border-l-3 rounded-lg p-4 border-red-500 bg-red-900/10" style="border-left-width:3px"><div class="flex items-start gap-2"><span>\uD83D\uDED1</span><div><p class="text-xs text-white font-semibold mb-1">${blocked.length} Blocked Task${blocked.length>1?'s':''}</p>${blocked.map(t=>`<p class="text-xs text-slate-400">\u2022 <a href="${t.url}" target="_blank" class="text-red-300 hover:text-red-200">${t.name}</a> <span class="text-slate-600">(${t.project}, ${t.daysInStatus}d in status)</span></p>`).join('')}</div></div></div>`;
+        c.appendChild(alertWrap);
+      }
+
+      // Init charts after DOM render
+      setTimeout(() => {
+        // Status chart
+        const statusCtx = document.getElementById('taskBoardChart');
+        if (statusCtx) {
+          const sc = {}; tasks.forEach(t=>{sc[t.status]=(sc[t.status]||0)+1;});
+          const cols = columns.filter(s=>sc[s]);
+          new Chart(statusCtx, {type:'bar', data:{labels:cols, datasets:[{data:cols.map(s=>sc[s]), backgroundColor:cols.map(s=>colColors[s]+'cc'), borderRadius:6, barThickness:28}]}, options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10}}},y:{grid:{color:'#1e293b'},ticks:{color:'#64748b',stepSize:5},beginAtZero:true}}}});
+        }
+        // Project chart
+        const projCtx = document.getElementById('taskProjectChart');
+        if (projCtx) {
+          const pc = {}; tasks.filter(t=>t.status!=='Done').forEach(t=>{pc[t.project]=(pc[t.project]||0)+1;});
+          const projLabels = Object.keys(pc).sort((a,b)=>pc[b]-pc[a]);
+          const projColors = ['#3b82f6','#a855f7','#f59e0b','#22c55e','#ec4899','#06b6d4','#64748b','#ef4444'];
+          new Chart(projCtx, {type:'doughnut', data:{labels:projLabels, datasets:[{data:projLabels.map(p=>pc[p]), backgroundColor:projColors.slice(0,projLabels.length), borderWidth:0}]}, options:{responsive:true, cutout:'60%', plugins:{legend:{position:'right',labels:{color:'#94a3b8',padding:8,font:{size:10}}}}}});
+        }
+      }, 100);
+    }
+
     // ==================== DEVOPS VIEW ====================
     let devopsState = { expandedObj: null, logFilter: 'all', logOutcome: 'all' };
 
@@ -2263,56 +2402,10 @@
       s3.innerHTML = qualHTML;
       c.appendChild(s3);
 
-      // ---------- Section 4: Objectives Progress ----------
+      // ---------- Section 4: Objectives Progress (moved to Tasks tab) ----------
       const s4 = document.createElement('div');
       s4.className = 'animate-in mt-6';
-      let objHTML = '<h2 class="text-lg font-semibold text-white mb-4">Objectives Progress</h2><div class="space-y-4">';
-      DV.objectives.forEach(obj => {
-        const pct = obj.totalTasks > 0 ? Math.round((obj.completedTasks / obj.totalTasks) * 100) : 0;
-        const ragDot = obj.rag === 'Green' ? 'bg-green-500' : obj.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
-        const barColor = pct >= 70 ? 'bg-green-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
-        const isExpanded = devopsState.expandedObj === obj.id;
-        objHTML += `<div class="bg-card rounded-xl border border-border overflow-hidden">
-          <div class="p-4 cursor-pointer hover:bg-slate-800/50" onclick="devopsState.expandedObj = devopsState.expandedObj === '${obj.id}' ? null : '${obj.id}'; render();">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full ${ragDot}"></span>
-                <h3 class="text-sm font-semibold text-white">${obj.title}</h3>
-                <span class="arch-chevron text-slate-400 text-xs ${isExpanded ? 'open' : ''}">\u25B6</span>
-              </div>
-              <span class="text-xs text-slate-400">${obj.project}</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="flex-1 h-2 rounded-full bg-slate-700">
-                <div class="h-2 rounded-full ${barColor} progress-bar" style="width:${pct}%"></div>
-              </div>
-              <span class="text-xs text-slate-300 font-mono">${obj.completedTasks}/${obj.totalTasks}</span>
-              ${obj.blockedTasks > 0 ? `<span class="status-chip chip-blocked">${obj.blockedTasks} blocked</span>` : ''}
-            </div>
-            <p class="text-xs text-slate-500 mt-1">Created ${obj.created} \u00B7 Status: ${obj.status}</p>
-          </div>`;
-        if (isExpanded) {
-          objHTML += `<div class="border-t border-border p-4 bg-slate-900/50">
-            <div class="flex justify-between items-center mb-3">
-              <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Task List</p>
-              <a href="${repoBase}${obj.file}" target="_blank" class="text-xs text-blue-400 hover:underline">View objective file \u2192</a>
-            </div>
-            <div class="space-y-1">`;
-          obj.tasks.forEach(t => {
-            const icon = t.status === 'done' ? '\u2705' : t.status === 'in_progress' ? '\u23F3' : t.status === 'blocked' ? '\uD83D\uDED1' : '\u25CB';
-            const textCls = t.status === 'done' ? 'text-slate-500 line-through' : t.status === 'blocked' ? 'text-red-400' : 'text-slate-300';
-            objHTML += `<div class="flex items-center gap-2 py-1">
-              <span class="text-xs">${icon}</span>
-              <span class="text-xs font-mono text-slate-500">${t.id}</span>
-              <span class="text-xs ${textCls}">${t.task}</span>
-            </div>`;
-          });
-          objHTML += '</div></div>';
-        }
-        objHTML += '</div>';
-      });
-      objHTML += '</div>';
-      s4.innerHTML = objHTML;
+      s4.innerHTML = '<div class="bg-card rounded-xl border border-border p-4"><div class="flex items-center justify-between"><div><h2 class="text-sm font-semibold text-white">Objectives Progress</h2><p class="text-xs text-slate-500 mt-1">' + DV.objectives.length + ' objectives tracked</p></div><button onclick="navigateTo(\'tasks\')" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">View in Tasks tab \u2192</button></div></div>';
       c.appendChild(s4);
 
       // ---------- Section 5: Activity Log ----------
