@@ -14,7 +14,7 @@ const DASHBOARD_DATA = {
     { name: "Active Projects", value: 6, target: null, unit: "", format: "number", trend: "flat", description: "Projects currently being worked on" },
     { name: "Projects on Track", value: 6, target: 6, unit: "", format: "ratio", trend: "flat", description: "Projects with Green RAG status" },
     { name: "Tasks This Week", value: 5, target: null, unit: "", format: "number", trend: "flat", description: "Tasks scheduled for this week" },
-    { name: "Tasks Blocked", value: 3, target: 0, unit: "", format: "number", trend: "up", description: "Tasks waiting on external action" },
+    { name: "Tasks Blocked", value: 2, target: 0, unit: "", format: "number", trend: "flat", description: "Tasks waiting on external action" },
     { name: "Tasks Completed (All Time)", value: 15, target: null, unit: "", format: "number", trend: "up", description: "Total tasks marked Done" },
     { name: "Runway", value: "N/A", target: null, unit: "months", format: "text", trend: "flat", description: "Months until revenue needed (bootstrapped)" },
   ],
@@ -629,7 +629,6 @@ const DASHBOARD_DATA = {
     { name: "INFRA-005: First research cycle — Claude Code best practices", project: "INFRA", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/H0wdllLy" },
     { name: "LOE SITE-003: Generate site images (Imagen 4)", project: "LOE", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/aHpfBBQT" },
     { name: "LOE: Fix SEO audit warnings (36 items)", project: "LOE", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/g1sVP85U" },
-    { name: "HG: QA check all pages after SEO changes (HG-047 to HG-066)", project: "Hairgenetix", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-08", daysInStatus: 0, url: "https://trello.com/c/1Bm9xyda" },
     { name: "SEO-001: Create DataForSEO account + deposit $50", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/Pal98Bld" },
     { name: "SEO-003: Start SE Ranking 14-day free trial", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/xWosGhaB" },
     { name: "Financial: Complete cost inventory (8 TBD items)", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-04", daysInStatus: 4, url: "https://trello.com/c/RxM7vvGM" },
@@ -971,26 +970,17 @@ const DASHBOARD_DATA = {
         ],
         // Agent Army metrics (updated by agent_metrics.py)
         agentMetrics: [
-          { name: "content-writer", version: "1.0.0", model: "sonnet", domain: "content", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null, trend: "stable", recentCosts: [], recentSuccess: [], recentQuality: [] },
-          { name: "seo-researcher", version: "1.0.0", model: "sonnet", domain: "intelligence", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null, trend: "stable", recentCosts: [], recentSuccess: [], recentQuality: [] },
-          { name: "shopify-manager", version: "1.0.0", model: "opus", domain: "commerce", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null, trend: "stable", recentCosts: [], recentSuccess: [], recentQuality: [] },
-          { name: "code-reviewer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null, trend: "stable", recentCosts: [], recentSuccess: [], recentQuality: [] },
-          { name: "docs-maintainer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null, trend: "stable", recentCosts: [], recentSuccess: [], recentQuality: [] }
+          { name: "content-writer", version: "1.0.0", model: "sonnet", domain: "content", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "seo-researcher", version: "1.0.0", model: "sonnet", domain: "intelligence", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "shopify-manager", version: "1.0.0", model: "opus", domain: "commerce", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "code-reviewer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null },
+          { name: "docs-maintainer", version: "1.0.0", model: "haiku", domain: "utility", executions: 0, successRate: null, totalCost: 0, avgCost: 0, avgQuality: null, lastExecution: null }
         ],
         agentCostBreakdown: {
           totalAgentCost: 0,
           totalAgentExecutions: 0,
-          byModel: { opus: 0, sonnet: 0, haiku: 0 },
-          monthlyBudget: 50.00,
-          // Weekly cost history for trend chart (populated by agent_metrics.py --update)
-          weeklyHistory: [
-            // { week: "W10", date: "2026-03-08", totalCost: 0, opusCost: 0, sonnetCost: 0, haikuCost: 0, totalRuns: 0, successRate: null }
-          ]
+          byModel: { opus: 0, sonnet: 0, haiku: 0 }
         },
-        // Actionable recommendations (generated by agent_improvement.py --scan)
-        agentRecommendations: [
-          // { severity: "info|warning|critical", agent: "agent-name", message: "...", action: "...", timestamp: "..." }
-        ],
         // Cumulative totals updated by pipeline scripts
         cumulativeTotals: {
           totalResearchFindings: 20,
@@ -1204,7 +1194,30 @@ const DASHBOARD_DATA = {
       },
     ],
 
-    // Section 6 — Quick Access Links
+    // Section 6 — Research
+    research: {
+      backlog: [
+        { id: "R-001", topic: "Multi-tenant AI SaaS architecture", depth: "deep", priority: "P1", requestedBy: "Malcolm", status: "done", output: "research/multi-tenant-ai-saas-architecture.md", completed: "2026-03-09", keyFinding: "5-layer decoupled architecture (Next.js + queue + AI workers + pgvector + LiteLLM gateway); shared DB + RLS for MVP; AI SaaS margins 50-60% vs 80-90% traditional", sources: 96 },
+      ],
+      completed: [
+        { id: "R-000", topic: "Autonomous research processes", depth: "deep", completed: "2026-03-08", output: "research/autonomous-research-process.md", keyFinding: "4-stage pipeline standard; EviBound gates eliminate hallucination; multi-agent outperforms single-agent", sources: 27 },
+        { id: "R-001", topic: "Multi-tenant AI SaaS architecture", depth: "deep", completed: "2026-03-09", output: "research/multi-tenant-ai-saas-architecture.md", keyFinding: "5-layer decoupled architecture; shared DB + RLS for MVP; AI SaaS margins 50-60%", sources: 96 },
+      ],
+      stats: {
+        queued: 0,
+        inProgress: 0,
+        done: 2,
+        blocked: 0,
+        totalSources: 123,
+        avgDepth: "deep",
+      },
+      recentReports: [
+        { date: "2026-03-09", topic: "Multi-tenant AI SaaS architecture", depth: "Deep", sources: 96, sections: 11, recommendations: 6, risks: 6, reportPath: "research/multi-tenant-ai-saas-architecture.md" },
+        { date: "2026-03-08", topic: "Autonomous research processes", depth: "Deep", sources: 27, sections: 10, recommendations: 9, risks: 7, reportPath: "research/autonomous-research-process.md" },
+      ],
+    },
+
+    // Section 7 — Quick Access Links
     quickAccess: [
       { name: "Autonomous Objectives Framework", path: "docs/capabilities/autonomous-objectives.md", type: "doc" },
       { name: "Master Strategy", path: "docs/master-strategy.md", type: "doc" },

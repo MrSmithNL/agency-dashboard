@@ -122,7 +122,7 @@
       <button onclick="navigateTo('organisation')" data-tab="organisation" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Organisation</button>
       <button onclick="navigateTo('agents')" data-tab="agents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agents</button>
       <button onclick="navigateTo('agent-army')" data-tab="agent-army" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agent Army</button>
-      <button onclick="navigateTo('tasks')" data-tab="tasks" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Tasks</button>
+      <button onclick="navigateTo('research')" data-tab="research" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Research</button>
       <button onclick="navigateTo('devops')" data-tab="devops" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">DevOps</button>
     </div>
   </nav>
@@ -180,7 +180,7 @@
       main.innerHTML = '';
       // Tab highlighting
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', devops:'devops' };
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', research:'research', devops:'devops' };
       const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
       if (ab) ab.classList.add('active');
       const isProject = !!D.projectDetails[route];
@@ -192,7 +192,7 @@
       else if (route === 'organisation') { renderOrganisation(main); document.getElementById('breadcrumb').textContent = 'Organisation'; document.title = 'Smith AI Agency \u2014 Organisation'; }
       else if (route === 'agents') { renderAgents(main); document.getElementById('breadcrumb').textContent = 'Agent Registry'; document.title = 'Smith AI Agency \u2014 Agents'; }
       else if (route === 'agent-army') { renderAgentArmy(main); document.getElementById('breadcrumb').textContent = 'Agent Army'; document.title = 'Smith AI Agency \u2014 Agent Army'; }
-      else if (route === 'tasks') { renderTasks(main); document.getElementById('breadcrumb').textContent = 'Tasks'; document.title = 'Smith AI Agency \u2014 Tasks'; }
+      else if (route === 'research') { renderResearch(main); document.getElementById('breadcrumb').textContent = 'Research'; document.title = 'Smith AI Agency \u2014 Research'; }
       else if (route === 'devops') { renderDevOps(main); document.getElementById('breadcrumb').textContent = 'Autonomous DevOps'; document.title = 'Smith AI Agency \u2014 DevOps'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
@@ -229,13 +229,7 @@
       cr.innerHTML = '<div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Tasks by Status</h3><canvas id="taskStatusChart" height="200"></canvas></div><div class="bg-card rounded-xl border border-border p-5"><h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Monthly Costs (EUR)</h3><canvas id="costChart" height="200"></canvas></div>';
       c.appendChild(cr);
       requestAnimationFrame(() => { renderTaskStatusChart(); renderCostChart(); });
-      // Task summary with link to Tasks tab
-      const taskSummary = el('div','bg-card rounded-xl border border-border p-4 animate-in');
-      const active = D.tasks.filter(t=>t.status!=='Done');
-      const blocked = D.tasks.filter(t=>t.status==='Blocked');
-      const thisWeek = D.tasks.filter(t=>t.status==='This Week');
-      taskSummary.innerHTML = `<div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tasks Overview</h2><button onclick="navigateTo('tasks')" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">View all tasks \u2192</button></div><div class="grid grid-cols-4 gap-3">${[{l:'This Week',v:thisWeek.length,c:'text-blue-400'},{l:'Blocked',v:blocked.length,c:blocked.length>0?'text-red-400':'text-green-400'},{l:'Active Total',v:active.length,c:'text-slate-300'},{l:'Completed',v:D.tasks.filter(t=>t.status==='Done').length,c:'text-green-400'}].map(k=>`<div class="text-center p-2 rounded-lg bg-bg"><p class="text-xs text-slate-500">${k.l}</p><p class="text-lg font-bold ${k.c}">${k.v}</p></div>`).join('')}</div>${blocked.length>0?`<div class="mt-3 pt-3 border-t border-border/50"><p class="text-xs text-red-400 mb-1">Blocked tasks:</p>${blocked.map(t=>`<p class="text-xs text-slate-400">\u2022 ${t.name}</p>`).join('')}</div>`:''}`;
-      c.appendChild(taskSummary);
+      renderTasksTable(c, D.tasks.filter(t=>t.status!=='Done'), 'Active Tasks');
       renderFinancialTable(c, D.financial);
     }
 
@@ -1681,158 +1675,9 @@
       tableWrap.innerHTML = tableHTML;
       c.appendChild(tableWrap);
 
-      // === Fleet Health — Traffic Light Grid ===
+      // === Custom Agents (enhanced with version, maturity, eval tests) ===
       if (filteredAgents.length > 0) {
-        const SI = T.selfImprovement;
-        const ET = SI && SI.evolutionTracking;
-        const AM = ET ? ET.agentMetrics : [];
-        const costData = ET ? ET.agentCostBreakdown || {} : {};
-
-        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider','Fleet Health'));
-
-        // Data freshness indicator
-        if (ET && ET.lastUpdated) {
-          const freshDiv = el('div','flex items-center gap-2 mb-2');
-          const daysSince = Math.floor((Date.now() - new Date(ET.lastUpdated).getTime()) / 86400000);
-          const freshColor = daysSince <= 1 ? 'text-green-400' : daysSince <= 7 ? 'text-amber-400' : 'text-red-400';
-          freshDiv.innerHTML = `<span class="text-xs ${freshColor}">● Data last updated: ${ET.lastUpdated}</span>${daysSince > 7 ? '<span class="text-xs text-red-400 bg-red-900/20 px-2 py-0.5 rounded">Stale — run agent_metrics.py --update</span>' : ''}`;
-          c.appendChild(freshDiv);
-        }
-
-        // Traffic light grid
-        const healthGrid = el('div','grid grid-cols-5 gap-3');
-        filteredAgents.forEach((a,i) => {
-          const metrics = AM.find(m => m.name === a.name) || {};
-          const hasData = metrics.executions > 0;
-          // Determine health status
-          let status = 'grey'; // no data
-          if (hasData) {
-            if (metrics.successRate >= 90 && (metrics.avgQuality === null || metrics.avgQuality >= 7)) status = 'green';
-            else if (metrics.successRate >= 70) status = 'amber';
-            else status = 'red';
-          }
-          const statusColors = { green: '#22c55e', amber: '#f59e0b', red: '#ef4444', grey: '#64748b' };
-          const statusLabels = { green: 'Healthy', amber: 'Warning', red: 'Critical', grey: 'No Data' };
-          const sc = statusColors[status];
-
-          const card = el('div','bg-card rounded-xl border border-border p-3 text-center animate-in');
-          card.style.animationDelay = `${i*0.06}s`;
-          card.style.borderTopColor = sc; card.style.borderTopWidth = '3px';
-          card.innerHTML = `<div class="w-3 h-3 rounded-full mx-auto mb-2" style="background:${sc};box-shadow:0 0 8px ${sc}50"></div><p class="text-xs text-white font-semibold">${a.label}</p><p class="text-xs font-bold mt-1" style="color:${sc}">${statusLabels[status]}</p>${hasData ? `<p class="text-xs text-slate-500 mt-1">${metrics.executions} runs · ${metrics.successRate}%</p>` : '<p class="text-xs text-slate-600 mt-1">Awaiting first run</p>'}`;
-          healthGrid.appendChild(card);
-        });
-        c.appendChild(healthGrid);
-
-        // === Operational KPIs — 6 cards ===
-        const kpis2 = el('div','grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mt-3');
-        const totalRuns = AM.reduce((s,a) => s + (a.executions||0), 0);
-        const totalCost = costData.totalAgentCost || 0;
-        const fleetSuccess = totalRuns > 0 ? Math.round(AM.filter(a => a.successRate !== null).reduce((s,a) => s + a.successRate, 0) / AM.filter(a => a.successRate !== null).length) : null;
-        const budgetPct = costData.monthlyBudget > 0 ? Math.round(totalCost / costData.monthlyBudget * 100) : 0;
-        const budgetColor = budgetPct >= 95 ? 'text-red-400' : budgetPct >= 80 ? 'text-amber-400' : 'text-green-400';
-        const failingAgents = AM.filter(a => a.successRate !== null && a.successRate < 80);
-        [{l:'Total Runs',v:totalRuns,c:'text-blue-400'},{l:'Fleet Success',v:fleetSuccess !== null ? fleetSuccess+'%' : '—',c:fleetSuccess >= 90 ? 'text-green-400' : fleetSuccess >= 70 ? 'text-amber-400' : 'text-slate-400'},{l:'Total Cost',v:'$'+totalCost.toFixed(2),c:'text-purple-400'},{l:'Budget Used',v:budgetPct+'%',c:budgetColor},{l:'Active Agents',v:T.customAgents.length,c:'text-cyan-400'},{l:'Failing Agents',v:failingAgents.length,c:failingAgents.length > 0 ? 'text-red-400' : 'text-green-400'}].forEach((k,i) => {
-          kpis2.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center animate-in" style="animation-delay:${i*0.05}s"><p class="text-xs text-slate-500">${k.l}</p><p class="text-lg font-bold ${k.c}">${k.v}</p></div>`;
-        });
-        c.appendChild(kpis2);
-
-        // === Cost Breakdown — Model Tier Cards + Budget Gauge ===
-        const costGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4 mt-3');
-
-        // Left: Model cost cards (3 tiers + budget gauge)
-        let costHTML = '<div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Cost by Model Tier</h4>';
-        const opusCost = (costData.byModel||{}).opus || 0;
-        const sonnetCost = (costData.byModel||{}).sonnet || 0;
-        const haikuCost = (costData.byModel||{}).haiku || 0;
-        costHTML += '<div class="grid grid-cols-3 gap-2 mb-4">';
-        [{l:'Opus',v:opusCost,c:'#a855f7'},{l:'Sonnet',v:sonnetCost,c:'#3b82f6'},{l:'Haiku',v:haikuCost,c:'#22c55e'}].forEach(m => {
-          costHTML += `<div class="text-center p-2 rounded-lg" style="background:${m.c}11;border:1px solid ${m.c}33"><p class="text-xs" style="color:${m.c}">${m.l}</p><p class="text-sm font-bold text-white">$${m.v.toFixed(2)}</p></div>`;
-        });
-        costHTML += '</div>';
-        // Budget gauge
-        const gaugeColor = budgetPct >= 95 ? '#ef4444' : budgetPct >= 80 ? '#f59e0b' : '#22c55e';
-        costHTML += `<h4 class="text-xs text-slate-400 uppercase tracking-wider mb-2">Monthly Budget</h4><div class="bg-slate-800 rounded-full h-4 relative overflow-hidden"><div class="h-full rounded-full transition-all duration-700" style="width:${Math.min(budgetPct,100)}%;background:${gaugeColor}"></div><span class="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">${budgetPct}% of $${(costData.monthlyBudget||0).toFixed(0)}</span></div>`;
-        costHTML += '</div>';
-
-        // Right: Cost trend chart (Chart.js)
-        let chartHTML = '<div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Cost Trend</h4><div style="height:180px"><canvas id="agentCostChart"></canvas></div></div>';
-
-        costGrid.innerHTML = costHTML + chartHTML;
-        c.appendChild(costGrid);
-
-        // === Agent Performance Table with Sparklines and Trend Indicators ===
-        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4','Agent Performance'));
-        const perfWrap = el('div','bg-card rounded-xl border border-border overflow-hidden');
-        let perfHTML = '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Agent</th><th class="p-3 text-center">Status</th><th class="p-3 text-center">Model</th><th class="p-3 text-center">Runs</th><th class="p-3 text-center">Success</th><th class="p-3 text-center">Avg Cost</th><th class="p-3 text-center">Quality</th><th class="p-3 text-center">Trend</th><th class="p-3 text-center">Last Run</th></tr></thead><tbody>';
-        const tierModelColors2 = {Haiku:'bg-green-900/30 text-green-400',Sonnet:'bg-blue-900/30 text-blue-400',Opus:'bg-purple-900/30 text-purple-400',haiku:'bg-green-900/30 text-green-400',sonnet:'bg-blue-900/30 text-blue-400',opus:'bg-purple-900/30 text-purple-400'};
-        AM.forEach((a,idx) => {
-          const agentInfo = T.customAgents.find(ca => ca.name === a.name) || {};
-          const tmc = tierModelColors2[a.model] || tierModelColors2[a.model&&a.model.charAt(0).toUpperCase()+a.model.slice(1)] || 'bg-slate-800 text-slate-400';
-          const sr = a.successRate !== null ? `${a.successRate}%` : '—';
-          const srC = a.successRate >= 90 ? 'text-green-400' : a.successRate >= 70 ? 'text-amber-400' : a.successRate !== null ? 'text-red-400' : 'text-slate-500';
-          const quality = a.avgQuality !== null ? `${a.avgQuality}/10` : '—';
-          const qC = a.avgQuality >= 8 ? 'text-green-400' : a.avgQuality >= 6 ? 'text-amber-400' : a.avgQuality !== null ? 'text-red-400' : 'text-slate-500';
-          // Trend indicator
-          const trendIcon = a.trend === 'improving' ? '↑' : a.trend === 'declining' ? '↓' : '→';
-          const trendColor = a.trend === 'improving' ? 'text-green-400' : a.trend === 'declining' ? 'text-red-400' : 'text-slate-500';
-          // Health dot
-          const hasData = a.executions > 0;
-          let dotColor = '#64748b';
-          if (hasData) {
-            if (a.successRate >= 90 && (a.avgQuality === null || a.avgQuality >= 7)) dotColor = '#22c55e';
-            else if (a.successRate >= 70) dotColor = '#f59e0b';
-            else dotColor = '#ef4444';
-          }
-          // Sparkline (inline SVG)
-          let sparkSvg = '<span class="text-xs text-slate-600">—</span>';
-          if (a.recentCosts && a.recentCosts.length >= 2) {
-            const vals = a.recentCosts.slice(-8);
-            const max = Math.max(...vals); const min = Math.min(...vals);
-            const range = max - min || 1;
-            const w = 60; const h = 16;
-            const points = vals.map((v,i) => `${(i/(vals.length-1))*w},${h - ((v-min)/range)*h}`).join(' ');
-            sparkSvg = `<svg width="${w}" height="${h}" class="inline-block"><polyline points="${points}" fill="none" stroke="#3b82f6" stroke-width="1.5"/></svg>`;
-          }
-          // Click to expand
-          perfHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50 cursor-pointer" onclick="document.getElementById('agent-detail-${idx}').classList.toggle('hidden')"><td class="p-3"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full flex-shrink-0" style="background:${dotColor}"></div><span class="text-xs text-white font-medium">${a.name}</span><span class="text-xs text-slate-600">v${a.version||'?'}</span></div></td><td class="p-3 text-center"><span class="text-xs px-1.5 py-0.5 rounded" style="background:${dotColor}22;color:${dotColor}">${hasData ? (a.successRate >= 90 ? 'Healthy' : a.successRate >= 70 ? 'Warning' : 'Critical') : 'No Data'}</span></td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${tmc}">${a.model}</span></td><td class="p-3 text-center text-xs text-white">${a.executions}</td><td class="p-3 text-center text-xs ${srC}">${sr}</td><td class="p-3 text-center text-xs text-slate-300">$${(a.avgCost||0).toFixed(3)}</td><td class="p-3 text-center text-xs ${qC}">${quality}</td><td class="p-3 text-center ${trendColor} text-sm font-bold">${trendIcon}</td><td class="p-3 text-center text-xs text-slate-500">${a.lastExecution || '—'}</td></tr>`;
-          // Expandable detail row
-          perfHTML += `<tr id="agent-detail-${idx}" class="hidden"><td colspan="9" class="p-4 bg-bg border-b border-border/30 animate-in"><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Description</p><p class="text-xs text-slate-300">${agentInfo.description || '—'}</p><p class="text-xs text-slate-400 uppercase tracking-wider mt-3 mb-1">Eval Tests</p><p class="text-xs text-slate-300">${agentInfo.evalTests || 0} test scenarios</p></div><div><p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Cost History</p>${sparkSvg}<p class="text-xs text-slate-400 uppercase tracking-wider mt-3 mb-1">Total Cost</p><p class="text-xs text-slate-300">$${(a.totalCost||0).toFixed(4)}</p></div><div><p class="text-xs text-slate-400 uppercase tracking-wider mb-1">Linked Skills</p><p class="text-xs text-slate-300">${(agentInfo.skills||[]).length > 0 ? agentInfo.skills.map(s => '<span class="text-cyan-400">'+s+'</span>').join(', ') : 'None'}</p><p class="text-xs text-slate-400 uppercase tracking-wider mt-3 mb-1">Domain</p><p class="text-xs text-slate-300">${a.domain}</p></div></div></td></tr>`;
-        });
-        perfHTML += '</tbody></table>';
-        perfWrap.innerHTML = perfHTML;
-        c.appendChild(perfWrap);
-
-        // === Actionable Recommendations ===
-        const recs = ET ? ET.agentRecommendations || [] : [];
-        // Generate automatic recommendations based on data
-        const autoRecs = [];
-        AM.forEach(a => {
-          if (a.executions === 0) autoRecs.push({ severity: 'info', agent: a.name, message: `${a.name} has no execution data yet`, action: 'Run the agent on a test task, then log with agent_metrics.py --log' });
-          if (a.successRate !== null && a.successRate < 80) autoRecs.push({ severity: 'critical', agent: a.name, message: `${a.name} success rate is ${a.successRate}% (below 80% threshold)`, action: 'Run agent_improvement.py --analyse ' + a.name + ' to identify failure patterns' });
-          if (a.avgQuality !== null && a.avgQuality < 6) autoRecs.push({ severity: 'warning', agent: a.name, message: `${a.name} quality score is ${a.avgQuality}/10 (below 6.0 threshold)`, action: 'Review evaluation results and update agent instructions' });
-          if (a.avgCost > 0.50) autoRecs.push({ severity: 'warning', agent: a.name, message: `${a.name} avg cost is $${a.avgCost.toFixed(2)}/run (above $0.50 threshold)`, action: 'Consider tightening instructions or downgrading model tier' });
-        });
-        if (budgetPct >= 80) autoRecs.push({ severity: budgetPct >= 95 ? 'critical' : 'warning', agent: 'fleet', message: `Monthly budget at ${budgetPct}% ($${totalCost.toFixed(2)} of $${(costData.monthlyBudget||0).toFixed(0)})`, action: 'Review cost breakdown and consider model tier adjustments' });
-        const allRecs = [...recs, ...autoRecs];
-        if (allRecs.length > 0) {
-          c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4','Recommendations'));
-          const recWrap = el('div','space-y-2');
-          const sevColors = { critical: 'border-red-500 bg-red-900/10', warning: 'border-amber-500 bg-amber-900/10', info: 'border-blue-500 bg-blue-900/10' };
-          const sevIcons = { critical: '🔴', warning: '🟡', info: '🔵' };
-          allRecs.sort((a,b) => {const o={critical:0,warning:1,info:2}; return (o[a.severity]||3) - (o[b.severity]||3);}).forEach(r => {
-            const sc2 = sevColors[r.severity] || sevColors.info;
-            recWrap.innerHTML += `<div class="border-l-3 rounded-lg p-3 ${sc2}" style="border-left-width:3px"><div class="flex items-start gap-2"><span>${sevIcons[r.severity]||'ℹ️'}</span><div class="flex-1"><p class="text-xs text-white">${r.message}</p><p class="text-xs text-slate-400 mt-1"><strong>Action:</strong> ${r.action}</p></div></div></div>`;
-          });
-          c.appendChild(recWrap);
-        }
-
-        // === Success Rate & Quality Trend Charts ===
-        const chartGrid = el('div','grid grid-cols-1 md:grid-cols-2 gap-4 mt-4');
-        chartGrid.innerHTML = `<div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Success Rate Trend</h4><div style="height:180px"><canvas id="agentSuccessChart"></canvas></div></div><div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Quality Score Trend</h4><div style="height:180px"><canvas id="agentQualityChart"></canvas></div></div>`;
-        c.appendChild(chartGrid);
-
-        // === Custom Agent Cards (with drill-down) ===
-        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4',`Agent Profiles (${filteredAgents.length})`));
+        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider',`Custom Agents (${filteredAgents.length})`));
         const agentGrid = el('div','grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4');
         const modelColors = { Opus: '#a855f7', Sonnet: '#3b82f6', Haiku: '#64748b' };
         const matColors = { production: '#22c55e', tested: '#f59e0b', draft: '#94a3b8' };
@@ -1840,67 +1685,12 @@
           const dom = domainMap[a.domain];
           const mc = modelColors[a.model] || '#64748b';
           const matC = matColors[a.maturity] || '#94a3b8';
-          const metrics = AM.find(m => m.name === a.name) || {};
-          const hasMetrics = metrics.executions > 0;
-          let dotColor = '#64748b';
-          if (hasMetrics) {
-            if (metrics.successRate >= 90) dotColor = '#22c55e';
-            else if (metrics.successRate >= 70) dotColor = '#f59e0b';
-            else dotColor = '#ef4444';
-          }
           const card = el('div','bg-card rounded-xl border border-border p-4 animate-in');
           card.style.animationDelay = `${i*0.08}s`; card.style.borderLeftColor = dom.color; card.style.borderLeftWidth = '3px';
-          card.innerHTML = `<div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${dotColor}"></div><h3 class="text-white font-semibold text-sm">${a.label}</h3></div><div class="flex gap-1"><span class="text-xs font-bold px-2 py-0.5 rounded" style="background:${mc}22;color:${mc}">${a.model}</span><span class="text-xs px-2 py-0.5 rounded" style="background:${matC}22;color:${matC}">${a.maturity||'—'}</span></div></div><p class="text-xs text-slate-400 mb-3">${a.description}</p>${hasMetrics ? `<div class="grid grid-cols-3 gap-2 mb-3"><div class="text-center p-1.5 rounded bg-bg"><p class="text-xs text-slate-500">Runs</p><p class="text-sm font-bold text-white">${metrics.executions}</p></div><div class="text-center p-1.5 rounded bg-bg"><p class="text-xs text-slate-500">Success</p><p class="text-sm font-bold" style="color:${dotColor}">${metrics.successRate}%</p></div><div class="text-center p-1.5 rounded bg-bg"><p class="text-xs text-slate-500">Avg Cost</p><p class="text-sm font-bold text-white">$${(metrics.avgCost||0).toFixed(3)}</p></div></div>` : '<div class="text-center py-2 mb-3 rounded bg-bg"><p class="text-xs text-slate-600">No execution data yet</p></div>'}<div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="text-xs" style="color:${dom.color}">${dom.icon} ${dom.name}</span>${a.skills.length>0?`<span class="text-xs text-slate-500">· ${a.skills.map(s=>`<span class="text-cyan-400">${s}</span>`).join(', ')}</span>`:''}</div><div class="flex items-center gap-2">${a.version?`<span class="text-xs text-slate-500">v${a.version}</span>`:''} ${a.evalTests?`<span class="text-xs text-slate-500">${a.evalTests} tests</span>`:''}</div></div>`;
+          card.innerHTML = `<div class="flex items-center justify-between mb-2"><h3 class="text-white font-semibold text-sm">${a.label}</h3><div class="flex gap-1"><span class="text-xs font-bold px-2 py-0.5 rounded" style="background:${mc}22;color:${mc}">${a.model}</span><span class="text-xs px-2 py-0.5 rounded" style="background:${matC}22;color:${matC}">${a.maturity||'—'}</span></div></div><p class="text-xs text-slate-400 mb-3">${a.description}</p><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="text-xs" style="color:${dom.color}">${dom.icon} ${dom.name}</span>${a.skills.length>0?`<span class="text-xs text-slate-500">· ${a.skills.map(s=>`<span class="text-cyan-400">${s}</span>`).join(', ')}</span>`:''}</div><div class="flex items-center gap-2">${a.version?`<span class="text-xs text-slate-500">v${a.version}</span>`:''} ${a.evalTests?`<span class="text-xs text-slate-500">${a.evalTests} tests</span>`:''}</div></div>`;
           agentGrid.appendChild(card);
         });
         c.appendChild(agentGrid);
-
-        // Initialize Chart.js charts after DOM render
-        setTimeout(() => {
-          const wh = costData.weeklyHistory || [];
-          const chartDefaults = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } }, scales: { x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }, y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } } } };
-
-          // Cost trend chart
-          const costCtx = document.getElementById('agentCostChart');
-          if (costCtx) {
-            new Chart(costCtx, { type: 'bar', data: {
-              labels: wh.length > 0 ? wh.map(w => w.week) : ['No data'],
-              datasets: [
-                { label: 'Opus', data: wh.length > 0 ? wh.map(w => w.opusCost || 0) : [0], backgroundColor: '#a855f766', borderColor: '#a855f7', borderWidth: 1 },
-                { label: 'Sonnet', data: wh.length > 0 ? wh.map(w => w.sonnetCost || 0) : [0], backgroundColor: '#3b82f666', borderColor: '#3b82f6', borderWidth: 1 },
-                { label: 'Haiku', data: wh.length > 0 ? wh.map(w => w.haikuCost || 0) : [0], backgroundColor: '#22c55e66', borderColor: '#22c55e', borderWidth: 1 }
-              ]
-            }, options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}` } } }, scales: { ...chartDefaults.scales, x: { ...chartDefaults.scales.x, stacked: true }, y: { ...chartDefaults.scales.y, stacked: true, ticks: { ...chartDefaults.scales.y.ticks, callback: v => '$'+v } } } } });
-          }
-
-          // Success rate trend chart
-          const successCtx = document.getElementById('agentSuccessChart');
-          if (successCtx) {
-            const agentColors = ['#f59e0b','#06b6d4','#a855f7','#22c55e','#64748b'];
-            new Chart(successCtx, { type: 'line', data: {
-              labels: wh.length > 0 ? wh.map(w => w.week) : ['No data'],
-              datasets: AM.map((a,i) => ({
-                label: a.name, data: a.recentSuccess && a.recentSuccess.length > 0 ? a.recentSuccess : [null],
-                borderColor: agentColors[i % agentColors.length], backgroundColor: agentColors[i % agentColors.length] + '22',
-                tension: 0.3, pointRadius: 2, borderWidth: 1.5
-              }))
-            }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 100, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'%' } } } } });
-          }
-
-          // Quality score trend chart
-          const qualCtx = document.getElementById('agentQualityChart');
-          if (qualCtx) {
-            const agentColors = ['#f59e0b','#06b6d4','#a855f7','#22c55e','#64748b'];
-            new Chart(qualCtx, { type: 'line', data: {
-              labels: wh.length > 0 ? wh.map(w => w.week) : ['No data'],
-              datasets: AM.map((a,i) => ({
-                label: a.name, data: a.recentQuality && a.recentQuality.length > 0 ? a.recentQuality : [null],
-                borderColor: agentColors[i % agentColors.length], backgroundColor: agentColors[i % agentColors.length] + '22',
-                tension: 0.3, pointRadius: 2, borderWidth: 1.5
-              }))
-            }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, min: 0, max: 10, ticks: { ...chartDefaults.scales.y.ticks, callback: v => v+'/10' } } } } });
-          }
-        }, 100);
       }
 
       // === How We Work — Orchestration Patterns & Model Routing ===
@@ -1956,6 +1746,35 @@
         routeWrap.innerHTML = routeHTML + govHTML;
         c.appendChild(routeWrap);
 
+        // Agent Performance (from evolutionTracking)
+        const SI = T.selfImprovement;
+        if (SI && SI.evolutionTracking && SI.evolutionTracking.agentMetrics) {
+          const AM = SI.evolutionTracking.agentMetrics;
+          const costData = SI.evolutionTracking.agentCostBreakdown || {};
+          c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-2','Agent Performance & Cost'));
+
+          // Cost summary
+          const costBar = el('div','grid grid-cols-2 md:grid-cols-4 gap-3');
+          [{label:'Total Runs', value: costData.totalAgentExecutions || 0},{label:'Total Cost', value: '$' + (costData.totalAgentCost || 0).toFixed(2)},{label:'Opus Cost', value: '$' + ((costData.byModel||{}).opus || 0).toFixed(2)},{label:'Sonnet Cost', value: '$' + ((costData.byModel||{}).sonnet || 0).toFixed(2)}].forEach(item => {
+            const cd = el('div','bg-card rounded-lg border border-border p-3 text-center');
+            cd.innerHTML = `<div class="text-lg font-bold text-white">${item.value}</div><div class="text-xs text-slate-400">${item.label}</div>`;
+            costBar.appendChild(cd);
+          });
+          c.appendChild(costBar);
+
+          // Performance table
+          const perfWrap = el('div','bg-card rounded-xl border border-border overflow-hidden mt-3');
+          let perfHTML = '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Agent</th><th class="p-3 text-center">Version</th><th class="p-3 text-center">Model</th><th class="p-3 text-center">Runs</th><th class="p-3 text-center">Success</th><th class="p-3 text-center">Avg Cost</th><th class="p-3 text-center">Quality</th></tr></thead><tbody>';
+          AM.forEach(a => {
+            const tmc2 = tierModelColors[a.model&&a.model.charAt(0).toUpperCase()+a.model.slice(1)]||tierModelColors[a.model]||'bg-slate-800 text-slate-400';
+            const sr = a.successRate !== null ? `${a.successRate}%` : '—';
+            const srC = a.successRate >= 90 ? 'text-green-400' : a.successRate >= 70 ? 'text-amber-400' : a.successRate !== null ? 'text-red-400' : 'text-slate-500';
+            perfHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-white font-medium">${a.name}</td><td class="p-3 text-center text-xs text-slate-400">${a.version||'—'}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${tmc2}">${a.model}</span></td><td class="p-3 text-center text-xs text-white">${a.executions}</td><td class="p-3 text-center text-xs ${srC}">${sr}</td><td class="p-3 text-center text-xs text-slate-300">$${(a.avgCost||0).toFixed(3)}</td><td class="p-3 text-center text-xs text-slate-300">${a.avgQuality!==null?a.avgQuality+'/10':'—'}</td></tr>`;
+          });
+          perfHTML += '</tbody></table>';
+          perfWrap.innerHTML = perfHTML;
+          c.appendChild(perfWrap);
+        }
       }
 
       // === Composio Highlights ===
@@ -2168,239 +1987,46 @@
             c.appendChild(ipWrap);
           }
 
-          // === CROSS-SKILL PROPAGATION LOG ===
-          if (ET.propagations && ET.propagations.length > 0) {
-            const propWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
-            let propHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Cross-Skill Propagations</h4></div>';
-            propHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Date</th><th class="text-left p-3">From</th><th class="p-3 text-center">→</th><th class="text-left p-3">To</th><th class="text-left p-3">Pattern</th><th class="p-3 text-center">Result</th></tr></thead><tbody>';
-            const propStatusColors = {success:'bg-green-900/30 text-green-400',failed:'bg-red-900/30 text-red-400',pending:'bg-amber-900/30 text-amber-400'};
-            ET.propagations.slice(-10).reverse().forEach(p => {
-              const psc = propStatusColors[p.result]||'bg-slate-800 text-slate-400';
-              propHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-slate-500">${p.date}</td><td class="p-3 text-xs text-cyan-400">${p.fromSkill}</td><td class="p-3 text-center text-slate-600">→</td><td class="p-3 text-xs text-cyan-400">${p.toSkill}</td><td class="p-3 text-xs text-slate-300">${p.pattern.length > 60 ? p.pattern.substring(0,60)+'...' : p.pattern}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${psc}">${p.result}</span></td></tr>`;
+          // === AGENT ARMY SECTION ===
+          if (ET.agentMetrics && ET.agentMetrics.length > 0) {
+            c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-8','Agent Army — Performance & Cost'));
+
+            // Agent cost summary bar
+            const costData = ET.agentCostBreakdown || {};
+            const costBar = el('div','grid grid-cols-2 md:grid-cols-4 gap-3 mt-3');
+            const costItems = [
+              {label:'Total Agent Executions', value: costData.totalAgentExecutions || 0},
+              {label:'Total Cost', value: '$' + (costData.totalAgentCost || 0).toFixed(2)},
+              {label:'Opus Cost', value: '$' + ((costData.byModel||{}).opus || 0).toFixed(2)},
+              {label:'Sonnet Cost', value: '$' + ((costData.byModel||{}).sonnet || 0).toFixed(2)}
+            ];
+            costItems.forEach(item => {
+              const card = el('div','bg-card rounded-lg border border-border p-3 text-center');
+              card.innerHTML = `<div class="text-lg font-bold text-white">${item.value}</div><div class="text-xs text-slate-400">${item.label}</div>`;
+              costBar.appendChild(card);
             });
-            propHTML += '</tbody></table>';
-            propWrap.innerHTML = propHTML;
-            c.appendChild(propWrap);
+            c.appendChild(costBar);
+
+            // Agent performance table
+            const agentWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in mt-3');
+            let agentHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Agent Performance</h4></div>';
+            agentHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Agent</th><th class="p-3 text-center">Version</th><th class="p-3 text-center">Model</th><th class="p-3 text-center">Domain</th><th class="p-3 text-center">Runs</th><th class="p-3 text-center">Success</th><th class="p-3 text-center">Avg Cost</th><th class="p-3 text-center">Quality</th></tr></thead><tbody>';
+            const modelColors = {opus:'bg-purple-900/30 text-purple-400',sonnet:'bg-blue-900/30 text-blue-400',haiku:'bg-green-900/30 text-green-400'};
+            const domainColors = {content:'bg-amber-900/30 text-amber-400',intelligence:'bg-cyan-900/30 text-cyan-400',commerce:'bg-pink-900/30 text-pink-400',utility:'bg-slate-700/50 text-slate-300'};
+            ET.agentMetrics.forEach(a => {
+              const mc = modelColors[a.model]||'bg-slate-800 text-slate-400';
+              const dc = domainColors[a.domain]||'bg-slate-800 text-slate-400';
+              const sr = a.successRate !== null ? `${a.successRate}%` : '—';
+              const srClass = a.successRate >= 90 ? 'text-green-400' : a.successRate >= 70 ? 'text-amber-400' : a.successRate !== null ? 'text-red-400' : 'text-slate-500';
+              const quality = a.avgQuality !== null ? `${a.avgQuality}/10` : '—';
+              agentHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-white font-medium">${a.name}</td><td class="p-3 text-center text-xs text-slate-400">${a.version}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${mc}">${a.model}</span></td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${dc}">${a.domain}</span></td><td class="p-3 text-center text-xs text-white">${a.executions}</td><td class="p-3 text-center text-xs ${srClass}">${sr}</td><td class="p-3 text-center text-xs text-slate-300">$${(a.avgCost||0).toFixed(3)}</td><td class="p-3 text-center text-xs text-slate-300">${quality}</td></tr>`;
+            });
+            agentHTML += '</tbody></table>';
+            agentWrap.innerHTML = agentHTML;
+            c.appendChild(agentWrap);
           }
         }
       }
-    }
-
-    // ==================== TASKS VIEW ====================
-    let tasksState = { view: 'board', filter: 'all', projectFilter: 'all', expandedObj: null, showDone: false };
-
-    function taskAgeColor(days) {
-      if (days <= 3) return { bg: '', text: 'text-slate-500', badge: '' };
-      if (days <= 7) return { bg: 'bg-amber-900/10', text: 'text-amber-400', badge: 'bg-amber-900/30 text-amber-400' };
-      if (days <= 14) return { bg: 'bg-orange-900/10', text: 'text-orange-400', badge: 'bg-orange-900/30 text-orange-400' };
-      return { bg: 'bg-red-900/10', text: 'text-red-400', badge: 'bg-red-900/30 text-red-400' };
-    }
-    function taskPriBorder(pri) {
-      return { High: 'border-l-red-500', Medium: 'border-l-amber-500', Low: 'border-l-slate-600' }[pri] || 'border-l-slate-600';
-    }
-
-    function renderTasks(c) {
-      const tasks = D.tasks || [];
-      const activeColumns = ['This Week','In Progress','Blocked','Review','Backlog'];
-      const allColumns = [...activeColumns, 'Done'];
-      const colColors = {'This Week':'#3b82f6','In Progress':'#22c55e','Blocked':'#ef4444','Review':'#a855f7','Backlog':'#64748b','Done':'#14532d'};
-      const colIcons = {'This Week':'\uD83D\uDCCB','In Progress':'\u25B6\uFE0F','Blocked':'\uD83D\uDEAB','Review':'\uD83D\uDD0D','Backlog':'\uD83D\uDCE6','Done':'\u2705'};
-      const WIP_LIMIT = 2;
-
-      const active = tasks.filter(t=>t.status!=='Done');
-      const blocked = tasks.filter(t=>t.status==='Blocked');
-      const done = tasks.filter(t=>t.status==='Done');
-      const inProgress = tasks.filter(t=>t.status==='In Progress');
-      const stale = active.filter(t=>t.daysInStatus >= 8);
-      const aging = active.filter(t=>t.daysInStatus >= 4 && t.daysInStatus < 8);
-
-      // === KPI BAR — 7 cards ===
-      const kpis = el('div','grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3');
-      [{l:'Active',v:active.length,c:'text-slate-300',sub:''},{l:'This Week',v:tasks.filter(t=>t.status==='This Week').length,c:'text-blue-400',sub:''},{l:'WIP',v:inProgress.length,c:inProgress.length > WIP_LIMIT ? 'text-red-400' : 'text-green-400',sub:`limit: ${WIP_LIMIT}`},{l:'Blocked',v:blocked.length,c:blocked.length>0?'text-red-400':'text-green-400',sub:''},{l:'Stale (8d+)',v:stale.length,c:stale.length>0?'text-orange-400':'text-green-400',sub:''},{l:'Aging (4-7d)',v:aging.length,c:aging.length>0?'text-amber-400':'text-green-400',sub:''},{l:'Completed',v:done.length,c:'text-green-400',sub:''}].forEach((k,i) => {
-        kpis.innerHTML += `<div class="bg-card rounded-xl border border-border p-3 text-center animate-in" style="animation-delay:${i*0.05}s"><p class="text-xs text-slate-500">${k.l}</p><p class="text-xl font-bold ${k.c}">${k.v}</p>${k.sub?`<p class="text-xs text-slate-600">${k.sub}</p>`:''}</div>`;
-      });
-      c.appendChild(kpis);
-
-      // === ALERTS — blocked + stale + WIP violation ===
-      const alerts = [];
-      if (inProgress.length > WIP_LIMIT) alerts.push({ sev: 'warning', icon: '\u26A0\uFE0F', msg: `WIP limit exceeded: ${inProgress.length} tasks in progress (limit: ${WIP_LIMIT})`, detail: 'Finish current work before starting new tasks' });
-      if (blocked.length > 0) alerts.push({ sev: 'critical', icon: '\uD83D\uDED1', msg: `${blocked.length} blocked task${blocked.length>1?'s':''}`, detail: blocked.map(t => `${t.name} (${t.project}, ${t.daysInStatus}d)`).join(' | ') });
-      if (stale.length > 0) alerts.push({ sev: 'warning', icon: '\u23F0', msg: `${stale.length} stale task${stale.length>1?'s':''} (8+ days without movement)`, detail: stale.sort((a,b)=>b.daysInStatus-a.daysInStatus).map(t => `${t.name} (${t.daysInStatus}d)`).join(' | ') });
-      if (alerts.length > 0) {
-        const alertWrap = el('div','space-y-2');
-        const sevStyles = { critical: 'border-red-500 bg-red-900/10', warning: 'border-amber-500 bg-amber-900/10' };
-        alerts.forEach(a => {
-          alertWrap.innerHTML += `<div class="rounded-lg p-3 ${sevStyles[a.sev]}" style="border-left:3px solid"><div class="flex items-start gap-2"><span>${a.icon}</span><div><p class="text-xs text-white font-semibold">${a.msg}</p><p class="text-xs text-slate-400 mt-0.5">${a.detail}</p></div></div></div>`;
-        });
-        c.appendChild(alertWrap);
-      }
-
-      // === TOOLBAR — view toggle + filters ===
-      const toolbar = el('div','flex flex-wrap items-center gap-3 bg-card rounded-xl border border-border p-3');
-      toolbar.innerHTML = `<div class="flex gap-1 bg-bg rounded-lg p-0.5"><button onclick="tasksState.view='board';render()" class="text-xs px-3 py-1.5 rounded ${tasksState.view==='board'?'bg-blue-600 text-white':'text-slate-400 hover:text-white'} cursor-pointer">Board</button><button onclick="tasksState.view='table';render()" class="text-xs px-3 py-1.5 rounded ${tasksState.view==='table'?'bg-blue-600 text-white':'text-slate-400 hover:text-white'} cursor-pointer">Table</button></div>`;
-      const projects = [...new Set(tasks.map(t=>t.project))].sort();
-      let projOpts = '<option value="all">All Projects</option>';
-      projects.forEach(p => { projOpts += `<option value="${p}" ${tasksState.projectFilter===p?'selected':''}>${p}</option>`; });
-      toolbar.innerHTML += `<select class="filter-select" onchange="tasksState.projectFilter=this.value;render()">${projOpts}</select>`;
-      let statusOpts = '<option value="all">All Status</option>';
-      allColumns.forEach(s => { statusOpts += `<option value="${s}" ${tasksState.filter===s?'selected':''}>${s}</option>`; });
-      toolbar.innerHTML += `<select class="filter-select" onchange="tasksState.filter=this.value;render()">${statusOpts}</select>`;
-      if (tasksState.projectFilter !== 'all' || tasksState.filter !== 'all') {
-        toolbar.innerHTML += `<button onclick="tasksState.projectFilter='all';tasksState.filter='all';render()" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">\u2715 Clear</button>`;
-      }
-      c.appendChild(toolbar);
-
-      // Filter tasks
-      let filtered = [...tasks];
-      if (tasksState.projectFilter !== 'all') filtered = filtered.filter(t => t.project === tasksState.projectFilter);
-      if (tasksState.filter !== 'all') filtered = filtered.filter(t => t.status === tasksState.filter);
-
-      if (tasksState.view === 'board') {
-        // === KANBAN BOARD — enhanced cards ===
-        const boardCols = tasksState.showDone ? allColumns : activeColumns;
-        const board = el('div',`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-${boardCols.length} gap-3`);
-        board.style.minHeight = '300px';
-        boardCols.forEach(col => {
-          const colTasks = filtered.filter(t => t.status === col);
-          const color = colColors[col];
-          const isWipCol = col === 'In Progress';
-          const wipOver = isWipCol && colTasks.length > WIP_LIMIT;
-          const column = el('div',`bg-card rounded-xl border overflow-hidden ${wipOver ? 'border-red-500/50' : 'border-border'}`);
-          column.style.borderTopColor = wipOver ? '#ef4444' : color; column.style.borderTopWidth = '3px';
-
-          // Column header with WIP limit
-          let headerExtra = '';
-          if (isWipCol) headerExtra = `<span class="text-xs ${wipOver ? 'text-red-400 font-bold' : 'text-slate-600'}">${colTasks.length}/${WIP_LIMIT}</span>`;
-          let colHTML = `<div class="p-3 border-b border-border/50"><div class="flex items-center justify-between"><span class="text-xs font-bold text-white">${colIcons[col]} ${col}</span><div class="flex items-center gap-1.5"><span class="text-xs font-bold px-1.5 py-0.5 rounded-full" style="background:${color}22;color:${color}">${colTasks.length}</span>${headerExtra}</div></div></div>`;
-          colHTML += '<div class="p-2 space-y-2" style="max-height:500px;overflow-y:auto">';
-
-          if (colTasks.length === 0) {
-            colHTML += '<p class="text-xs text-slate-600 text-center py-4">No tasks</p>';
-          } else {
-            // Sort by priority then age
-            const priOrder = {High:0,Medium:1,Low:2};
-            colTasks.sort((a,b) => (priOrder[a.priority]??3) - (priOrder[b.priority]??3) || b.daysInStatus - a.daysInStatus);
-            colTasks.forEach(t => {
-              const age = taskAgeColor(t.daysInStatus);
-              const priBorder = taskPriBorder(t.priority);
-              const isBlocked = t.status === 'Blocked';
-              const isDone = t.status === 'Done';
-              colHTML += `<a href="${t.url}" target="_blank" class="block rounded-lg p-2.5 border-l-3 border border-border/50 hover:bg-slate-800/80 transition-colors ${age.bg} ${isDone ? 'opacity-60' : ''}" style="border-left-width:3px;border-left-color:${t.priority==='High'?'#ef4444':t.priority==='Medium'?'#f59e0b':'#64748b'}">`;
-              colHTML += `<p class="text-xs text-white leading-relaxed ${isDone ? 'line-through text-slate-500' : ''}">${t.name}</p>`;
-              colHTML += '<div class="flex items-center justify-between mt-2">';
-              colHTML += `<span class="text-xs text-slate-500">${t.project}</span>`;
-              colHTML += '<div class="flex items-center gap-1.5">';
-              if (isBlocked) colHTML += '<span class="text-xs bg-red-900/30 text-red-400 px-1 py-0.5 rounded">\uD83D\uDED1</span>';
-              if (t.daysInStatus > 0 && !isDone) {
-                colHTML += `<span class="text-xs px-1.5 py-0.5 rounded ${age.badge || 'text-slate-600'}">${t.daysInStatus}d</span>`;
-              }
-              colHTML += '</div></div></a>';
-            });
-          }
-          colHTML += '</div>';
-          column.innerHTML = colHTML;
-          board.appendChild(column);
-        });
-        c.appendChild(board);
-
-        // Done toggle
-        if (!tasksState.showDone) {
-          const doneToggle = el('div','text-center mt-1');
-          doneToggle.innerHTML = `<button onclick="tasksState.showDone=true;render()" class="text-xs text-slate-500 hover:text-slate-300 cursor-pointer">\u2705 Show Done column (${done.length} completed) \u25BC</button>`;
-          c.appendChild(doneToggle);
-        } else {
-          const doneToggle = el('div','text-center mt-1');
-          doneToggle.innerHTML = `<button onclick="tasksState.showDone=false;render()" class="text-xs text-slate-500 hover:text-slate-300 cursor-pointer">Hide Done column \u25B2</button>`;
-          c.appendChild(doneToggle);
-        }
-      } else {
-        // === TABLE VIEW ===
-        renderTasksTable(c, filtered, `Tasks (${filtered.length})`);
-      }
-
-      // === CHARTS — 3 panels ===
-      const chartRow = el('div','grid grid-cols-1 md:grid-cols-3 gap-4 mt-3');
-      chartRow.innerHTML = `<div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Pipeline Shape</h4><canvas id="taskPipelineChart" height="200"></canvas></div><div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Work Distribution</h4><canvas id="taskProjectChart" height="200"></canvas></div><div class="bg-card rounded-xl border border-border p-4"><h4 class="text-xs text-slate-400 uppercase tracking-wider mb-3">Task Aging (Active)</h4><canvas id="taskAgingChart" height="200"></canvas></div>`;
-      c.appendChild(chartRow);
-
-      // === STALE TASKS REPORT ===
-      const staleReport = active.filter(t => t.daysInStatus >= 4).sort((a,b) => b.daysInStatus - a.daysInStatus);
-      if (staleReport.length > 0) {
-        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4',`Aging Tasks (${staleReport.length})`));
-        const staleWrap = el('div','bg-card rounded-xl border border-border overflow-hidden');
-        let staleHTML = '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Task</th><th class="p-3 text-center">Status</th><th class="p-3 text-center">Days</th><th class="p-3 text-center">Health</th><th class="p-3 text-left">Project</th></tr></thead><tbody>';
-        staleReport.forEach(t => {
-          const age = taskAgeColor(t.daysInStatus);
-          const healthLabel = t.daysInStatus >= 15 ? 'Stale' : t.daysInStatus >= 8 ? 'At Risk' : 'Aging';
-          const healthDot = t.daysInStatus >= 15 ? '#ef4444' : t.daysInStatus >= 8 ? '#f97316' : '#f59e0b';
-          staleHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50 ${age.bg}"><td class="p-3"><a href="${t.url}" target="_blank" class="text-xs text-white hover:text-blue-400">${t.name}</a></td><td class="p-3 text-center"><span class="status-chip ${chipClass(t.status)}">${t.status}</span></td><td class="p-3 text-center"><span class="text-xs font-bold ${age.text}">${t.daysInStatus}d</span></td><td class="p-3 text-center"><span class="flex items-center justify-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${healthDot}"></span><span class="text-xs" style="color:${healthDot}">${healthLabel}</span></span></td><td class="p-3 text-xs text-slate-400">${t.project}</td></tr>`;
-        });
-        staleHTML += '</tbody></table>';
-        staleWrap.innerHTML = staleHTML;
-        c.appendChild(staleWrap);
-      }
-
-      // === OBJECTIVES PROGRESS ===
-      if (D.devops && D.devops.objectives) {
-        c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-4','Objectives Progress'));
-        const objWrap = el('div','space-y-4');
-        const repoBase = 'https://github.com/MrSmithNL/smith-ai-agency/blob/main/';
-        D.devops.objectives.forEach(obj => {
-          const pct = obj.totalTasks > 0 ? Math.round((obj.completedTasks / obj.totalTasks) * 100) : 0;
-          const ragDot = obj.rag === 'Green' ? 'bg-green-500' : obj.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
-          const bColor = pct >= 70 ? 'bg-green-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
-          const isExpanded = tasksState.expandedObj === obj.id;
-          let objHTML = `<div class="bg-card rounded-xl border border-border overflow-hidden"><div class="p-4 cursor-pointer hover:bg-slate-800/50" onclick="tasksState.expandedObj = tasksState.expandedObj === '${obj.id}' ? null : '${obj.id}'; render();"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${ragDot}"></span><h3 class="text-sm font-semibold text-white">${obj.title}</h3><span class="arch-chevron text-slate-400 text-xs ${isExpanded ? 'open' : ''}">\u25B6</span></div><span class="text-xs text-slate-400">${obj.project}</span></div><div class="flex items-center gap-3"><div class="flex-1 h-2 rounded-full bg-slate-700"><div class="h-2 rounded-full ${bColor} progress-bar" style="width:${pct}%"></div></div><span class="text-xs text-slate-300 font-mono">${obj.completedTasks}/${obj.totalTasks}</span>${obj.blockedTasks > 0 ? `<span class="status-chip chip-blocked">${obj.blockedTasks} blocked</span>` : ''}</div><p class="text-xs text-slate-500 mt-1">Created ${obj.created} \u00B7 Status: ${obj.status}</p></div>`;
-          if (isExpanded) {
-            objHTML += `<div class="border-t border-border p-4 bg-slate-900/50"><div class="flex justify-between items-center mb-3"><p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Task List</p><a href="${repoBase}${obj.file}" target="_blank" class="text-xs text-blue-400 hover:underline">View objective file \u2192</a></div><div class="space-y-1">`;
-            obj.tasks.forEach(t => {
-              const icon = t.status === 'done' ? '\u2705' : t.status === 'in_progress' ? '\u23F3' : t.status === 'blocked' ? '\uD83D\uDED1' : '\u25CB';
-              const textCls = t.status === 'done' ? 'text-slate-500 line-through' : t.status === 'blocked' ? 'text-red-400' : 'text-slate-300';
-              objHTML += `<div class="flex items-center gap-2 py-1"><span class="text-xs">${icon}</span><span class="text-xs font-mono text-slate-500">${t.id}</span><span class="text-xs ${textCls}">${t.task}</span></div>`;
-            });
-            objHTML += '</div></div>';
-          }
-          objHTML += '</div>';
-          objWrap.innerHTML += objHTML;
-        });
-        c.appendChild(objWrap);
-      }
-
-      // === INIT CHARTS ===
-      setTimeout(() => {
-        const chartDefs = { responsive: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 9 } } }, y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', stepSize: 5 }, beginAtZero: true } } };
-
-        // Pipeline shape — horizontal bar showing task counts per status
-        const pipeCtx = document.getElementById('taskPipelineChart');
-        if (pipeCtx) {
-          const sc = {}; tasks.forEach(t=>{sc[t.status]=(sc[t.status]||0)+1;});
-          const cols = allColumns.filter(s=>sc[s]);
-          new Chart(pipeCtx, {type:'bar', data:{labels:cols, datasets:[{data:cols.map(s=>sc[s]), backgroundColor:cols.map(s=>colColors[s]+'cc'), borderRadius:6, barThickness:24}]}, options:chartDefs});
-        }
-
-        // Work distribution — doughnut by project (active only)
-        const projCtx = document.getElementById('taskProjectChart');
-        if (projCtx) {
-          const pc = {}; active.forEach(t=>{pc[t.project]=(pc[t.project]||0)+1;});
-          const projLabels = Object.keys(pc).sort((a,b)=>pc[b]-pc[a]);
-          const projColors = ['#3b82f6','#a855f7','#f59e0b','#22c55e','#ec4899','#06b6d4','#64748b','#ef4444'];
-          new Chart(projCtx, {type:'doughnut', data:{labels:projLabels, datasets:[{data:projLabels.map(p=>pc[p]), backgroundColor:projColors.slice(0,projLabels.length), borderWidth:0}]}, options:{responsive:true, cutout:'60%', plugins:{legend:{position:'right',labels:{color:'#94a3b8',padding:6,font:{size:9}}}}}});
-        }
-
-        // Aging WIP chart — scatter: x=status column, y=days in status, colored by health zone
-        const agingCtx = document.getElementById('taskAgingChart');
-        if (agingCtx) {
-          const statusOrder = {'This Week':0,'In Progress':1,'Blocked':2,'Review':3,'Backlog':4};
-          const agingData = active.filter(t => statusOrder[t.status] !== undefined).map(t => ({
-            x: statusOrder[t.status],
-            y: t.daysInStatus,
-            name: t.name
-          }));
-          // Color by health zone
-          const pointColors = agingData.map(d => d.y >= 15 ? '#ef4444' : d.y >= 8 ? '#f97316' : d.y >= 4 ? '#f59e0b' : '#22c55e');
-          new Chart(agingCtx, {type:'scatter', data:{datasets:[{data:agingData, pointBackgroundColor:pointColors, pointRadius:6, pointHoverRadius:8}]}, options:{responsive:true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=>{const d=agingData[ctx.dataIndex]; return d ? `${d.name} (${d.y}d)` : '';}}}}, scales:{x:{type:'category', labels:Object.keys(statusOrder), grid:{display:false}, ticks:{color:'#94a3b8',font:{size:9}}}, y:{title:{display:true,text:'Days in Status',color:'#64748b',font:{size:9}}, grid:{color:'#1e293b'}, ticks:{color:'#64748b',font:{size:9}}, beginAtZero:true}}}});
-        }
-      }, 100);
     }
 
     // ==================== DEVOPS VIEW ====================
@@ -2488,10 +2114,56 @@
       s3.innerHTML = qualHTML;
       c.appendChild(s3);
 
-      // ---------- Section 4: Objectives Progress (moved to Tasks tab) ----------
+      // ---------- Section 4: Objectives Progress ----------
       const s4 = document.createElement('div');
       s4.className = 'animate-in mt-6';
-      s4.innerHTML = '<div class="bg-card rounded-xl border border-border p-4"><div class="flex items-center justify-between"><div><h2 class="text-sm font-semibold text-white">Objectives Progress</h2><p class="text-xs text-slate-500 mt-1">' + DV.objectives.length + ' objectives tracked</p></div><button onclick="navigateTo(\'tasks\')" class="text-xs text-blue-400 hover:text-blue-300 cursor-pointer">View in Tasks tab \u2192</button></div></div>';
+      let objHTML = '<h2 class="text-lg font-semibold text-white mb-4">Objectives Progress</h2><div class="space-y-4">';
+      DV.objectives.forEach(obj => {
+        const pct = obj.totalTasks > 0 ? Math.round((obj.completedTasks / obj.totalTasks) * 100) : 0;
+        const ragDot = obj.rag === 'Green' ? 'bg-green-500' : obj.rag === 'Amber' ? 'bg-amber-500' : 'bg-red-500';
+        const barColor = pct >= 70 ? 'bg-green-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
+        const isExpanded = devopsState.expandedObj === obj.id;
+        objHTML += `<div class="bg-card rounded-xl border border-border overflow-hidden">
+          <div class="p-4 cursor-pointer hover:bg-slate-800/50" onclick="devopsState.expandedObj = devopsState.expandedObj === '${obj.id}' ? null : '${obj.id}'; render();">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full ${ragDot}"></span>
+                <h3 class="text-sm font-semibold text-white">${obj.title}</h3>
+                <span class="arch-chevron text-slate-400 text-xs ${isExpanded ? 'open' : ''}">\u25B6</span>
+              </div>
+              <span class="text-xs text-slate-400">${obj.project}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 h-2 rounded-full bg-slate-700">
+                <div class="h-2 rounded-full ${barColor} progress-bar" style="width:${pct}%"></div>
+              </div>
+              <span class="text-xs text-slate-300 font-mono">${obj.completedTasks}/${obj.totalTasks}</span>
+              ${obj.blockedTasks > 0 ? `<span class="status-chip chip-blocked">${obj.blockedTasks} blocked</span>` : ''}
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Created ${obj.created} \u00B7 Status: ${obj.status}</p>
+          </div>`;
+        if (isExpanded) {
+          objHTML += `<div class="border-t border-border p-4 bg-slate-900/50">
+            <div class="flex justify-between items-center mb-3">
+              <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Task List</p>
+              <a href="${repoBase}${obj.file}" target="_blank" class="text-xs text-blue-400 hover:underline">View objective file \u2192</a>
+            </div>
+            <div class="space-y-1">`;
+          obj.tasks.forEach(t => {
+            const icon = t.status === 'done' ? '\u2705' : t.status === 'in_progress' ? '\u23F3' : t.status === 'blocked' ? '\uD83D\uDED1' : '\u25CB';
+            const textCls = t.status === 'done' ? 'text-slate-500 line-through' : t.status === 'blocked' ? 'text-red-400' : 'text-slate-300';
+            objHTML += `<div class="flex items-center gap-2 py-1">
+              <span class="text-xs">${icon}</span>
+              <span class="text-xs font-mono text-slate-500">${t.id}</span>
+              <span class="text-xs ${textCls}">${t.task}</span>
+            </div>`;
+          });
+          objHTML += '</div></div>';
+        }
+        objHTML += '</div>';
+      });
+      objHTML += '</div>';
+      s4.innerHTML = objHTML;
       c.appendChild(s4);
 
       // ---------- Section 5: Activity Log ----------
@@ -2553,6 +2225,117 @@
       qaHTML += '</div>';
       s6.innerHTML = qaHTML;
       c.appendChild(s6);
+    }
+
+    // ==================== RESEARCH VIEW ====================
+    function renderResearch(c) {
+      const R = D.research;
+
+      // ---------- KPI Cards ----------
+      const kpis = el('div','grid grid-cols-2 md:grid-cols-4 gap-4 animate-in');
+      const kpiData = [
+        { label: 'Queued', value: R.stats.queued, color: R.stats.queued > 0 ? 'text-amber-400' : 'text-slate-400' },
+        { label: 'In Progress', value: R.stats.inProgress, color: R.stats.inProgress > 0 ? 'text-blue-400' : 'text-slate-400' },
+        { label: 'Completed', value: R.stats.done, color: 'text-green-400' },
+        { label: 'Total Sources', value: R.stats.totalSources, color: 'text-purple-400' },
+      ];
+      kpiData.forEach((k,i) => {
+        kpis.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.05}s">
+          <p class="text-xs text-slate-400 uppercase tracking-wider">${k.label}</p>
+          <p class="text-2xl font-bold ${k.color} mt-1">${k.value}</p>
+        </div>`;
+      });
+      c.appendChild(kpis);
+
+      // ---------- Recent Reports ----------
+      const s2 = el('div','animate-in mt-6');
+      let repHTML = '<h2 class="text-lg font-semibold text-white mb-4">Recent Research Reports</h2>';
+      if (R.recentReports.length === 0) {
+        repHTML += '<p class="text-slate-400">No research reports yet. Add a topic to the backlog and the nightly worker will run it.</p>';
+      } else {
+        repHTML += '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b border-border">';
+        repHTML += '<th class="pb-2 pr-4">Date</th><th class="pb-2 pr-4">Topic</th><th class="pb-2 pr-4">Depth</th><th class="pb-2 pr-4">Sources</th><th class="pb-2 pr-4">Sections</th><th class="pb-2 pr-4">Recommendations</th><th class="pb-2">Risks</th>';
+        repHTML += '</tr></thead><tbody>';
+        R.recentReports.forEach(r => {
+          repHTML += `<tr class="border-b border-border/50 hover:bg-white/5">
+            <td class="py-3 pr-4 text-slate-300">${r.date}</td>
+            <td class="py-3 pr-4 text-white font-medium">${r.topic}</td>
+            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${r.depth}</span></td>
+            <td class="py-3 pr-4 text-slate-300">${r.sources}</td>
+            <td class="py-3 pr-4 text-slate-300">${r.sections}</td>
+            <td class="py-3 pr-4 text-slate-300">${r.recommendations}</td>
+            <td class="py-3 text-slate-300">${r.risks}</td>
+          </tr>`;
+        });
+        repHTML += '</tbody></table></div>';
+      }
+      s2.innerHTML = repHTML;
+      c.appendChild(s2);
+
+      // ---------- Backlog ----------
+      const s3 = el('div','animate-in mt-6');
+      let blHTML = '<h2 class="text-lg font-semibold text-white mb-4">Research Backlog</h2>';
+      const queued = R.backlog.filter(b => b.status === 'queued');
+      const inProg = R.backlog.filter(b => b.status === 'in_progress');
+      const done = R.backlog.filter(b => b.status === 'done');
+      const blocked = R.backlog.filter(b => b.status === 'blocked');
+      const allItems = [...inProg, ...queued, ...blocked, ...done];
+      if (allItems.length === 0) {
+        blHTML += '<p class="text-slate-400">Backlog is empty. Add a research topic to get started.</p>';
+      } else {
+        blHTML += '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b border-border">';
+        blHTML += '<th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Topic</th><th class="pb-2 pr-4">Depth</th><th class="pb-2 pr-4">Priority</th><th class="pb-2 pr-4">Status</th><th class="pb-2 pr-4">Sources</th><th class="pb-2">Completed</th>';
+        blHTML += '</tr></thead><tbody>';
+        allItems.forEach(b => {
+          const statusColors = { queued: 'bg-amber-900/30 text-amber-400', in_progress: 'bg-blue-900/30 text-blue-400', done: 'bg-green-900/30 text-green-400', blocked: 'bg-red-900/30 text-red-400' };
+          const sc = statusColors[b.status] || 'bg-slate-800 text-slate-400';
+          const prioColors = { P1: 'text-red-400', P2: 'text-amber-400', P3: 'text-slate-400' };
+          const pc = prioColors[b.priority] || 'text-slate-400';
+          blHTML += `<tr class="border-b border-border/50 hover:bg-white/5">
+            <td class="py-3 pr-4 text-slate-400 font-mono text-xs">${b.id}</td>
+            <td class="py-3 pr-4 text-white">${b.topic}</td>
+            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${b.depth}</span></td>
+            <td class="py-3 pr-4 font-semibold ${pc}">${b.priority}</td>
+            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded ${sc}">${b.status.replace('_',' ')}</span></td>
+            <td class="py-3 pr-4 text-slate-300">${b.sources || '\u2014'}</td>
+            <td class="py-3 text-slate-300">${b.completed || '\u2014'}</td>
+          </tr>`;
+        });
+        blHTML += '</tbody></table></div>';
+      }
+      s3.innerHTML = blHTML;
+      c.appendChild(s3);
+
+      // ---------- Key Findings ----------
+      const s4 = el('div','animate-in mt-6');
+      let findHTML = '<h2 class="text-lg font-semibold text-white mb-4">Key Findings</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+      R.completed.forEach(r => {
+        findHTML += `<div class="bg-card rounded-xl border border-border p-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-mono text-slate-500">${r.id}</span>
+            <span class="text-xs text-slate-500">${r.completed}</span>
+          </div>
+          <p class="text-white font-medium mb-2">${r.topic}</p>
+          <p class="text-sm text-slate-300">${r.keyFinding}</p>
+          <p class="text-xs text-slate-500 mt-2">${r.sources} sources</p>
+        </div>`;
+      });
+      findHTML += '</div>';
+      s4.innerHTML = findHTML;
+      c.appendChild(s4);
+
+      // ---------- Process Info ----------
+      const s5 = el('div','animate-in mt-6');
+      s5.innerHTML = `<div class="bg-card rounded-xl border border-border p-4">
+        <h2 class="text-lg font-semibold text-white mb-3">Research Process</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+          <div><p class="text-slate-400 text-xs uppercase mb-1">Schedule</p><p class="text-white">Every night at 01:00</p></div>
+          <div><p class="text-slate-400 text-xs uppercase mb-1">Worker</p><p class="text-white">Nightly Research Worker</p></div>
+          <div><p class="text-slate-400 text-xs uppercase mb-1">Average Depth</p><p class="text-white">${R.stats.avgDepth}</p></div>
+          <div><p class="text-slate-400 text-xs uppercase mb-1">How to Add</p><p class="text-white">Tell Claude or edit research-backlog.md</p></div>
+        </div>
+      </div>`;
+      c.appendChild(s5);
     }
 
     render();
