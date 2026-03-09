@@ -686,11 +686,12 @@ const DASHBOARD_DATA = {
   skillTaxonomy: {
     strategy: {
       title: "Agent Army Strategy",
-      summary: "A three-layer taxonomy for organising 869 skills, 5 agents, and capability docs across 6 functional domains. Skills are executable instructions, capabilities are domain-level guidance docs, and agents are autonomous workers with model routing.",
+      summary: "A five-layer capability hierarchy: Products → Capabilities → Agents → Skills → Tools. Skills are procedural knowledge (40 core), tools are external connectors (832 Composio), agents are autonomous workers (5), capabilities are business-level abilities (6) plus internal ways of working (10).",
       layers: [
-        { name: "Skills", description: "Individual executable instructions invoked with /skill-name. Atomic building blocks stored in ~/.claude/skills/.", count: 869, breakdown: "37 core + 832 Composio automations" },
-        { name: "Capabilities", description: "Domain-level reference docs describing HOW to combine skills, agents, and services. Not executable — they guide decision-making. Stored in smith-ai-agency/docs/capabilities/.", count: 3, breakdown: "graphic-design, content-creation, strategic-intelligence" },
-        { name: "Agents", description: "Autonomous workers with model routing. They consume skills and tools to do work independently. Stored in ~/.claude/agents/.", count: 5, breakdown: "shopify-manager, seo-researcher, code-reviewer, content-writer, docs-maintainer" }
+        { name: "Tools", description: "External connections and atomic actions — Composio connectors, MCP servers, APIs. The execution layer.", count: 832, breakdown: "~832 Composio connectors + built-in Claude tools + MCP servers" },
+        { name: "Skills", description: "Reusable procedural knowledge — instructions that tell Claude how and when to do things. Stored in ~/.claude/skills/.", count: 40, breakdown: "8 design + 9 content + 9 intelligence + 2 commerce + 6 integration + 6 utility" },
+        { name: "Agents", description: "Autonomous AI workers with specific roles, model assignments, and tool access. Stored in ~/.claude/agents/.", count: 5, breakdown: "shopify-manager (Opus), seo-researcher (Sonnet), code-reviewer (Haiku), content-writer (Sonnet), docs-maintainer (Haiku)" },
+        { name: "Capabilities", description: "Business-level abilities the agency can deliver. Documented in smith-ai-agency/docs/capabilities/ (tagged as Business Capability or Way of Working).", count: 16, breakdown: "6 business capabilities + 10 ways of working" }
       ],
       maintenance: "Standing order #22 ensures every new skill gets taxonomy metadata, registry entry, and capability doc update. Domain boundaries reviewed at 50 and 100 core skills. Domains split when exceeding 15 skills with 2 distinct sub-groups.",
       namingConvention: "New skills: verb-noun in kebab-case (e.g., audit-site, generate-blog). No domain prefix — domain lives in YAML metadata. Existing 37 skills keep their names."
