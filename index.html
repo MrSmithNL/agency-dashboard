@@ -97,7 +97,7 @@
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
-  <script src="data.js?v=20260309b"></script>
+  <script src="data.js?v=20260309c"></script>
 
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -2228,16 +2228,22 @@
     }
 
     // ==================== RESEARCH VIEW ====================
+    // ---- Research state ----
+    let researchState = { expanded: null };
+
     function renderResearch(c) {
       const R = D.devops.research;
+      const prioColors = { high: 'text-red-400 bg-red-900/30', medium: 'text-amber-400 bg-amber-900/30', low: 'text-slate-400 bg-slate-800' };
+      const sevColors = { high: 'text-red-400 bg-red-900/30', medium: 'text-amber-400 bg-amber-900/30', low: 'text-slate-400 bg-slate-800' };
 
       // ---------- KPI Cards ----------
-      const kpis = el('div','grid grid-cols-2 md:grid-cols-4 gap-4 animate-in');
+      const kpis = el('div','grid grid-cols-2 md:grid-cols-5 gap-4 animate-in');
       const kpiData = [
         { label: 'Queued', value: R.stats.queued, color: R.stats.queued > 0 ? 'text-amber-400' : 'text-slate-400' },
         { label: 'In Progress', value: R.stats.inProgress, color: R.stats.inProgress > 0 ? 'text-blue-400' : 'text-slate-400' },
         { label: 'Completed', value: R.stats.done, color: 'text-green-400' },
         { label: 'Total Sources', value: R.stats.totalSources, color: 'text-purple-400' },
+        { label: 'Recommendations', value: R.completed.reduce((s,r) => s + (r.recommendations||[]).length, 0), color: 'text-blue-400' },
       ];
       kpiData.forEach((k,i) => {
         kpis.innerHTML += `<div class="bg-card rounded-xl border border-border p-4 animate-in" style="animation-delay:${i*0.05}s">
@@ -2247,82 +2253,120 @@
       });
       c.appendChild(kpis);
 
-      // ---------- Recent Reports ----------
+      // ---------- Completed Research (expandable cards) ----------
       const s2 = el('div','animate-in mt-6');
-      let repHTML = '<h2 class="text-lg font-semibold text-white mb-4">Recent Research Reports</h2>';
-      if (R.recentReports.length === 0) {
-        repHTML += '<p class="text-slate-400">No research reports yet. Add a topic to the backlog and the nightly worker will run it.</p>';
-      } else {
-        repHTML += '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b border-border">';
-        repHTML += '<th class="pb-2 pr-4">Date</th><th class="pb-2 pr-4">Topic</th><th class="pb-2 pr-4">Depth</th><th class="pb-2 pr-4">Sources</th><th class="pb-2 pr-4">Sections</th><th class="pb-2 pr-4">Recommendations</th><th class="pb-2">Risks</th>';
-        repHTML += '</tr></thead><tbody>';
-        R.recentReports.forEach(r => {
-          repHTML += `<tr class="border-b border-border/50 hover:bg-white/5">
-            <td class="py-3 pr-4 text-slate-300">${r.date}</td>
-            <td class="py-3 pr-4 text-white font-medium">${r.topic}</td>
-            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${r.depth}</span></td>
-            <td class="py-3 pr-4 text-slate-300">${r.sources}</td>
-            <td class="py-3 pr-4 text-slate-300">${r.sections}</td>
-            <td class="py-3 pr-4 text-slate-300">${r.recommendations}</td>
-            <td class="py-3 text-slate-300">${r.risks}</td>
-          </tr>`;
-        });
-        repHTML += '</tbody></table></div>';
-      }
-      s2.innerHTML = repHTML;
+      let h2 = '<div class="flex items-center justify-between mb-4"><h2 class="text-lg font-semibold text-white">Research Reports</h2>';
+      h2 += '<button onclick="showNewResearchDialog()" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors">+ New Research</button></div>';
+      s2.innerHTML = h2;
       c.appendChild(s2);
+
+      R.completed.slice().reverse().forEach((r, idx) => {
+        const card = el('div', 'animate-in mb-4');
+        const isExpanded = researchState.expanded === r.id;
+        const chevron = isExpanded ? '\u25BC' : '\u25B6';
+        const recs = r.recommendations || [];
+        const risks = r.risks || [];
+        const statusColors = { queued: 'bg-amber-900/30 text-amber-400', in_progress: 'bg-blue-900/30 text-blue-400', done: 'bg-green-900/30 text-green-400', blocked: 'bg-red-900/30 text-red-400' };
+
+        let html = `<div class="bg-card rounded-xl border border-border overflow-hidden">`;
+        // Header row (clickable)
+        html += `<div class="p-4 cursor-pointer hover:bg-white/5 transition-colors" onclick="researchState.expanded = researchState.expanded === '${r.id}' ? null : '${r.id}'; document.getElementById('mainContent').innerHTML=''; renderResearch(document.getElementById('mainContent'));">`;
+        html += `<div class="flex items-center gap-3">`;
+        html += `<span class="text-slate-500 text-xs">${chevron}</span>`;
+        html += `<span class="text-xs font-mono text-slate-500">${r.id}</span>`;
+        html += `<span class="text-white font-medium flex-1">${r.topic}</span>`;
+        html += `<span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${r.depth}</span>`;
+        html += `<span class="text-xs text-slate-500">${r.sources} sources</span>`;
+        html += `<span class="text-xs text-slate-500">${r.completed}</span>`;
+        html += `<span class="text-xs px-2 py-0.5 rounded bg-green-900/30 text-green-400">${recs.length} recs</span>`;
+        html += `<span class="text-xs px-2 py-0.5 rounded bg-red-900/30 text-red-400">${risks.length} risks</span>`;
+        html += `</div>`;
+        html += `<p class="text-sm text-slate-400 mt-2 ml-6">${r.keyFinding}</p>`;
+        html += `</div>`;
+
+        // Expanded detail
+        if (isExpanded) {
+          html += `<div class="border-t border-border px-4 pb-4">`;
+
+          // Action buttons bar
+          html += `<div class="flex gap-2 mt-4 mb-4 flex-wrap">`;
+          html += `<button onclick="showImplementAllDialog('${r.id}')" class="text-xs px-3 py-1.5 rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium transition-colors">\u2705 Implement All Recommendations</button>`;
+          html += `<button onclick="showNewResearchDialog('${r.id}')" class="text-xs px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white font-medium transition-colors">\uD83D\uDD0D Do More Research</button>`;
+          html += `</div>`;
+
+          // Recommendations
+          if (recs.length > 0) {
+            html += `<h3 class="text-sm font-semibold text-white mt-4 mb-3">Recommendations (${recs.length})</h3>`;
+            html += `<div class="space-y-2">`;
+            recs.forEach(rec => {
+              const pc = prioColors[rec.priority] || prioColors.low;
+              html += `<div class="flex items-start gap-3 p-3 rounded-lg bg-bg/50 border border-border/50 group">`;
+              html += `<div class="flex-1">`;
+              html += `<div class="flex items-center gap-2 mb-1">`;
+              html += `<span class="text-xs font-mono text-slate-500">${rec.id}</span>`;
+              html += `<span class="text-xs px-2 py-0.5 rounded ${pc}">${rec.priority}</span>`;
+              html += `<span class="text-white text-sm font-medium">${rec.title}</span>`;
+              html += `</div>`;
+              html += `<p class="text-xs text-slate-400">${rec.description}</p>`;
+              html += `</div>`;
+              html += `<button onclick="showImplementDialog('${r.id}','${rec.id}')" class="text-xs px-2 py-1 rounded bg-blue-900/30 text-blue-400 hover:bg-blue-800/50 transition-colors opacity-60 group-hover:opacity-100 whitespace-nowrap">Implement \u2192</button>`;
+              html += `</div>`;
+            });
+            html += `</div>`;
+          }
+
+          // Risks
+          if (risks.length > 0) {
+            html += `<h3 class="text-sm font-semibold text-white mt-5 mb-3">Risks (${risks.length})</h3>`;
+            html += `<div class="space-y-2">`;
+            risks.forEach(risk => {
+              const sc = sevColors[risk.severity] || sevColors.low;
+              html += `<div class="flex items-start gap-3 p-3 rounded-lg bg-bg/50 border border-border/50">`;
+              html += `<div class="flex-1">`;
+              html += `<div class="flex items-center gap-2 mb-1">`;
+              html += `<span class="text-xs font-mono text-slate-500">${risk.id}</span>`;
+              html += `<span class="text-xs px-2 py-0.5 rounded ${sc}">${risk.severity}</span>`;
+              html += `<span class="text-white text-sm font-medium">${risk.title}</span>`;
+              html += `</div>`;
+              html += `<p class="text-xs text-slate-400">${risk.description}</p>`;
+              html += `</div>`;
+              html += `</div>`;
+            });
+            html += `</div>`;
+          }
+
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+        card.innerHTML = html;
+        c.appendChild(card);
+      });
 
       // ---------- Backlog ----------
       const s3 = el('div','animate-in mt-6');
       let blHTML = '<h2 class="text-lg font-semibold text-white mb-4">Research Backlog</h2>';
       const queued = R.backlog.filter(b => b.status === 'queued');
       const inProg = R.backlog.filter(b => b.status === 'in_progress');
-      const done = R.backlog.filter(b => b.status === 'done');
-      const blocked = R.backlog.filter(b => b.status === 'blocked');
-      const allItems = [...inProg, ...queued, ...blocked, ...done];
+      const allItems = [...inProg, ...queued];
       if (allItems.length === 0) {
-        blHTML += '<p class="text-slate-400">Backlog is empty. Add a research topic to get started.</p>';
+        blHTML += '<div class="bg-card rounded-xl border border-border p-6 text-center"><p class="text-slate-400 mb-3">No research queued. Add a topic and the nightly worker will run it at 01:00.</p>';
+        blHTML += '<button onclick="showNewResearchDialog()" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors">+ Add Research Topic</button></div>';
       } else {
         blHTML += '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b border-border">';
-        blHTML += '<th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Topic</th><th class="pb-2 pr-4">Depth</th><th class="pb-2 pr-4">Priority</th><th class="pb-2 pr-4">Status</th><th class="pb-2 pr-4">Sources</th><th class="pb-2">Completed</th>';
+        blHTML += '<th class="pb-2 pr-4">ID</th><th class="pb-2 pr-4">Topic</th><th class="pb-2 pr-4">Depth</th><th class="pb-2 pr-4">Priority</th><th class="pb-2">Status</th>';
         blHTML += '</tr></thead><tbody>';
         allItems.forEach(b => {
-          const statusColors = { queued: 'bg-amber-900/30 text-amber-400', in_progress: 'bg-blue-900/30 text-blue-400', done: 'bg-green-900/30 text-green-400', blocked: 'bg-red-900/30 text-red-400' };
+          const statusColors = { queued: 'bg-amber-900/30 text-amber-400', in_progress: 'bg-blue-900/30 text-blue-400' };
           const sc = statusColors[b.status] || 'bg-slate-800 text-slate-400';
-          const prioColors = { P1: 'text-red-400', P2: 'text-amber-400', P3: 'text-slate-400' };
-          const pc = prioColors[b.priority] || 'text-slate-400';
-          blHTML += `<tr class="border-b border-border/50 hover:bg-white/5">
-            <td class="py-3 pr-4 text-slate-400 font-mono text-xs">${b.id}</td>
-            <td class="py-3 pr-4 text-white">${b.topic}</td>
-            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${b.depth}</span></td>
-            <td class="py-3 pr-4 font-semibold ${pc}">${b.priority}</td>
-            <td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded ${sc}">${b.status.replace('_',' ')}</span></td>
-            <td class="py-3 pr-4 text-slate-300">${b.sources || '\u2014'}</td>
-            <td class="py-3 text-slate-300">${b.completed || '\u2014'}</td>
-          </tr>`;
+          const prioC = { P1: 'text-red-400', P2: 'text-amber-400', P3: 'text-slate-400' };
+          const pc = prioC[b.priority] || 'text-slate-400';
+          blHTML += `<tr class="border-b border-border/50"><td class="py-3 pr-4 text-slate-400 font-mono text-xs">${b.id}</td><td class="py-3 pr-4 text-white">${b.topic}</td><td class="py-3 pr-4"><span class="text-xs px-2 py-0.5 rounded bg-purple-900/30 text-purple-400">${b.depth}</span></td><td class="py-3 pr-4 font-semibold ${pc}">${b.priority}</td><td class="py-3"><span class="text-xs px-2 py-0.5 rounded ${sc}">${b.status.replace('_',' ')}</span></td></tr>`;
         });
         blHTML += '</tbody></table></div>';
       }
       s3.innerHTML = blHTML;
       c.appendChild(s3);
-
-      // ---------- Key Findings ----------
-      const s4 = el('div','animate-in mt-6');
-      let findHTML = '<h2 class="text-lg font-semibold text-white mb-4">Key Findings</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-      R.completed.forEach(r => {
-        findHTML += `<div class="bg-card rounded-xl border border-border p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-xs font-mono text-slate-500">${r.id}</span>
-            <span class="text-xs text-slate-500">${r.completed}</span>
-          </div>
-          <p class="text-white font-medium mb-2">${r.topic}</p>
-          <p class="text-sm text-slate-300">${r.keyFinding}</p>
-          <p class="text-xs text-slate-500 mt-2">${r.sources} sources</p>
-        </div>`;
-      });
-      findHTML += '</div>';
-      s4.innerHTML = findHTML;
-      c.appendChild(s4);
 
       // ---------- Process Info ----------
       const s5 = el('div','animate-in mt-6');
@@ -2336,6 +2380,189 @@
         </div>
       </div>`;
       c.appendChild(s5);
+    }
+
+    // ---- Research Dialogs ----
+    function closeResearchDialog() {
+      const d = document.getElementById('researchDialog');
+      if (d) d.remove();
+    }
+
+    function createDialog(title, content) {
+      closeResearchDialog();
+      const overlay = document.createElement('div');
+      overlay.id = 'researchDialog';
+      overlay.className = 'fixed inset-0 z-50 flex items-center justify-center';
+      overlay.style.background = 'rgba(0,0,0,0.7)';
+      overlay.onclick = (e) => { if (e.target === overlay) closeResearchDialog(); };
+      overlay.innerHTML = `<div class="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between p-4 border-b border-border">
+          <h3 class="text-white font-semibold">${title}</h3>
+          <button onclick="closeResearchDialog()" class="text-slate-400 hover:text-white text-lg">\u2715</button>
+        </div>
+        <div class="p-4">${content}</div>
+      </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    function showImplementDialog(researchId, recId) {
+      const R = D.devops.research;
+      const report = R.completed.find(r => r.id === researchId);
+      const rec = report ? (report.recommendations || []).find(r => r.id === recId) : null;
+      if (!rec) return;
+
+      const content = `
+        <div class="mb-4">
+          <p class="text-xs text-slate-400 mb-1">Recommendation</p>
+          <p class="text-white font-medium">${rec.title}</p>
+          <p class="text-sm text-slate-400 mt-1">${rec.description}</p>
+        </div>
+        <div class="mb-4">
+          <p class="text-xs text-slate-400 mb-2">How would you like to implement this?</p>
+          <div class="space-y-2">
+            <button onclick="copyImplementText('${researchId}','${recId}','new')" class="w-full text-left p-3 rounded-lg border border-border hover:border-blue-500 hover:bg-blue-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83C\uDD95 New Project</p>
+              <p class="text-xs text-slate-400">Create a new INFRA/PROD project for this</p>
+            </button>
+            <button onclick="copyImplementText('${researchId}','${recId}','existing')" class="w-full text-left p-3 rounded-lg border border-border hover:border-green-500 hover:bg-green-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83D\uDCC2 Existing Project</p>
+              <p class="text-xs text-slate-400">Add as a task to an existing project</p>
+            </button>
+            <button onclick="copyImplementText('${researchId}','${recId}','objective')" class="w-full text-left p-3 rounded-lg border border-border hover:border-purple-500 hover:bg-purple-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83C\uDFAF Create Objective</p>
+              <p class="text-xs text-slate-400">Create an autonomous objective from this</p>
+            </button>
+          </div>
+        </div>`;
+      createDialog('Implement: ' + rec.title, content);
+    }
+
+    function showImplementAllDialog(researchId) {
+      const R = D.devops.research;
+      const report = R.completed.find(r => r.id === researchId);
+      if (!report) return;
+      const recs = report.recommendations || [];
+      const highRecs = recs.filter(r => r.priority === 'high');
+      const medRecs = recs.filter(r => r.priority === 'medium');
+      const lowRecs = recs.filter(r => r.priority === 'low');
+
+      const content = `
+        <div class="mb-4">
+          <p class="text-white font-medium mb-1">${report.topic}</p>
+          <p class="text-sm text-slate-400">${recs.length} recommendations: ${highRecs.length} high, ${medRecs.length} medium, ${lowRecs.length} low priority</p>
+        </div>
+        <div class="mb-4">
+          <p class="text-xs text-slate-400 mb-2">Implementation approach</p>
+          <div class="space-y-2">
+            <button onclick="copyImplementAllText('${researchId}','new')" class="w-full text-left p-3 rounded-lg border border-border hover:border-blue-500 hover:bg-blue-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83C\uDD95 New Project</p>
+              <p class="text-xs text-slate-400">Create a new project with all recommendations as tasks</p>
+            </button>
+            <button onclick="copyImplementAllText('${researchId}','existing')" class="w-full text-left p-3 rounded-lg border border-border hover:border-green-500 hover:bg-green-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83D\uDCC2 Existing Project</p>
+              <p class="text-xs text-slate-400">Add all recommendations as tasks to an existing project</p>
+            </button>
+            <button onclick="copyImplementAllText('${researchId}','objective')" class="w-full text-left p-3 rounded-lg border border-border hover:border-purple-500 hover:bg-purple-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\uD83C\uDFAF Create Objective</p>
+              <p class="text-xs text-slate-400">Create an autonomous objective with phased implementation</p>
+            </button>
+            <button onclick="copyImplementAllText('${researchId}','high-only')" class="w-full text-left p-3 rounded-lg border border-border hover:border-red-500 hover:bg-red-900/20 transition-colors">
+              <p class="text-white text-sm font-medium">\u26A1 High Priority Only</p>
+              <p class="text-xs text-slate-400">Implement only the ${highRecs.length} high-priority recommendations first</p>
+            </button>
+          </div>
+        </div>`;
+      createDialog('Implement All: ' + report.topic, content);
+    }
+
+    function showNewResearchDialog(existingId) {
+      const R = D.devops.research;
+      const existing = existingId ? R.completed.find(r => r.id === existingId) : null;
+      const contextLabel = existing ? `<p class="text-xs text-slate-400 mb-3">Building on: <span class="text-purple-400">${existing.topic}</span> (${existing.sources} sources)</p>` : '';
+      const contextValue = existing ? existing.topic + ' — ' : '';
+
+      const content = `
+        ${contextLabel}
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Research Topic</label>
+            <input id="researchTopic" type="text" value="${contextValue}" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500" placeholder="e.g. Email marketing platforms for small agencies">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 block mb-1">Key Question</label>
+            <textarea id="researchQuestion" rows="3" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 resize-none" placeholder="What specific question should the research answer?">${existing ? 'Building on ' + existing.topic + ' research (' + existing.sources + ' sources), investigate: ' : ''}</textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Depth</label>
+              <select id="researchDepth" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <option value="surface">Surface (2-5 min)</option>
+                <option value="standard" selected>Standard (10-20 min)</option>
+                <option value="deep">Deep (30-60 min)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-400 block mb-1">Priority</label>
+              <select id="researchPriority" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <option value="P1">P1 — Urgent</option>
+                <option value="P2" selected>P2 — Important</option>
+                <option value="P3">P3 — Nice to have</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="submitNewResearch('${existingId || ''}')" class="w-full mt-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors">Add to Research Backlog</button>
+        </div>`;
+      createDialog(existing ? 'Follow-up Research' : 'New Research Request', content);
+    }
+
+    function copyImplementText(researchId, recId, mode) {
+      const R = D.devops.research;
+      const report = R.completed.find(r => r.id === researchId);
+      const rec = report ? (report.recommendations || []).find(r => r.id === recId) : null;
+      if (!rec) return;
+      const modeLabels = { new: 'as a new project', existing: 'in an existing project', objective: 'as an autonomous objective' };
+      const text = `Implement recommendation from research ${researchId} (${report.topic}):\n\n${rec.title}: ${rec.description}\n\nImplement ${modeLabels[mode]}.`;
+      navigator.clipboard.writeText(text).then(() => {
+        closeResearchDialog();
+        showToast('Copied to clipboard — paste into Claude Code to implement');
+      });
+    }
+
+    function copyImplementAllText(researchId, mode) {
+      const R = D.devops.research;
+      const report = R.completed.find(r => r.id === researchId);
+      if (!report) return;
+      const recs = mode === 'high-only' ? (report.recommendations || []).filter(r => r.priority === 'high') : (report.recommendations || []);
+      const modeLabels = { new: 'as a new project', existing: 'in an existing project', objective: 'as an autonomous objective', 'high-only': 'as high-priority tasks' };
+      let text = `Implement ${recs.length} recommendations from research ${researchId} (${report.topic}) ${modeLabels[mode]}:\n\n`;
+      recs.forEach(r => { text += `- [${r.priority.toUpperCase()}] ${r.title}: ${r.description}\n`; });
+      navigator.clipboard.writeText(text).then(() => {
+        closeResearchDialog();
+        showToast('Copied to clipboard — paste into Claude Code to implement');
+      });
+    }
+
+    function submitNewResearch(existingId) {
+      const topic = document.getElementById('researchTopic').value.trim();
+      const question = document.getElementById('researchQuestion').value.trim();
+      const depth = document.getElementById('researchDepth').value;
+      const priority = document.getElementById('researchPriority').value;
+      if (!topic || !question) { showToast('Please fill in topic and question'); return; }
+      const R = D.devops.research;
+      const nextId = 'R-' + String(Math.max(...R.completed.map(r => parseInt(r.id.replace('R-',''))), ...R.backlog.map(r => parseInt(r.id.replace('R-','')))) + 1).padStart(3,'0');
+      const text = `Add to research backlog:\n\nID: ${nextId}\nTopic: ${topic}\nQuestion: ${question}\nDepth: ${depth}\nPriority: ${priority}\nRequested by: Malcolm${existingId ? '\nFollows: ' + existingId : ''}`;
+      navigator.clipboard.writeText(text).then(() => {
+        closeResearchDialog();
+        showToast('Copied to clipboard — paste into Claude Code to add to backlog');
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-800 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50 animate-in';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
     }
 
     render();
