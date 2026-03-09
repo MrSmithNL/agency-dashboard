@@ -624,15 +624,16 @@ const DASHBOARD_DATA = {
   // TASKS
   // ============================================================
   tasks: [
+    { name: "BLOCKED: QA check all Hairgenetix pages after SEO changes (HG-047 to HG-066)", project: "Hairgenetix", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-08", daysInStatus: 0, url: "https://trello.com/c/1Bm9xyda" },
+    { name: "SEO-001: Create DataForSEO account + deposit $50", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/Pal98Bld" },
+    { name: "SEO-003: Start SE Ranking 14-day free trial", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/xWosGhaB" },
     { name: "Financial: Complete cost inventory checklist", project: "INFRA", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/UZWj0sVZ" },
     { name: "HG: Fix H1 tags + meta titles/descriptions (34 pages)", project: "Hairgenetix", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-03", daysInStatus: 5, url: "https://trello.com/c/zVihksrx" },
     { name: "INFRA-005: First research cycle — Claude Code best practices", project: "INFRA", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/H0wdllLy" },
     { name: "LOE SITE-003: Generate site images (Imagen 4)", project: "LOE", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/aHpfBBQT" },
     { name: "LOE: Fix SEO audit warnings (36 items)", project: "LOE", status: "This Week", priority: "Medium", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/g1sVP85U" },
-    { name: "SEO-001: Create DataForSEO account + deposit $50", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/Pal98Bld" },
-    { name: "SEO-003: Start SE Ranking 14-day free trial", project: "SEO", status: "Blocked", priority: "High", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/xWosGhaB" },
     { name: "Financial: Complete cost inventory (8 TBD items)", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-04", daysInStatus: 4, url: "https://trello.com/c/RxM7vvGM" },
-    { name: "HG: Install GA4 and establish metric baselines", project: "Hairgenetix", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-04", daysInStatus: 4, url: "https://trello.com/c/Ud42qGMx" },
+    { name: "HG: Install GA4 and establish metric baselines", project: "SEO", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-04", daysInStatus: 4, url: "https://trello.com/c/Ud42qGMx" },
     { name: "INFRA-001: Set up Overnight CLI Runner", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/Hg0V0p37" },
     { name: "INFRA-002: Create Project Template Repo", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/qpaWjSRZ" },
     { name: "INFRA-003: Set up BI Dashboard (Looker Studio + Sheets)", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/V3G7QEBB" },
@@ -641,7 +642,7 @@ const DASHBOARD_DATA = {
     { name: "LOE: Malcolm — activate 3 MailerLite automations in UI", project: "LOE", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/Pq5XyedR" },
     { name: "SEO-007: Connect SEMrush via Rube", project: "SEO", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/afwNYpG5" },
     { name: "SEO-024: Schedule recurring SEO audits", project: "SEO", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/NoIwEBzv" },
-    { name: "SEO-025: Apply audit recommendations to LOE", project: "LOE", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/983gPPot" },
+    { name: "SEO-025: Apply audit recommendations to LOE", project: "SEO", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/983gPPot" },
     { name: "SF-001: SellFunnel architecture strategy", project: "SF", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/E1bVnPJS" },
     { name: "SF-002: Define SellFunnel success KPIs and metrics", project: "SF", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-04", daysInStatus: 4, url: "https://trello.com/c/g6UY7ovY" },
     { name: "TOOL-001: Fix Bitwarden CLI unlock", project: "INFRA", status: "Backlog", priority: "Low", due: "", lastActivity: "2026-03-02", daysInStatus: 6, url: "https://trello.com/c/W6pr3Md9" },
