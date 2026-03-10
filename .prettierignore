@@ -1,0 +1,7 @@
+node_modules/
+.git/
+*.md
+
+# Auto-generated files — synced from smith-ai-agency source repo
+data.js
+index.html

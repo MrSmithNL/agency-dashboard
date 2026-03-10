@@ -13,3 +13,12 @@ A deployment-only repo containing the built dashboard files. The source of truth
 2. **Deployment only** — copy built files from source, commit, push
 3. **No docs/ folder needed** — documentation lives in INFRA-003's docs/
 4. **No Core 7 files needed** — this is a deployment target, not a project
+
+## Code Quality
+
+- **ESLint** — flat config (`eslint.config.mjs`), lints `data.js` for syntax/logic errors
+- **Prettier** — formats config files only (`data.js` and `index.html` are excluded as auto-generated)
+- **Husky + lint-staged** — pre-commit hook runs ESLint + Prettier on staged files
+- **CI workflow** — `.github/workflows/ci.yml` runs lint + format check on push/PR to main
+- **CodeQL SAST** — `.github/workflows/codeql.yml` scans JavaScript weekly and on push/PR
+- **Scripts:** `npm run lint`, `npm run format`, `npm run format:check`
