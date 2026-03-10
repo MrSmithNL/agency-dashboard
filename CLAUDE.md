@@ -1,5 +1,12 @@
 # Project Instructions — Agency Dashboard (Deployment Repo)
 
+<!-- project-classification
+type: infrastructure
+work_nature: documentation
+hierarchy_position: internal-tool
+enforcement_profile: light
+-->
+
 This is NOT a standalone project. It is the GitHub Pages deployment target for INFRA-003.
 
 ## What This Repo Is
