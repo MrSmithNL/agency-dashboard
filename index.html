@@ -97,7 +97,7 @@
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
-  <script src="data.js?v=20260310a"></script>
+  <script src="data.js?v=20260310b"></script>
 
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -124,6 +124,7 @@
       <button onclick="navigateTo('agent-army')" data-tab="agent-army" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Agent Army</button>
       <button onclick="navigateTo('research')" data-tab="research" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Research</button>
       <button onclick="navigateTo('devops')" data-tab="devops" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">DevOps</button>
+      <button onclick="navigateTo('incidents')" data-tab="incidents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Incidents</button>
     </div>
   </nav>
 
@@ -180,7 +181,7 @@
       main.innerHTML = '';
       // Tab highlighting
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', research:'research', devops:'devops' };
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', research:'research', devops:'devops', incidents:'incidents' };
       const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
       if (ab) ab.classList.add('active');
       const isProject = !!D.projectDetails[route];
@@ -194,6 +195,7 @@
       else if (route === 'agent-army') { renderAgentArmy(main); document.getElementById('breadcrumb').textContent = 'Agent Army'; document.title = 'Smith AI Agency \u2014 Agent Army'; }
       else if (route === 'research') { renderResearch(main); document.getElementById('breadcrumb').textContent = 'Research'; document.title = 'Smith AI Agency \u2014 Research'; }
       else if (route === 'devops') { renderDevOps(main); document.getElementById('breadcrumb').textContent = 'Autonomous DevOps'; document.title = 'Smith AI Agency \u2014 DevOps'; }
+      else if (route === 'incidents') { renderIncidents(main); document.getElementById('breadcrumb').textContent = 'Incident Management'; document.title = 'Smith AI Agency \u2014 Incidents'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
     }
@@ -2590,6 +2592,217 @@
       t.textContent = msg;
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 3000);
+    }
+
+    // ==================== INCIDENTS TAB ====================
+    let incidentState = { filter: 'all' };
+
+    function renderIncidents(c) {
+      if (!D.incidents) { c.innerHTML = '<p class="text-amber-400">Incidents data not loaded.</p>'; return; }
+      const INC = D.incidents;
+
+      // ---------- Section 1: Status Banner ----------
+      const s0 = document.createElement('div');
+      s0.className = 'animate-in';
+      const safeBg = INC.safeModeActive ? 'bg-red-900/50 border-red-500' : 'bg-card border-border';
+      const sweepColor = INC.lastSweepStatus === 'GREEN' ? 'text-green-400' : INC.lastSweepStatus === 'AMBER' ? 'text-amber-400' : 'text-red-400';
+      s0.innerHTML = `
+        <div class="${safeBg} rounded-xl border p-4 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            ${INC.safeModeActive ? '<span class="text-red-400 text-lg font-bold animate-pulse">SAFE MODE ACTIVE</span>' : '<span class="text-green-400 text-sm font-semibold">System Operating Normally</span>'}
+            <span class="text-xs text-slate-400">Maturity Stage ${INC.maturityStage}: ${INC.maturityLabel}</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-slate-400">Last SRE Sweep</p>
+            <p class="text-sm font-semibold ${sweepColor}">${INC.lastSweepStatus} &mdash; ${INC.lastSweepDate}</p>
+          </div>
+        </div>`;
+      c.appendChild(s0);
+
+      // ---------- Section 2: KPI Cards ----------
+      const s1 = document.createElement('div');
+      s1.className = 'animate-in mt-4';
+      let kpiHTML = '<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">';
+      INC.kpis.forEach(k => {
+        const color = k.name === 'Open Incidents' ? (k.value > 0 ? 'text-red-400 border-red-500/50' : 'text-green-400 border-green-500/50') :
+                      k.name === 'SRE Sweep Status' ? (k.value === 'GREEN' ? 'text-green-400 border-green-500/50' : k.value === 'AMBER' ? 'text-amber-400 border-amber-500/50' : 'text-red-400 border-red-500/50') :
+                      'text-white border-border';
+        kpiHTML += `<div class="bg-card rounded-xl p-4 border ${color}">
+          <p class="text-xs text-slate-400 mb-1">${k.name}</p>
+          <p class="text-xl font-bold">${k.value}</p>
+          ${k.target ? `<p class="text-xs text-slate-500">Target: <${k.target} ${k.unit || ''}</p>` : ''}
+        </div>`;
+      });
+      kpiHTML += '</div>';
+      s1.innerHTML = kpiHTML;
+      c.appendChild(s1);
+
+      // ---------- Section 3: Severity Distribution ----------
+      const s2 = document.createElement('div');
+      s2.className = 'animate-in mt-6';
+      const sd = INC.severityDistribution;
+      const total = sd.P1 + sd.P2 + sd.P3 + sd.P4;
+      s2.innerHTML = `
+        <h2 class="text-lg font-semibold text-white mb-4">Severity Distribution (Last 30 Days)</h2>
+        <div class="grid grid-cols-4 gap-3">
+          <div class="bg-card rounded-xl p-4 border ${sd.P1 > 0 ? 'border-red-500' : 'border-border'} text-center">
+            <p class="text-xs text-red-400 font-semibold">P1 Critical</p>
+            <p class="text-3xl font-bold ${sd.P1 > 0 ? 'text-red-400' : 'text-slate-600'}">${sd.P1}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border ${sd.P2 > 0 ? 'border-amber-500' : 'border-border'} text-center">
+            <p class="text-xs text-amber-400 font-semibold">P2 High</p>
+            <p class="text-3xl font-bold ${sd.P2 > 0 ? 'text-amber-400' : 'text-slate-600'}">${sd.P2}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border ${sd.P3 > 0 ? 'border-blue-500' : 'border-border'} text-center">
+            <p class="text-xs text-blue-400 font-semibold">P3 Medium</p>
+            <p class="text-3xl font-bold ${sd.P3 > 0 ? 'text-blue-400' : 'text-slate-600'}">${sd.P3}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border text-center">
+            <p class="text-xs text-slate-400 font-semibold">P4 Low</p>
+            <p class="text-3xl font-bold text-slate-600">${sd.P4}</p>
+          </div>
+        </div>`;
+      c.appendChild(s2);
+
+      // ---------- Section 4: SRE Sweep Results ----------
+      const s3 = document.createElement('div');
+      s3.className = 'animate-in mt-6';
+      let sweepHTML = `<h2 class="text-lg font-semibold text-white mb-4">Last SRE Sweep &mdash; ${INC.lastSweep.date}</h2>
+        <div class="bg-card rounded-xl border border-border overflow-hidden">
+          <div class="p-4 flex items-center justify-between border-b border-border">
+            <span class="text-sm font-semibold ${INC.lastSweep.status === 'GREEN' ? 'text-green-400' : INC.lastSweep.status === 'AMBER' ? 'text-amber-400' : 'text-red-400'}">${INC.lastSweep.status}</span>
+            <span class="text-xs text-slate-400">${INC.lastSweep.issuesFound} issues found</span>
+          </div>
+          <table class="w-full"><tbody>`;
+      INC.lastSweep.checks.forEach(ch => {
+        const icon = ch.status === 'pass' ? '<span class="text-green-400">&#10003;</span>' : ch.status === 'warn' ? '<span class="text-amber-400">&#9888;</span>' : '<span class="text-red-400">&#10007;</span>';
+        sweepHTML += `<tr class="border-b border-border/30"><td class="p-3 text-sm text-center w-10">${icon}</td><td class="p-3 text-sm text-slate-300">${ch.name}</td><td class="p-3 text-xs text-slate-400">${ch.detail}</td></tr>`;
+      });
+      sweepHTML += '</tbody></table></div>';
+      s3.innerHTML = sweepHTML;
+      c.appendChild(s3);
+
+      // ---------- Section 5: Recent Incidents ----------
+      const s4 = document.createElement('div');
+      s4.className = 'animate-in mt-6';
+      let incHTML = `<h2 class="text-lg font-semibold text-white mb-4">Recent Incidents</h2>`;
+      if (INC.recentIncidents.length === 0) {
+        incHTML += '<p class="text-slate-400 text-sm">No incidents recorded yet.</p>';
+      } else {
+        incHTML += '<div class="bg-card rounded-xl border border-border overflow-hidden"><table class="w-full text-left"><thead><tr class="border-b border-border bg-slate-800/50"><th class="p-3 text-xs text-slate-400">ID</th><th class="p-3 text-xs text-slate-400">Severity</th><th class="p-3 text-xs text-slate-400">Service</th><th class="p-3 text-xs text-slate-400">Symptom</th><th class="p-3 text-xs text-slate-400 text-center">TTR</th><th class="p-3 text-xs text-slate-400 text-center">Status</th><th class="p-3 text-xs text-slate-400">Runbook</th></tr></thead><tbody>';
+        INC.recentIncidents.forEach(inc => {
+          const sevColor = inc.severity === 'P1' ? 'bg-red-900/30 text-red-400' : inc.severity === 'P2' ? 'bg-amber-900/30 text-amber-400' : inc.severity === 'P3' ? 'bg-blue-900/30 text-blue-400' : 'bg-slate-800 text-slate-400';
+          const statusColor = inc.status === 'resolved' ? 'bg-green-900/30 text-green-400' : inc.status === 'open' ? 'bg-red-900/30 text-red-400' : 'bg-amber-900/30 text-amber-400';
+          incHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50">
+            <td class="p-3 text-xs font-mono text-slate-300">${inc.id}</td>
+            <td class="p-3"><span class="text-xs px-2 py-0.5 rounded ${sevColor}">${inc.severity}</span></td>
+            <td class="p-3 text-xs text-slate-300">${inc.service}</td>
+            <td class="p-3 text-xs text-slate-300">${inc.symptom.substring(0, 80)}${inc.symptom.length > 80 ? '...' : ''}</td>
+            <td class="p-3 text-xs text-center text-slate-300">${inc.ttrMinutes} min</td>
+            <td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${statusColor}">${inc.status}</span></td>
+            <td class="p-3 text-xs text-slate-400">${inc.runbook || '-'}</td>
+          </tr>`;
+        });
+        incHTML += '</tbody></table></div>';
+      }
+      s4.innerHTML = incHTML;
+      c.appendChild(s4);
+
+      // ---------- Section 6: Alert Summary ----------
+      const s5 = document.createElement('div');
+      s5.className = 'animate-in mt-6';
+      const as = INC.alertSummary;
+      s5.innerHTML = `
+        <h2 class="text-lg font-semibold text-white mb-4">Alert Summary (Last 7 Days)</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="bg-card rounded-xl p-4 border border-border text-center">
+            <p class="text-xs text-slate-400">Total Alerts</p>
+            <p class="text-2xl font-bold text-white">${as.total}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border ${as.byPriority.emergency > 0 ? 'border-red-500' : 'border-border'} text-center">
+            <p class="text-xs text-red-400">Emergency (P1)</p>
+            <p class="text-2xl font-bold ${as.byPriority.emergency > 0 ? 'text-red-400' : 'text-slate-600'}">${as.byPriority.emergency}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border text-center">
+            <p class="text-xs text-amber-400">High (P2)</p>
+            <p class="text-2xl font-bold ${as.byPriority.high > 0 ? 'text-amber-400' : 'text-slate-600'}">${as.byPriority.high}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border text-center">
+            <p class="text-xs text-slate-400">Suppressed</p>
+            <p class="text-2xl font-bold text-slate-600">${as.suppressed}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border text-center">
+            <p class="text-xs text-slate-400">Auto-Remediated</p>
+            <p class="text-2xl font-bold text-slate-600">${as.autoRemediated}</p>
+          </div>
+        </div>`;
+      c.appendChild(s5);
+
+      // ---------- Section 7: Runbook Coverage ----------
+      const s6 = document.createElement('div');
+      s6.className = 'animate-in mt-6';
+      const rb = INC.runbooks;
+      s6.innerHTML = `
+        <h2 class="text-lg font-semibold text-white mb-4">Runbook Library</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-card rounded-xl p-4 border border-border">
+            <p class="text-xs text-slate-400">Total Runbooks</p>
+            <p class="text-2xl font-bold text-white">${rb.total}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border">
+            <p class="text-xs text-slate-400">Used This Month</p>
+            <p class="text-2xl font-bold text-white">${rb.usedThisMonth}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border">
+            <p class="text-xs text-slate-400">Success Rate</p>
+            <p class="text-2xl font-bold text-green-400">${rb.successRate}</p>
+          </div>
+          <div class="bg-card rounded-xl p-4 border border-border">
+            <p class="text-xs text-slate-400">Coverage</p>
+            <p class="text-sm font-semibold text-white mt-1">${rb.coverage}</p>
+          </div>
+        </div>`;
+      c.appendChild(s6);
+
+      // ---------- Section 8: Follow-Up Actions ----------
+      const s7 = document.createElement('div');
+      s7.className = 'animate-in mt-6';
+      let fuHTML = '<h2 class="text-lg font-semibold text-white mb-4">Follow-Up Actions</h2>';
+      if (INC.followUpActions.length === 0) {
+        fuHTML += '<p class="text-slate-400 text-sm">No pending follow-up actions.</p>';
+      } else {
+        fuHTML += '<div class="bg-card rounded-xl border border-border overflow-hidden"><table class="w-full text-left"><thead><tr class="border-b border-border bg-slate-800/50"><th class="p-3 text-xs text-slate-400">Action</th><th class="p-3 text-xs text-slate-400">Owner</th><th class="p-3 text-xs text-slate-400">Due</th><th class="p-3 text-xs text-slate-400 text-center">Status</th></tr></thead><tbody>';
+        INC.followUpActions.forEach(fa => {
+          const overdue = new Date(fa.dueDate) < new Date() && fa.status === 'pending';
+          const statusColor = fa.status === 'done' ? 'bg-green-900/30 text-green-400' : overdue ? 'bg-red-900/30 text-red-400' : 'bg-amber-900/30 text-amber-400';
+          const statusLabel = overdue ? 'overdue' : fa.status;
+          fuHTML += `<tr class="border-b border-border/30"><td class="p-3 text-xs text-slate-300">${fa.action}</td><td class="p-3 text-xs text-slate-400">${fa.owner}</td><td class="p-3 text-xs ${overdue ? 'text-red-400' : 'text-slate-400'}">${fa.dueDate}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${statusColor}">${statusLabel}</span></td></tr>`;
+        });
+        fuHTML += '</tbody></table></div>';
+      }
+      s7.innerHTML = fuHTML;
+      c.appendChild(s7);
+
+      // ---------- Section 9: AI Failure Types ----------
+      const s8 = document.createElement('div');
+      s8.className = 'animate-in mt-6';
+      let ftHTML = '<h2 class="text-lg font-semibold text-white mb-4">AI Failure Types Observed</h2>';
+      if (INC.failureTypes.length === 0) {
+        ftHTML += '<p class="text-slate-400 text-sm">No AI-specific failures recorded yet.</p>';
+      } else {
+        ftHTML += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">';
+        INC.failureTypes.forEach(ft => {
+          const sevColor = ft.severity === 'P1' ? 'text-red-400' : ft.severity === 'P2' ? 'text-amber-400' : ft.severity === 'P3' ? 'text-blue-400' : 'text-slate-400';
+          ftHTML += `<div class="bg-card rounded-xl p-4 border border-border">
+            <p class="text-xs ${sevColor} font-semibold">${ft.severity}</p>
+            <p class="text-sm text-white font-semibold mt-1">${ft.type}</p>
+            <p class="text-xs text-slate-400 mt-1">${ft.count} occurrence${ft.count !== 1 ? 's' : ''}</p>
+          </div>`;
+        });
+        ftHTML += '</div>';
+      }
+      s8.innerHTML = ftHTML;
+      c.appendChild(s8);
     }
 
     render();

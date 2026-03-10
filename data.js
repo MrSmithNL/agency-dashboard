@@ -1005,6 +1005,106 @@ const DASHBOARD_DATA = {
   // ============================================================
   // AUTONOMOUS DEVOPS
   // ============================================================
+  // ============================================================
+  // INCIDENT MANAGEMENT
+  // ============================================================
+  incidents: {
+    // Current status
+    safeModeActive: false,
+    lastSweepStatus: "RED",
+    lastSweepDate: "2026-03-10",
+    maturityStage: 2,
+    maturityLabel: "Alert Assistance",
+
+    // KPIs
+    kpis: [
+      { name: "Open Incidents", value: 0, severity: null, trend: "flat" },
+      { name: "MTTR (avg)", value: "15 min", raw: 15, target: 60, unit: "min", trend: "flat" },
+      { name: "MTTD (avg)", value: "0 min", raw: 0, target: 30, unit: "min", trend: "flat" },
+      { name: "Auto-Remediation Rate", value: "0%", raw: 0, target: 50, trend: "flat" },
+      { name: "SRE Sweep Status", value: "RED", trend: "down" },
+      { name: "Total Incidents", value: 1, trend: "flat" },
+    ],
+
+    // Severity distribution
+    severityDistribution: { P1: 0, P2: 0, P3: 1, P4: 0 },
+
+    // Active incidents (empty = good)
+    activeIncidents: [],
+
+    // Recent incidents (last 30 days)
+    recentIncidents: [
+      {
+        id: "INC-2026-03-10-001",
+        severity: "P3",
+        status: "resolved",
+        service: "smith-ai-agency",
+        symptom: "CI pipelines failing on 4 of 7 repos after Quality Manager enforcement",
+        detectedAt: "2026-03-10T17:40:00",
+        resolvedAt: "2026-03-10T17:55:00",
+        ttdMinutes: 0,
+        ttrMinutes: 15,
+        autoResolved: false,
+        runbook: "RB-001",
+        postmortem: "PIR-2026-03-10-001",
+        tier: 2,
+      },
+    ],
+
+    // DORA metrics for incidents
+    doraIncidents: {
+      mttrTrend: [{ period: "W10", value: 15 }],
+      mttdTrend: [{ period: "W10", value: 0 }],
+      incidentRate: [{ period: "W10", value: 1 }],
+      changeFailureRate: { value: "14%", raw: 14, benchmark: "medium" },
+    },
+
+    // SRE sweep results
+    lastSweep: {
+      date: "2026-03-10",
+      status: "RED",
+      issuesFound: 6,
+      checks: [
+        { name: "Scheduled Tasks", status: "pass", detail: "18 loaded tasks" },
+        { name: "Backup Health", status: "warn", detail: "Mirror directory missing" },
+        { name: "CI/CD Pipelines", status: "fail", detail: "4/7 repos failing" },
+        { name: "Dependency Alerts", status: "warn", detail: "4 alerts on loveoverexile" },
+        { name: "Open Incidents", status: "pass", detail: "0 open incidents" },
+      ],
+    },
+
+    // Alert summary (last 7 days)
+    alertSummary: {
+      total: 1,
+      byPriority: { emergency: 0, high: 0, normal: 1, low: 0 },
+      suppressed: 0,
+      autoRemediated: 0,
+    },
+
+    // AI agent failure types seen
+    failureTypes: [
+      { type: "Tech Debt Exposure", count: 1, severity: "P3" },
+    ],
+
+    // Runbook coverage
+    runbooks: {
+      total: 10,
+      usedThisMonth: 1,
+      successRate: "100%",
+      coverage: "10/10 top incident types covered",
+    },
+
+    // Follow-up actions from incidents
+    followUpActions: [
+      { action: "Run ruff --fix on agency Python scripts", owner: "DevOps Manager", status: "pending", dueDate: "2026-03-14" },
+      { action: "Fix CI failures on hairgenetix + loveoverexile", owner: "DevOps Manager", status: "pending", dueDate: "2026-03-17" },
+      { action: "Enable Dependabot on saas-platform", owner: "DevOps Manager", status: "pending", dueDate: "2026-03-14" },
+      { action: "Investigate 4 Dependabot alerts on loveoverexile", owner: "DevOps Manager", status: "pending", dueDate: "2026-03-14" },
+      { action: "Create ~/Backups/git-mirrors/ directory", owner: "Malcolm", status: "pending", dueDate: "2026-03-11" },
+      { action: "Add warn-only phase to Quality Manager SOP", owner: "CI Manager", status: "pending", dueDate: "2026-03-21" },
+    ],
+  },
+
   devops: {
     // Section 1 — Execution Summary KPIs
     kpis: [
