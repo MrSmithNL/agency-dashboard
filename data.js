@@ -1582,4 +1582,82 @@ const DASHBOARD_DATA = {
       },
     },
   },
+
+  // ============================================================
+  // SPRINT PLANNING
+  // ============================================================
+  sprintPlanning: {
+    // Layer 1: Strategic Project Priorities (set in business strategy, reviewed at sprint planning)
+    projectPriorities: [
+      { code: "PROD-001", name: "SEO & AISO Capability", rank: 1, rationale: "Powers all client work + AISOGEN vertical", capacityPct: 50, color: "#3b82f6" },
+      { code: "PROD-004", name: "SaaS Platform", rank: 1, rationale: "Foundation all verticals build on", capacityPct: 50, color: "#8b5cf6" },
+      { code: "CLIENT-001", name: "Love Over Exile", rank: 2, rationale: "Proof of concept, first client", capacityPct: 30, color: "#22c55e" },
+      { code: "CLIENT-002", name: "Hairgenetix", rank: 2, rationale: "Revenue-generating client", capacityPct: 30, color: "#10b981" },
+      { code: "CLIENT-003", name: "Skingenetix", rank: 2, rationale: "New client project", capacityPct: 30, color: "#14b8a6" },
+      { code: "INFRA", name: "Infrastructure", rank: 2, rationale: "Supports everything, always needed", capacityPct: 30, color: "#a855f7" },
+      { code: "AISOGEN", name: "AISOGEN", rank: 3, rationale: "Strategy phase — not yet building", capacityPct: 20, color: "#f59e0b" },
+      { code: "SELLFUNNEL", name: "SellFunnel", rank: 3, rationale: "Waiting for PROD-004 foundation", capacityPct: 20, color: "#f97316" },
+      { code: "BOOKROCKET", name: "Book Rocket", rank: 4, rationale: "Planned — domain only", capacityPct: 0, color: "#64748b" },
+    ],
+
+    // Capacity allocation rules
+    capacityRules: {
+      rank1: { label: "Critical Path", maxPct: 50, description: "First claim on sprint capacity" },
+      rank2: { label: "High Importance", maxPct: 30, description: "Second claim on remaining capacity" },
+      rank3: { label: "Medium", maxPct: 20, description: "Gets capacity after ranks 1-2 served" },
+      rank4: { label: "Maintenance", maxPct: 0, description: "Reactive/maintenance work only" },
+    },
+
+    // Current sprint (S001)
+    currentSprint: {
+      id: "S001",
+      dates: { start: "2026-03-10", end: "2026-03-21" },
+      status: "active",
+      capacity: { available: 10, committed: 6, completed: 0 },
+      velocity: { baseline: null, note: "First sprint — no baseline" },
+      tasks: [
+        { id: "T-003", objective: "seo-apply-recommendations", task: "Re-run Technical Audit on hairgenetix.com", project: "PROD-001", size: "S", status: "pending", arid: null, note: "Operational — no ARID" },
+        { id: "T-004", objective: "seo-apply-recommendations", task: "Compile all LOE audit findings into prioritised fix list", project: "PROD-001", size: "M", status: "pending", arid: null, note: "Operational" },
+        { id: "T-005", objective: "seo-apply-recommendations", task: "Compile all HG audit findings into prioritised fix list", project: "PROD-001", size: "M", status: "pending", arid: null, note: "Operational" },
+        { id: "T-001", objective: "seo-content-pipeline", task: "Analyse LOE keyword research for top 5 content gaps", project: "PROD-001", size: "S", status: "pending", arid: null, note: "Operational" },
+        { id: "T-002", objective: "seo-content-pipeline", task: "Analyse HG keyword research for top 5 content gaps", project: "PROD-001", size: "S", status: "pending", arid: null, note: "Operational" },
+        { id: "T-003b", objective: "seo-content-pipeline", task: "Create reusable content brief template", project: "PROD-001", size: "S", status: "pending", arid: null, note: "Operational" },
+      ],
+      stretch: [
+        { id: "T-009", objective: "seo-apply-recommendations", task: "Draft llms.txt for hairgenetix.com", project: "PROD-001", size: "S" },
+        { id: "T-004b", objective: "seo-content-pipeline", task: "Generate 5 LOE content briefs", project: "PROD-001", size: "S" },
+      ],
+    },
+
+    // Next sprints (S002, S003 — planned/projected)
+    futureSprints: [
+      {
+        id: "S002",
+        dates: { start: "2026-03-24", end: "2026-04-04" },
+        status: "planned",
+        focus: "First implementation sprint — ARID-scored items with full RE gates",
+        projectedTasks: [
+          { project: "PROD-001", description: "Apply SEO audit fixes (from S001 compiled lists)", count: 3, rank: 1 },
+          { project: "CLIENT-002", description: "Hairgenetix content growth tasks (pending validation)", count: 2, rank: 2 },
+          { project: "PROD-004", description: "SaaS Platform Phase 1 tasks (pending objective)", count: 1, rank: 1 },
+        ],
+        notes: "Requires: HG content objective validation, PROD-004 objective creation, S001 velocity data",
+      },
+      {
+        id: "S003",
+        dates: { start: "2026-04-07", end: "2026-04-18" },
+        status: "projected",
+        focus: "Content pipeline + platform foundation",
+        projectedTasks: [
+          { project: "PROD-001", description: "Content pipeline automation", count: 3, rank: 1 },
+          { project: "PROD-004", description: "SaaS Platform auth + billing", count: 2, rank: 1 },
+          { project: "CLIENT-001", description: "LOE content publishing + SEO fixes", count: 2, rank: 2 },
+        ],
+        notes: "Projected based on roadmap — will be refined at S002 planning",
+      },
+    ],
+
+    // Last updated
+    lastUpdated: "2026-03-12",
+  },
 };

@@ -97,7 +97,7 @@
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
-  <script src="data.js?v=20260311a"></script>
+  <script src="data.js?v=20260312a"></script>
 
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -125,6 +125,7 @@
       <button onclick="navigateTo('research')" data-tab="research" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Research</button>
       <button onclick="navigateTo('devops')" data-tab="devops" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">DevOps</button>
       <button onclick="navigateTo('incidents')" data-tab="incidents" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Incidents</button>
+      <button onclick="navigateTo('sprints')" data-tab="sprints" class="tab-btn px-4 py-3 text-sm font-medium text-slate-400 hover:text-white border-b-2 border-transparent transition-colors whitespace-nowrap">Sprint Planning</button>
     </div>
   </nav>
 
@@ -181,7 +182,7 @@
       main.innerHTML = '';
       // Tab highlighting
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', research:'research', devops:'devops', incidents:'incidents' };
+      const tabMap = { home:'home', calendar:'calendar', improvement:'improvement', organisation:'organisation', agents:'agents', 'agent-army':'agent-army', research:'research', devops:'devops', incidents:'incidents', sprints:'sprints' };
       const ab = document.querySelector(`[data-tab="${tabMap[route] || 'home'}"]`);
       if (ab) ab.classList.add('active');
       const isProject = !!D.projectDetails[route];
@@ -196,6 +197,7 @@
       else if (route === 'research') { renderResearch(main); document.getElementById('breadcrumb').textContent = 'Research'; document.title = 'Smith AI Agency \u2014 Research'; }
       else if (route === 'devops') { renderDevOps(main); document.getElementById('breadcrumb').textContent = 'Autonomous DevOps'; document.title = 'Smith AI Agency \u2014 DevOps'; }
       else if (route === 'incidents') { renderIncidents(main); document.getElementById('breadcrumb').textContent = 'Incident Management'; document.title = 'Smith AI Agency \u2014 Incidents'; }
+      else if (route === 'sprints') { renderSprintPlanning(main); document.getElementById('breadcrumb').textContent = 'Sprint Planning'; document.title = 'Smith AI Agency \u2014 Sprint Planning'; }
       else if (isProject) { renderProjectDetail(main, route); const det = D.projectDetails[route]; document.getElementById('breadcrumb').innerHTML = '<span class="back-btn" onclick="navigateTo(\'\')">\u2190 Cockpit</span> / ' + det.code + ' ' + det.name; document.title = det.code + ' ' + det.name + ' \u2014 Cockpit'; }
       else { main.innerHTML = '<p class="text-slate-400">Page not found. <a href="#" class="text-blue-400 hover:underline" onclick="navigateTo(\'\'); return false;">Back to Cockpit</a></p>'; }
     }
@@ -2803,6 +2805,246 @@
       }
       s8.innerHTML = ftHTML;
       c.appendChild(s8);
+    }
+
+    // ==================== SPRINT PLANNING ====================
+    function renderSprintPlanning(c) {
+      if (!D.sprintPlanning) { c.innerHTML = '<p class="text-amber-400">Sprint planning data not loaded.</p>'; return; }
+      const SP = D.sprintPlanning;
+
+      // ---------- Section 1: Two-Layer Model Header ----------
+      const s0 = document.createElement('div');
+      s0.className = 'animate-in';
+      s0.innerHTML = `
+        <div class="bg-card rounded-xl border border-border p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-lg font-semibold text-white">Two-Layer Prioritisation</h2>
+              <p class="text-xs text-slate-400 mt-1">Layer 1: Strategic project priority &rarr; Layer 2: ARID score within each project</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-slate-400">Last updated</p>
+              <p class="text-sm text-slate-300">${SP.lastUpdated}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3 mt-4">
+            ${Object.entries(SP.capacityRules).map(([key, r]) => {
+              const rankNum = key.replace('rank','');
+              const rankColor = rankNum === '1' ? 'border-blue-500 bg-blue-900/20' : rankNum === '2' ? 'border-green-500 bg-green-900/20' : rankNum === '3' ? 'border-amber-500 bg-amber-900/20' : 'border-slate-600 bg-slate-800/40';
+              return `<div class="rounded-lg border ${rankColor} p-3 text-center">
+                <p class="text-xs font-semibold ${rankNum === '1' ? 'text-blue-400' : rankNum === '2' ? 'text-green-400' : rankNum === '3' ? 'text-amber-400' : 'text-slate-400'}">Rank ${rankNum}</p>
+                <p class="text-sm text-white font-bold mt-1">${r.label}</p>
+                <p class="text-xs text-slate-400 mt-1">${r.maxPct > 0 ? 'Up to ' + r.maxPct + '% capacity' : 'Reactive only'}</p>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+      c.appendChild(s0);
+
+      // ---------- Section 2: Project Priority Cards ----------
+      const s1 = document.createElement('div');
+      s1.className = 'animate-in mt-6';
+      let prioHTML = '<h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Project Priority Ranks</h2>';
+      prioHTML += '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">';
+      SP.projectPriorities.forEach(p => {
+        const rankBorder = p.rank === 1 ? 'border-l-blue-500' : p.rank === 2 ? 'border-l-green-500' : p.rank === 3 ? 'border-l-amber-500' : 'border-l-slate-600';
+        const rankBg = p.rank === 1 ? 'bg-blue-900/10' : p.rank === 2 ? 'bg-green-900/10' : p.rank === 3 ? 'bg-amber-900/10' : 'bg-slate-800/30';
+        const rankLabel = p.rank === 1 ? 'text-blue-400' : p.rank === 2 ? 'text-green-400' : p.rank === 3 ? 'text-amber-400' : 'text-slate-500';
+        prioHTML += `<div class="bg-card rounded-xl border border-border border-l-4 ${rankBorder} ${rankBg} p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full" style="background:${p.color}"></span>
+              <span class="text-sm font-semibold text-white">${p.name}</span>
+            </div>
+            <span class="text-xs font-bold px-2 py-0.5 rounded ${rankLabel}" style="background:${p.color}22">Rank ${p.rank}</span>
+          </div>
+          <p class="text-xs text-slate-400">${p.code}</p>
+          <p class="text-xs text-slate-500 mt-2">${p.rationale}</p>
+        </div>`;
+      });
+      prioHTML += '</div>';
+      s1.innerHTML = prioHTML;
+      c.appendChild(s1);
+
+      // ---------- Section 3: Current Sprint ----------
+      const s2 = document.createElement('div');
+      s2.className = 'animate-in mt-6';
+      const cs = SP.currentSprint;
+      const completedPct = cs.capacity.committed > 0 ? Math.round((cs.capacity.completed / cs.capacity.committed) * 100) : 0;
+      const statusColor = cs.status === 'active' ? 'bg-green-900/30 text-green-400 border-green-500/50' : 'bg-slate-800 text-slate-400 border-border';
+
+      let sprintHTML = `
+        <div class="bg-card rounded-xl border border-border p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <h2 class="text-lg font-semibold text-white">${cs.id} — Current Sprint</h2>
+              <span class="text-xs px-2 py-0.5 rounded-full ${statusColor} border">${cs.status}</span>
+            </div>
+            <p class="text-sm text-slate-400">${cs.dates.start} → ${cs.dates.end}</p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-4 mb-5">
+            <div class="text-center">
+              <p class="text-xs text-slate-400">Available Days</p>
+              <p class="text-2xl font-bold text-white">${cs.capacity.available}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400">Committed</p>
+              <p class="text-2xl font-bold text-blue-400">${cs.capacity.committed}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400">Completed</p>
+              <p class="text-2xl font-bold text-green-400">${cs.capacity.completed}</p>
+            </div>
+            <div class="text-center">
+              <p class="text-xs text-slate-400">Rate</p>
+              <p class="text-2xl font-bold ${completedPct >= 80 ? 'text-green-400' : completedPct >= 50 ? 'text-amber-400' : 'text-slate-400'}">${completedPct}%</p>
+            </div>
+          </div>
+
+          <div class="w-full bg-slate-700 rounded-full h-2 mb-5">
+            <div class="${completedPct >= 80 ? 'bg-green-500' : completedPct >= 50 ? 'bg-amber-500' : 'bg-blue-500'} h-2 rounded-full progress-bar" style="width:${completedPct}%"></div>
+          </div>
+
+          <table class="w-full text-left">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="p-2 text-xs text-slate-400">Task</th>
+                <th class="p-2 text-xs text-slate-400">Project</th>
+                <th class="p-2 text-xs text-slate-400 text-center">Size</th>
+                <th class="p-2 text-xs text-slate-400 text-center">ARID</th>
+                <th class="p-2 text-xs text-slate-400 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>`;
+
+      cs.tasks.forEach(t => {
+        const proj = SP.projectPriorities.find(p => t.project.startsWith(p.code));
+        const projColor = proj ? proj.color : '#64748b';
+        const statusCls = t.status === 'done' ? 'chip-done' : t.status === 'in_progress' ? 'chip-inprogress' : t.status === 'blocked' ? 'chip-blocked' : 'chip-backlog';
+        const statusLabel = t.status === 'done' ? 'Done' : t.status === 'in_progress' ? 'In Progress' : t.status === 'blocked' ? 'Blocked' : 'Pending';
+        sprintHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50">
+          <td class="p-2 text-sm text-slate-300">${t.task}</td>
+          <td class="p-2"><span class="text-xs px-2 py-0.5 rounded" style="background:${projColor}22;color:${projColor}">${t.project}</span></td>
+          <td class="p-2 text-xs text-slate-400 text-center">${t.size}</td>
+          <td class="p-2 text-xs text-slate-400 text-center">${t.arid !== null ? t.arid : '<span class="text-slate-600">—</span>'}</td>
+          <td class="p-2 text-center"><span class="status-chip ${statusCls}">${statusLabel}</span></td>
+        </tr>`;
+      });
+
+      sprintHTML += `</tbody></table>`;
+
+      // Stretch goals
+      if (cs.stretch && cs.stretch.length > 0) {
+        sprintHTML += `<div class="mt-4 pt-3 border-t border-border/50">
+          <p class="text-xs text-slate-400 uppercase tracking-wider mb-2">Stretch Goals</p>`;
+        cs.stretch.forEach(t => {
+          sprintHTML += `<p class="text-xs text-slate-500 ml-2">• ${t.task} <span class="text-slate-600">(${t.project}, ${t.size})</span></p>`;
+        });
+        sprintHTML += '</div>';
+      }
+
+      sprintHTML += '</div>';
+      s2.innerHTML = sprintHTML;
+      c.appendChild(s2);
+
+      // ---------- Section 4: Future Sprints ----------
+      const s3 = document.createElement('div');
+      s3.className = 'animate-in mt-6';
+      let futureHTML = '<h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Upcoming Sprints</h2>';
+      futureHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+
+      SP.futureSprints.forEach(fs => {
+        const statusBadge = fs.status === 'planned' ? 'bg-blue-900/30 text-blue-400 border-blue-500/50' : 'bg-slate-800 text-slate-500 border-border';
+        futureHTML += `<div class="bg-card rounded-xl border border-border p-5">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <h3 class="text-sm font-semibold text-white">${fs.id}</h3>
+              <span class="text-xs px-2 py-0.5 rounded-full border ${statusBadge}">${fs.status}</span>
+            </div>
+            <p class="text-xs text-slate-400">${fs.dates.start} → ${fs.dates.end}</p>
+          </div>
+          <p class="text-xs text-slate-300 mb-3">${fs.focus}</p>
+          <div class="space-y-2">`;
+
+        fs.projectedTasks.forEach(pt => {
+          const proj = SP.projectPriorities.find(p => pt.project.startsWith(p.code));
+          const projColor = proj ? proj.color : '#64748b';
+          const rankLabel = pt.rank === 1 ? 'R1' : pt.rank === 2 ? 'R2' : pt.rank === 3 ? 'R3' : 'R4';
+          futureHTML += `<div class="flex items-center gap-2">
+            <span class="text-xs font-bold px-1.5 py-0.5 rounded" style="background:${projColor}22;color:${projColor}">${rankLabel}</span>
+            <span class="text-xs px-2 py-0.5 rounded" style="background:${projColor}22;color:${projColor}">${pt.project}</span>
+            <span class="text-xs text-slate-400 flex-1">${pt.description}</span>
+            <span class="text-xs text-slate-500">${pt.count} task${pt.count !== 1 ? 's' : ''}</span>
+          </div>`;
+        });
+
+        futureHTML += `</div>`;
+        if (fs.notes) {
+          futureHTML += `<p class="text-xs text-slate-500 mt-3 border-t border-border/30 pt-2">${fs.notes}</p>`;
+        }
+        futureHTML += '</div>';
+      });
+
+      futureHTML += '</div>';
+      s3.innerHTML = futureHTML;
+      c.appendChild(s3);
+
+      // ---------- Section 5: Capacity Allocation Chart ----------
+      const s4 = document.createElement('div');
+      s4.className = 'animate-in mt-6';
+      s4.innerHTML = `<div class="bg-card rounded-xl border border-border p-5">
+        <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Capacity Allocation by Project Rank</h3>
+        <canvas id="capacityChart" height="200"></canvas>
+      </div>`;
+      c.appendChild(s4);
+
+      requestAnimationFrame(() => {
+        const ctx = document.getElementById('capacityChart');
+        if (!ctx) return;
+
+        // Group projects by rank
+        const rankGroups = {};
+        SP.projectPriorities.forEach(p => {
+          if (!rankGroups[p.rank]) rankGroups[p.rank] = [];
+          rankGroups[p.rank].push(p);
+        });
+
+        const labels = SP.projectPriorities.map(p => p.name);
+        const colors = SP.projectPriorities.map(p => p.color);
+        const ranks = SP.projectPriorities.map(p => p.rank);
+
+        // Count tasks per project in current sprint
+        const taskCounts = SP.projectPriorities.map(p => {
+          return cs.tasks.filter(t => t.project.startsWith(p.code)).length;
+        });
+
+        const ch = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Current Sprint Tasks',
+              data: taskCounts,
+              backgroundColor: colors.map(c => c + '80'),
+              borderColor: colors,
+              borderWidth: 1,
+              borderRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { labels: { color: '#94a3b8', font: { size: 11 } } },
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+              y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', stepSize: 1 }, beginAtZero: true },
+            }
+          }
+        });
+        chartInstances.push(ch);
+      });
     }
 
     render();
