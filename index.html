@@ -97,7 +97,7 @@
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
-  <script src="data.js?v=20260312a"></script>
+  <script src="data.js?v=20260313a"></script>
 
   <header class="border-b border-border px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -1884,19 +1884,48 @@
           c.appendChild(el('h2','text-sm font-semibold text-slate-400 uppercase tracking-wider mt-8','Evolution Tracking — System Performance'));
 
           // Top-level cumulative stats
-          const cumBar = el('div','grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 animate-in');
+          const cumBar = el('div','grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 animate-in');
           const cumItems = [
+            {l:'Skill Executions', v: ET.cumulativeTotals.totalSkillExecutions || 0, c:'text-white', icon:'⚡'},
             {l:'Research Findings', v: ET.cumulativeTotals.totalResearchFindings, c:'text-cyan-400', icon:'🔍'},
             {l:'Improvements Proposed', v: ET.cumulativeTotals.totalImprovementsProposed, c:'text-amber-400', icon:'💡'},
             {l:'Improvements Promoted', v: ET.cumulativeTotals.totalImprovementsPromoted, c:'text-green-400', icon:'✓'},
             {l:'Propagations', v: ET.cumulativeTotals.totalPropagationsSuccessful + '/' + ET.cumulativeTotals.totalPropagationsAttempted, c:'text-purple-400', icon:'🔄'},
             {l:'Pipeline Runs', v: ET.cumulativeTotals.totalPipelineRuns, c:'text-blue-400', icon:'⚡'},
-            {l:'Docs Updated', v: ET.cumulativeTotals.totalDocsUpdatedByResearch, c:'text-pink-400', icon:'📄'}
+            {l:'Hooks Active', v: ET.cumulativeTotals.totalHooksActive || 0, c:'text-pink-400', icon:'🔗'}
           ];
           cumItems.forEach((m,i) => {
             cumBar.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center" style="animation-delay:${i*0.04}s"><p class="text-lg mb-1">${m.icon}</p><p class="text-lg font-bold ${m.c}">${m.v}</p><p class="text-xs text-slate-500">${m.l}</p></div>`;
           });
           c.appendChild(cumBar);
+
+          // Skill Activity Table (per-skill execution tracking)
+          if (ET.skillActivity && ET.skillActivity.length > 0) {
+            const saSum = ET.skillActivitySummary || {};
+            // Summary KPIs for skill activity
+            const saKpiBar = el('div','grid grid-cols-2 md:grid-cols-5 gap-2 animate-in');
+            [{l:'Tracked Skills',v:saSum.totalTracked||0,c:'text-white'},{l:'Active',v:saSum.activeSkills||0,c:'text-green-400'},{l:'Dormant',v:saSum.dormantSkills||0,c:'text-slate-400'},{l:'Ready for Distillation',v:saSum.readyForDistillation||0,c:'text-amber-400'},{l:'Auto-Logging',v:saSum.autoLoggingEnabled?'ON':'OFF',c:saSum.autoLoggingEnabled?'text-green-400':'text-red-400'}].forEach(k => {
+              saKpiBar.innerHTML += `<div class="bg-card rounded-lg border border-border p-3 text-center"><p class="text-lg font-bold ${k.c}">${k.v}</p><p class="text-xs text-slate-500">${k.l}</p></div>`;
+            });
+            c.appendChild(saKpiBar);
+
+            // Skill activity table
+            const saWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
+            let saHTML = '<div class="p-4 border-b border-border"><h4 class="text-xs text-slate-400 uppercase tracking-wider">Skill Execution Activity — 23 Tracked Skills</h4></div>';
+            saHTML += '<table class="w-full text-sm"><thead><tr class="text-xs text-slate-400 uppercase tracking-wider border-b border-border"><th class="text-left p-3">Skill</th><th class="p-3 text-center">Domain</th><th class="p-3 text-center">Executions</th><th class="p-3 text-center hidden md:table-cell">Last Used</th><th class="p-3 text-center hidden md:table-cell">Last Improved</th><th class="p-3 text-center">Quality</th><th class="p-3 text-center">Status</th></tr></thead><tbody>';
+            const domainColorMap = {intelligence:'text-amber-400',content:'text-blue-400',design:'text-purple-400',commerce:'text-green-400',integration:'text-cyan-400',utility:'text-slate-400'};
+            const statusColors = {active:'bg-green-900/30 text-green-400',dormant:'bg-slate-800 text-slate-500',new:'bg-blue-900/30 text-blue-400'};
+            ET.skillActivity.forEach(s => {
+              const dc = domainColorMap[s.domain] || 'text-slate-400';
+              const sc = statusColors[s.status] || 'bg-slate-800 text-slate-400';
+              const execColor = s.executions >= 10 ? 'text-green-400 font-bold' : s.executions > 0 ? 'text-white' : 'text-slate-600';
+              const distillBadge = s.executions >= 10 ? '<span class="text-xs ml-1 px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-400">distill</span>' : '';
+              saHTML += `<tr class="border-b border-border/30 hover:bg-slate-800/50"><td class="p-3 text-xs text-white font-medium">${s.name}${distillBadge}</td><td class="p-3 text-center"><span class="text-xs ${dc}">${s.domain}</span></td><td class="p-3 text-center text-xs ${execColor}">${s.executions}</td><td class="p-3 text-center text-xs text-slate-400 hidden md:table-cell">${s.lastUsed||'—'}</td><td class="p-3 text-center text-xs text-slate-400 hidden md:table-cell">${s.lastImproved||'—'}</td><td class="p-3 text-center text-xs text-slate-300">${s.avgQuality!==null?s.avgQuality+'/10':'—'}</td><td class="p-3 text-center"><span class="text-xs px-2 py-0.5 rounded ${sc}">${s.status}</span></td></tr>`;
+            });
+            saHTML += '</tbody></table>';
+            saWrap.innerHTML = saHTML;
+            c.appendChild(saWrap);
+          }
 
           // Pipeline Scripts Status
           const pipeWrap = el('div','bg-card rounded-xl border border-border overflow-hidden animate-in');
